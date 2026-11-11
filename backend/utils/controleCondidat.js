@@ -12,6 +12,10 @@ const DATE_FORMATS = [
 
 const parseSafeDate = (d) => {
   if (!d) return null;
+  const str = String(d).trim().toLowerCase();
+  if (str.includes('aujourd') || str.includes('ce jour') || str.includes('actuel') || str.includes('poste')) {
+    return moment();
+  }
   const m = moment(d, DATE_FORMATS);
   return m.isValid() ? m : null;
 };

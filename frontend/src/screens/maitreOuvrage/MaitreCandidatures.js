@@ -78,6 +78,7 @@ const MaitreCandidatures = () => {
   const [activeInspectDoc, setActiveInspectDoc] = useState('cni');
   const [offres, setOffres] = useState([]);
   const [loadingOffres, setLoadingOffres] = useState(false);
+  const [entreprisesList, setEntreprisesList] = useState([]);
 
   // Modal Créer Offre
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -85,6 +86,7 @@ const MaitreCandidatures = () => {
   const [submittingOffre, setSubmittingOffre] = useState(false);
 
   const ent = userInfo?.entreprise || {};
+  const [selectedEntrepriseId, setSelectedEntrepriseId] = useState(ent._id || '');
   const orgNom = ent.nom || (userInfo?.poste?.includes('Barid') ? 'Al Barid Bank' : 'Espace Recruteur');
   const orgSigle = ent.sigle || 'RH';
   const orgColor = ent.couleurPrimaire || '#003366';
@@ -115,12 +117,25 @@ const MaitreCandidatures = () => {
     return '/images/logos/lrt_logo.svg';
   };
 
+  const fetchEntreprises = async () => {
+    try {
+      const { data } = await axios.get('/api/entreprises');
+      setEntreprisesList(data || []);
+      if (!selectedEntrepriseId && data && data.length > 0) {
+        setSelectedEntrepriseId(data[0]._id);
+        if (data[0].secteur) setSecteur(data[0].secteur);
+      }
+    } catch (err) {
+      console.error('Erreur chargement entreprises:', err);
+    }
+  };
+
   const fetchOffres = async () => {
     try {
       setLoadingOffres(true);
       const { data } = await axios.get('/api/offres');
       // Filtrer les offres appartenant à cette entreprise si configurée
-      if (ent._id) {
+      if (ent._id && !userInfo?.isAdmin) {
         setOffres(data.filter((o) => String(o.entreprise?._id || o.entreprise) === String(ent._id)));
       } else {
         setOffres(data);
@@ -138,6 +153,7 @@ const MaitreCandidatures = () => {
       dispatch(listCandidatures());
       dispatch(listUsers());
       fetchOffres();
+      fetchEntreprises();
     }
   }, [userInfo, dispatch, navigate]);
 
@@ -152,6 +168,13 @@ const MaitreCandidatures = () => {
       setFormError("Veuillez renseigner l'intitulé officiel du poste et la date limite de dépôt.");
       setModalTab('general');
       addToast('Le titre et la date limite sont obligatoires', { appearance: 'warning' });
+      return;
+    }
+    const targetEntrepriseId = selectedEntrepriseId || ent._id;
+    if (!targetEntrepriseId) {
+      setFormError("Veuillez sélectionner l'entreprise / organisme recruteur.");
+      setModalTab('general');
+      addToast("Veuillez sélectionner l'institution recruteuse", { appearance: 'warning' });
       return;
     }
     setFormError('');
@@ -169,7 +192,7 @@ const MaitreCandidatures = () => {
         '/api/offres',
         {
           titre: titre.trim(),
-          entreprise: ent._id || undefined,
+          entreprise: targetEntrepriseId,
           specialite,
           secteur,
           ville,
@@ -193,6 +216,9 @@ const MaitreCandidatures = () => {
       addToast(err.response?.data?.message || err.message, { appearance: 'error' });
     }
   };
+
+  const currentSelectedEnt = entreprisesList.find((x) => String(x._id) === String(selectedEntrepriseId)) || ent;
+  const displayOrgNom = currentSelectedEnt?.nom || (orgNom !== 'Espace Recruteur' ? orgNom : 'Al Barid Bank & Institutions Partenaires');
 
   // Traitement des candidatures enrichies
   const enrichedCandidatures = (candidatures || []).map((cand) => {
@@ -305,6 +331,16 @@ const MaitreCandidatures = () => {
 
             {/* RECRUITER ACTIONS */}
             <div className='d-flex align-items-center gap-3'>
+              {userInfo?.isAdmin && (
+                <Button
+                  variant='primary'
+                  size='sm'
+                  style={{ borderRadius: '8px', fontSize: '13px', fontWeight: '600' }}
+                  onClick={() => navigate('/admin/dashboard')}
+                >
+                  <i className='fas fa-arrow-left me-1'></i> Dashboard Admin
+                </Button>
+              )}
               <Button
                 variant='outline-secondary'
                 size='sm'
@@ -739,9 +775,9 @@ const MaitreCandidatures = () => {
       <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)} size='xl' centered>
         <Form onSubmit={handleCreateOffre}>
           <Modal.Header closeButton className='bg-light'>
-            <Modal.Title className='fs-5 fw-bold'>
-              <i className='fas fa-bullhorn text-primary me-2'></i>
-              Publier un Nouveau Concours — {orgNom}
+            <Modal.Title className='fs-5 fw-bold text-dark d-flex align-items-center gap-2'>
+              <i className='fas fa-bullhorn text-primary'></i>
+              <span>Publier un Nouveau Concours — <span className='text-primary'>{displayOrgNom}</span></span>
             </Modal.Title>
           </Modal.Header>
           <Modal.Body className='p-4'>
@@ -773,6 +809,65 @@ const MaitreCandidatures = () => {
 
             <div style={{ display: modalTab === 'general' ? 'block' : 'none' }}>
               <div>
+                {/* SÉLECTION OFFICIELLE DE L'ENTREPRISE / ORGANISME */}
+                {(!ent._id || userInfo?.isAdmin) && (
+                  <Form.Group className='mb-4 p-3 bg-light rounded-3 border border-primary border-opacity-25'>
+                    <Form.Label className='fw-bold text-dark d-flex align-items-center justify-content-between mb-2'>
+                      <span>
+                        <i className='fas fa-building text-primary me-2'></i>
+                        Institution / Entreprise Recruteuse *
+                      </span>
+                      {currentSelectedEnt?.sigle && (
+                        <Badge bg='primary' className='px-3 py-1 fs-6'>
+                          {currentSelectedEnt.sigle}
+                        </Badge>
+                      )}
+                    </Form.Label>
+                    <Form.Select
+                      value={selectedEntrepriseId}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setSelectedEntrepriseId(val);
+                        const match = entreprisesList.find((x) => String(x._id) === String(val));
+                        if (match && match.secteur) {
+                          setSecteur(match.secteur);
+                        }
+                      }}
+                      required
+                      className='form-select-lg fw-bold shadow-sm'
+                      style={{ border: '2px solid #2563EB', background: '#FFFFFF' }}
+                    >
+                      <option value=''>-- Sélectionner l'institution (Al Barid Bank, OCP, CIH, MEF, CDG, etc.) --</option>
+                      {entreprisesList.map((item) => (
+                        <option key={item._id} value={item._id}>
+                          {item.nom} ({item.sigle}) — {item.secteur}
+                        </option>
+                      ))}
+                    </Form.Select>
+                    {currentSelectedEnt?.nom && (
+                      <div className='d-flex align-items-center gap-2 mt-2 text-muted small'>
+                        <i className='fas fa-check-circle text-success'></i>
+                        <span>Le concours sera publié sous la bannière officielle de <strong>{currentSelectedEnt.nom}</strong> ({currentSelectedEnt.secteur}).</span>
+                      </div>
+                    )}
+                  </Form.Group>
+                )}
+
+                {ent._id && !userInfo?.isAdmin && (
+                  <div className='p-3 mb-4 bg-primary bg-opacity-10 rounded-3 border border-primary d-flex align-items-center gap-3'>
+                    <img
+                      src={getOrgLogo()}
+                      alt={orgNom}
+                      style={{ height: '42px', objectFit: 'contain' }}
+                      onError={(e) => { e.target.src = '/images/logos/lrt_logo.svg'; }}
+                    />
+                    <div>
+                      <div className='fw-bold text-primary fs-6'>{orgNom} ({orgSigle})</div>
+                      <div className='small text-muted'>{ent.secteur || 'Secteur Institutionnel'}</div>
+                    </div>
+                  </div>
+                )}
+
                 <Form.Group className='mb-3'>
                   <Form.Label className='fw-bold small text-muted'>Intitulé Officiel du Poste / Concours *</Form.Label>
                   <Form.Control
@@ -1602,7 +1697,7 @@ const MaitreCandidatures = () => {
                           <strong>Missions déclarées :</strong> {selectedInspectCandidate.experiences?.length || 0} mission(s)
                           {selectedInspectCandidate.experiences && selectedInspectCandidate.experiences.map((exp, idx) => (
                             <div key={idx} className='mt-1 ps-2 border-start border-primary'>
-                              • <strong>{exp.fonctionOccupee || exp.poste}</strong> chez {exp.entreprise} ({exp.dateDebut} au {exp.dateFin}) — Domaine: {exp.domaine}
+                              • <strong>{exp.fonctionOccupee || exp.poste}</strong> chez {exp.entreprise} ({exp.dateDebut} au {exp.enPoste || String(exp.dateFin).toLowerCase().includes('aujourd') ? "À ce jour (En poste)" : exp.dateFin}) — Domaine: {exp.domaine}
                             </div>
                           ))}
                         </div>

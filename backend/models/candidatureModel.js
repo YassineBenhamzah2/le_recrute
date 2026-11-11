@@ -112,6 +112,10 @@ const candidatureSchema = mongoose.Schema(
           type: String,
           required: true,
         },
+        enPoste: {
+          type: Boolean,
+          default: false,
+        },
       },
     ],
     offre: {

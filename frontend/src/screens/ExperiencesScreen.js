@@ -40,6 +40,7 @@ const ExperiencesScreen = () => {
   const [entreprise, setEntreprise] = useState('');
   const [dateDebut, setDateDebut] = useState('');
   const [dateFin, setDateFin] = useState('');
+  const [enPoste, setEnPoste] = useState(false);
   const [message, setMessage] = useState('');
   const [modalError, setModalError] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -105,6 +106,7 @@ const ExperiencesScreen = () => {
   const [showNote, setShowNote] = useState(false);
   const handleCloseNote = () => {
     setShowNote(false);
+    setEnPoste(false);
     setModalError('');
   };
   const handleShowNote = () => {
@@ -145,6 +147,9 @@ const ExperiencesScreen = () => {
 
   const parseMomentSafe = (val) => {
     if (!val) return null;
+    if (typeof val === 'string' && (val.toLowerCase().includes('aujourd') || val.toLowerCase().includes('ce jour') || val.toLowerCase().includes('poste'))) {
+      return moment();
+    }
     if (moment.isMoment(val)) return val.isValid() ? val : null;
     if (val instanceof Date) {
       const m = moment(val);
@@ -176,13 +181,13 @@ const ExperiencesScreen = () => {
       setModalError("Veuillez renseigner la date de début");
       return;
     }
-    if (!dateFin) {
-      setModalError("Veuillez renseigner la date de fin");
+    if (!enPoste && !dateFin) {
+      setModalError("Veuillez renseigner la date de fin ou cocher 'Poste actuel (Toujours en poste)'");
       return;
     }
 
     const dd = parseMomentSafe(dateDebut);
-    const df = parseMomentSafe(dateFin);
+    const df = enPoste ? moment() : parseMomentSafe(dateFin);
 
     if (!dd || !dd.isValid()) {
       setModalError("Date de début invalide");
@@ -196,14 +201,16 @@ const ExperiencesScreen = () => {
       setModalError("La date de fin doit être postérieure à la date de début");
       return;
     }
-    if (df.isAfter(moment())) {
+    if (!enPoste && df.isAfter(moment().endOf('day'))) {
       setModalError("La date de fin ne peut pas être dans le futur");
       return;
     }
+
+    // Validation Bac : uniquement si l'année de début est strictement inférieure à l'année du Bac
     if (userInfo && userInfo.dateObtentionBac) {
       const dBac = parseMomentSafe(userInfo.dateObtentionBac);
-      if (dBac && dd.isBefore(dBac)) {
-        setModalError("La date de début ne peut pas être antérieure à la date du Bac");
+      if (dBac && dBac.isValid() && dd.year() < dBac.year()) {
+        setModalError(`L'année de début de l'expérience (${dd.year()}) ne peut pas être antérieure à l'année d'obtention du Bac (${dBac.year()})`);
         return;
       }
     }
@@ -215,7 +222,8 @@ const ExperiencesScreen = () => {
         fonctionOccupee: fonctionOccupee.trim(),
         entreprise: entreprise.trim(),
         dateDebut: dd.format('DD.MM.YYYY'),
-        dateFin: df.format('DD.MM.YYYY'),
+        dateFin: enPoste ? "Aujourd'hui" : df.format('DD.MM.YYYY'),
+        enPoste: Boolean(enPoste),
       },
     ]);
 
@@ -224,6 +232,7 @@ const ExperiencesScreen = () => {
     setFonctionOccupee('');
     setDateDebut('');
     setDateFin('');
+    setEnPoste(false);
     setModalError('');
     setShowNote(false);
   };
@@ -500,7 +509,14 @@ const ExperiencesScreen = () => {
                             <td>{experience.entreprise}</td>
                             <td>
                               <span className='badge bg-light text-dark border px-2 py-1'>
-                                {experience.dateDebut} ➔ {experience.dateFin}
+                                {experience.dateDebut} ➔{' '}
+                                {experience.enPoste || String(experience.dateFin).toLowerCase().includes('aujourd') ? (
+                                  <span className='text-success fw-bold'>
+                                    <i className='fas fa-clock me-1'></i> À ce jour (En poste)
+                                  </span>
+                                ) : (
+                                  experience.dateFin
+                                )}
                               </span>
                             </td>
                             <td>
@@ -630,6 +646,42 @@ const ExperiencesScreen = () => {
                 </Form.Group>
               </Col>
             </Row>
+            <Row className='mb-2'>
+              <Col md={12}>
+                <div
+                  className='p-2 mb-3 rounded'
+                  style={{
+                    background: enPoste ? '#F0FDF4' : '#F8FAFC',
+                    border: enPoste ? '1.5px solid #22C55E' : '1px solid #E2E8F0',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  <Form.Check
+                    type='checkbox'
+                    id='enPosteCheckbox'
+                    className='fw-bold'
+                    style={{ color: enPoste ? '#15803D' : '#334155', cursor: 'pointer' }}
+                    label={
+                      <span style={{ fontSize: '13.5px' }}>
+                        <i className='fas fa-user-clock me-2 text-success'></i>
+                        <strong>Poste actuel (Toujours en poste aujourd'hui)</strong> — Calcul automatique de l'expérience jusqu'à aujourd'hui
+                      </span>
+                    }
+                    checked={enPoste}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setEnPoste(checked);
+                      if (checked) {
+                        setDateFin(new Date());
+                      } else {
+                        setDateFin('');
+                      }
+                      setModalError('');
+                    }}
+                  />
+                </div>
+              </Col>
+            </Row>
             <Row>
               <Col md={6}>
                 <Form.Group className='mb-3'>
@@ -652,17 +704,26 @@ const ExperiencesScreen = () => {
                 <Form.Group className='mb-3'>
                   <Form.Label className='fw-bold'>
                     <i className='fas fa-calendar-check text-primary me-2'></i> Date de Fin :
-                    <span className='text-danger ms-1'>*</span>
+                    {!enPoste && <span className='text-danger ms-1'>*</span>}
                   </Form.Label>
-                  <Calendar
-                    date={'Date fin'}
-                    className='form-control'
-                    value={dateFin}
-                    onChange={(d) => {
-                      setDateFin(d);
-                      setModalError('');
-                    }}
-                  />
+                  {enPoste ? (
+                    <div
+                      className='form-control d-flex align-items-center gap-2 fw-bold'
+                      style={{ background: '#DCFCE7', color: '#15803D', borderColor: '#86EFAC', height: '38px' }}
+                    >
+                      <i className='fas fa-check-circle'></i> À ce jour (Aujourd'hui)
+                    </div>
+                  ) : (
+                    <Calendar
+                      date={'Date fin'}
+                      className='form-control'
+                      value={dateFin}
+                      onChange={(d) => {
+                        setDateFin(d);
+                        setModalError('');
+                      }}
+                    />
+                  )}
                 </Form.Group>
               </Col>
             </Row>

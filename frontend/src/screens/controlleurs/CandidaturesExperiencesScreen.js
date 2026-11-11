@@ -166,18 +166,36 @@ const CandidaturesExperiencesScreen = () => {
                             responsive
                             className='table-sm'
                           >
-                            <thead className='text-center'>
+                            <thead className='text-center bg-light'>
                               <tr>
-                                <th>Date Debut</th>
+                                <th>Domaine</th>
+                                <th>Fonction</th>
+                                <th>Établissement</th>
+                                <th>Date Début</th>
                                 <th>Date Fin</th>
                               </tr>
                             </thead>
-                            <tbody className='text-center'>
+                            <tbody className='text-center align-middle'>
                               {experiences &&
-                                experiences.map((experience) => (
-                                  <tr>
+                                experiences.map((experience, idx) => (
+                                  <tr key={idx}>
+                                    <td>
+                                      <span className='badge bg-info text-dark'>
+                                        {experience.domaine || 'Générale'}
+                                      </span>
+                                    </td>
+                                    <td className='fw-bold'>{experience.fonctionOccupee || '-'}</td>
+                                    <td>{experience.entreprise || '-'}</td>
                                     <td>{experience.dateDebut}</td>
-                                    <td>{experience.dateFin}</td>
+                                    <td>
+                                      {experience.enPoste || String(experience.dateFin).toLowerCase().includes('aujourd') ? (
+                                        <span className='badge bg-success'>
+                                          <i className='fas fa-clock me-1'></i> À ce jour (En poste)
+                                        </span>
+                                      ) : (
+                                        experience.dateFin
+                                      )}
+                                    </td>
                                   </tr>
                                 ))}
                             </tbody>

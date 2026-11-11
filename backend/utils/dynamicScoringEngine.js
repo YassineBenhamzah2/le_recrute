@@ -12,6 +12,10 @@ const DATE_FORMATS = [
 
 const parseSafeDate = (d) => {
   if (!d) return null;
+  const str = String(d).trim().toLowerCase();
+  if (str.includes('aujourd') || str.includes('ce jour') || str.includes('actuel') || str.includes('poste')) {
+    return moment();
+  }
   const m = moment(d, DATE_FORMATS);
   return m.isValid() ? m : null;
 };
@@ -196,7 +200,7 @@ export const calculateDynamicScore = (candidature, user, scoringRules) => {
       candidature.experiences.forEach((exp) => {
         if (!exp) return;
         const debut = parseSafeDate(exp.dateDebut);
-        const fin = parseSafeDate(exp.dateFin);
+        const fin = (exp.enPoste || String(exp.dateFin).toLowerCase().includes('aujourd')) ? moment() : parseSafeDate(exp.dateFin);
 
         if (debut && fin && fin.isAfter(debut)) {
           const duree = parseFloat(fin.diff(debut, 'months', true));
