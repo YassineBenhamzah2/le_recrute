@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 80" width="300" height="80">
+  <defs>
+    <linearGradient id="boaBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0066CC"/>
+      <stop offset="100%" stop-color="#004488"/>
+    </linearGradient>
+  </defs>
+  <!-- Globe & Star Emblem -->
+  <g transform="translate(12, 12)">
+    <circle cx="28" cy="28" r="26" fill="url(#boaBlue)"/>
+    <ellipse cx="28" cy="28" rx="24" ry="10" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity="0.8"/>
+    <ellipse cx="28" cy="28" rx="10" ry="24" fill="none" stroke="#FFFFFF" stroke-width="1.5" opacity="0.8"/>
+    <path d="M28 16 L31 24 L40 24 L33 29 L35 37 L28 32 L21 37 L23 29 L16 24 L25 24 Z" fill="#FFCC00"/>
+  </g>
+  <!-- Text -->
+  <text x="78" y="38" font-family="'Plus Jakarta Sans', 'Inter', sans-serif" font-weight="900" font-size="22" fill="#004488" letter-spacing="-0.01em">BANK OF AFRICA</text>
+  <text x="78" y="54" font-family="'Inter', sans-serif" font-weight="700" font-size="11" fill="#D97706" letter-spacing="0.1em">BMCE GROUP</text>
+  <text x="78" y="66" font-family="'Inter', sans-serif" font-weight="500" font-size="8.5" fill="#64748B">Portail Recrutement &amp; Carrières</text>
+</svg>

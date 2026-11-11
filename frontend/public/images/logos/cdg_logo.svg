@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 280 80" width="280" height="80">
+  <defs>
+    <linearGradient id="cdgAmber" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
+  <!-- Diamond Emblem -->
+  <g transform="translate(16, 14)">
+    <rect x="12" y="12" width="28" height="28" rx="6" transform="rotate(45 26 26)" fill="url(#cdgAmber)"/>
+    <circle cx="26" cy="26" r="6" fill="#FFFFFF"/>
+  </g>
+  <!-- CDG Text -->
+  <text x="75" y="44" font-family="'Plus Jakarta Sans', 'Inter', sans-serif" font-weight="900" font-size="34" fill="#D97706" letter-spacing="-0.03em">CDG</text>
+  <text x="75" y="58" font-family="'Inter', sans-serif" font-weight="700" font-size="9" fill="#1E293B" letter-spacing="0.08em">CAISSE DE DÉPÔT ET DE GESTION</text>
+</svg>

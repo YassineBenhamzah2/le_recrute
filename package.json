@@ -1,0 +1,45 @@
+{
+  "name": "recrutement-ccp",
+  "version": "1.0.0",
+  "description": "application de recrutement d'Al Barid Bank",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node backend/server",
+    "server": "nodemon backend/server",
+    "client": "npm start --prefix frontend",
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix frontend && npm run build --prefix frontend"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/iliassanati/recrutementCCP.git"
+  },
+  "author": "[iliassanati]",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/iliassanati/recrutementCCP/issues"
+  },
+  "homepage": "https://github.com/iliassanati/recrutementCCP#readme",
+  "dependencies": {
+    "@sendgrid/mail": "^7.6.0",
+    "aws-sdk": "^2.1048.0",
+    "bcryptjs": "^2.4.3",
+    "colors": "^1.4.0",
+    "cors": "^2.8.5",
+    "dotenv": "^10.0.0",
+    "express": "^4.17.1",
+    "express-async-handler": "^1.2.0",
+    "forever": "^4.0.1",
+    "jsonwebtoken": "^8.5.1",
+    "moment": "^2.29.1",
+    "mongoose": "^6.1.1",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.4",
+    "nodemailer": "^6.7.2"
+  },
+  "devDependencies": {
+    "concurrently": "^6.4.0",
+    "nodemon": "^2.0.15"
+  }
+}

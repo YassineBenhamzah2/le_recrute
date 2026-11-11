@@ -1,0 +1,219 @@
+/* Modern SaaS Navigation Header */
+.app-global-navbar {
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 1050;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  font-family: 'Plus Jakarta Sans', 'Inter', -apple-system, sans-serif;
+}
+
+.app-navbar-container {
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.app-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  color: #0f172a;
+}
+
+.app-brand-icon {
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #003366, #1d4ed8);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 18px;
+  box-shadow: 0 4px 10px rgba(29, 78, 216, 0.25);
+  flex-shrink: 0;
+}
+
+.app-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.app-brand-title {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.app-brand-title span {
+  color: #1d4ed8;
+}
+
+.app-brand-sub {
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.app-nav-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-nav-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #475569;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: all 0.15s ease-in-out;
+  white-space: nowrap;
+}
+
+.app-nav-item:hover {
+  color: #1d4ed8;
+  background-color: #f1f5f9;
+}
+
+.app-nav-item.active {
+  color: #1d4ed8;
+  background-color: #eff6ff;
+}
+
+.app-nav-item-icon {
+  font-size: 13px;
+  opacity: 0.8;
+}
+
+.app-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px 5px 6px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 50px;
+  text-decoration: none;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.app-user-pill:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.app-user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.app-user-info {
+  display: flex;
+  flex-direction: column;
+  text-align: left;
+}
+
+.app-user-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.app-user-role {
+  font-size: 10.5px;
+  color: #10b981;
+  font-weight: 600;
+}
+
+.app-btn-logout {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.app-btn-logout:hover {
+  background: #fef2f2;
+  border-color: #fca5a5;
+  color: #ef4444;
+}
+
+.app-btn-login {
+  padding: 8px 16px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.app-btn-login:hover {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.app-btn-register {
+  padding: 8px 18px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #ffffff;
+  background: #0f172a;
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  transition: all 0.15s ease;
+}
+
+.app-btn-register:hover {
+  background: #1e293b;
+  color: #ffffff;
+}
+
+@media (max-width: 992px) {
+  .app-nav-menu {
+    display: none;
+  }
+}

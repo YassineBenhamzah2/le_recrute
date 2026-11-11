@@ -1,0 +1,157 @@
+main {
+  min-height: 80vh;
+  width: 100%;
+}
+
+#root {
+  height: 100%;
+  display: block;
+}
+
+#root .app {
+  display: flex;
+  position: relative;
+}
+
+#root .pro-sidebar {
+  height: 100%;
+  width: 270px;
+  min-width: 270px;
+  text-align: left;
+  transition: width, left, right, 0.3s;
+  position: relative;
+  z-index: 1009;
+  top: 0;
+  bottom: 0;
+
+  color: wheat;
+  position: sticky;
+}
+
+#root .closemenu {
+  color: #dadada;
+  position: absolute;
+  right: 0;
+  z-index: 9999;
+  line-height: 65px;
+  border-radius: 50%;
+  font-weight: bold;
+  font-size: 22px;
+  top: 55px;
+  cursor: pointer;
+}
+
+#root .pro-sidebar.collapsed {
+  width: 80px;
+  min-width: 80px;
+}
+#root .pro-sidebar > .pro-sidebar-inner {
+  background: #1d1d1d;
+  height: 100%;
+  position: relative;
+  z-index: 101;
+}
+
+#root .pro-sidebar-inner .pro-sidebar-layout ul {
+  padding: 0 5px;
+  /* color: #dadada; */
+  color: #ffff;
+  margin: 10px 0px;
+  font-weight: bold;
+}
+
+#root
+  .pro-sidebar-inner
+  .pro-sidebar-layout
+  ul
+  .pro-inner-item
+  .pro-icon-wrapper {
+  background-color: #f0eedd;
+  color: #000;
+  border-radius: 10px;
+}
+#root
+  .pro-sidebar
+  > .pro-sidebar-inner
+  > .pro-sidebar-layout
+  .pro-sidebar-header {
+  border-bottom: 1px solid hsla(0, 0%, 67.8%, 0.2);
+  padding-top: 12px;
+  padding-bottom: 12px;
+  border-bottom-width: 0px;
+}
+
+#root .pro-sidebar > .pro-sidebar-inner > .pro-sidebar-layout {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  z-index: 101;
+}
+
+#root .pro-sidebar .pro-menu .pro-menu-item.pro-sub-menu .pro-inner-list-item {
+  background-color: transparent;
+}
+
+a {
+  text-decoration: none !important;
+}
+
+.react-bootstrap-table table {
+  table-layout: auto !important;
+  white-space: nowrap;
+}
+
+.react-bootstrap-table-editing-cell {
+  display: block;
+}
+
+.filter-label {
+  display: block;
+}
+
+.filter {
+  color: gray;
+}
+
+.form-control {
+  width: auto;
+  justify-content: center;
+}
+
+.filter-label {
+  text-align: -webkit-center;
+}
+
+.btn-group > .btn-group > .btn,
+.btn-group > .btn:not(.dropdown-toggle) {
+  white-space: nowrap;
+}
+
+.react-bootstrap-table-pagination {
+  margin-top: 10px;
+  margin-right: 15px;
+  margin-left: 15px;
+}
+
+.pagination {
+  justify-content: flex-end;
+}
+.react-bootstrap-table table {
+  table-layout: auto !important;
+  white-space: nowrap;
+}
+
+.react-bootstrap-table-editing-cell {
+  display: block;
+}
+
+.filter-label {
+  display: block;
+}
+
+.filter {
+  color: gray;
+}

@@ -1,0 +1,113 @@
+name: CI/CD Pipeline — Build, Test & Deploy to VPS
+
+on:
+  push:
+    branches: [ "main", "master", "dev" ]
+  pull_request:
+    branches: [ "main", "master" ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build-and-test:
+    name: 🧪 Build & Quality Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: 📥 Checkout Code
+        uses: actions/checkout@v4
+
+      - name: ⚙️ Setup Node.js (v20)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: |
+            package.json
+            frontend/package.json
+
+      - name: 📦 Install Backend Dependencies
+        run: npm install
+
+      - name: 📦 Install Frontend Dependencies
+        run: |
+          cd frontend
+          npm install --legacy-peer-deps
+
+      - name: 🏗️ Build Production Frontend
+        run: |
+          cd frontend
+          CI=false npm run build
+
+  deploy:
+    name: 🚀 Deploy to VPS (SSH)
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    if: (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || github.ref == 'refs/heads/dev') && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    timeout-minutes: 25
+    steps:
+      - name: 🔍 Check SSH Secrets Configuration
+        id: check_secrets
+        env:
+          HOST: ${{ secrets.VPS_HOST }}
+          USER_NAME: ${{ secrets.VPS_USER || secrets.VPS_USERNAME }}
+          AUTH: ${{ secrets.VPS_SSH_KEY || secrets.VPS_PASSWORD }}
+        run: |
+          if [ -n "$HOST" ] && [ -n "$USER_NAME" ] && [ -n "$AUTH" ]; then
+            echo "can_deploy=true" >> $GITHUB_OUTPUT
+            echo "✅ SSH Secrets détectés avec succès."
+          else
+            echo "can_deploy=false" >> $GITHUB_OUTPUT
+            echo "::warning::Secrets SSH manquants (VPS_HOST, VPS_USER/VPS_USERNAME, VPS_SSH_KEY ou VPS_PASSWORD)."
+            {
+              echo "## ⚠️ Déploiement non effectué"
+              echo "Le build est validé avec succès, mais le déploiement SSH requiert les secrets suivants dans **Settings → Secrets and variables → Actions** :"
+              echo "- \`VPS_HOST\` (IP ou nom d'hôte de votre serveur, ex: srv766071 ou IP)"
+              echo "- \`VPS_USER\` (ou \`VPS_USERNAME\`, ex: root)"
+              echo "- \`VPS_SSH_KEY\` (Clé privée SSH) OU \`VPS_PASSWORD\` (Mot de passe root)"
+              echo "- \`VPS_PORT\` (Optionnel, défaut 22)"
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: 🌐 Execute Deployment on VPS over SSH
+        if: steps.check_secrets.outputs.can_deploy == 'true'
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER || secrets.VPS_USERNAME || 'root' }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          password: ${{ secrets.VPS_PASSWORD }}
+          port: ${{ secrets.VPS_PORT || 22 }}
+          command_timeout: 20m
+          script: |
+            set -e
+            echo "🚀 [1/4] Connexion SSH au VPS réussie..."
+
+            APP_DIR="/var/www/recrutement-ccp"
+
+            if [ ! -d "$APP_DIR" ]; then
+              if [ -d "/var/www/ehc_website/recrutement-ccp" ]; then
+                APP_DIR="/var/www/ehc_website/recrutement-ccp"
+              else
+                echo "📁 Création du dossier cible $APP_DIR..."
+                mkdir -p "$APP_DIR"
+                git clone https://github.com/${{ github.repository }}.git "$APP_DIR"
+              fi
+            fi
+
+            cd "$APP_DIR"
+            echo "📂 Répertoire de travail : $(pwd)"
+
+            echo "📥 [2/4] Récupération du code le plus récent (${{ github.ref_name }})..."
+            git fetch origin ${{ github.ref_name }}
+            git checkout -f -B ${{ github.ref_name }} FETCH_HEAD
+            git pull origin ${{ github.ref_name }}
+
+            echo "⚙️ [3/4] Exécution du script de déploiement..."
+            chmod +x deploy.sh 2>/dev/null || true
+            ./deploy.sh
+
+            echo "🎉 [4/4] Déploiement achevé avec succès sur le VPS !"
