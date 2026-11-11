@@ -154,11 +154,21 @@ const PIPELINE_STAGES = [
   },
 ];
 
+const MOROCCAN_CITIES = [
+  { name: 'Casablanca', lat: 33.5731, lon: -7.5898, postes: 185 },
+  { name: 'Rabat', lat: 34.0209, lon: -6.8416, postes: 140 },
+  { name: 'Tanger', lat: 35.7595, lon: -5.8340, postes: 65 },
+  { name: 'Marrakech', lat: 31.6295, lon: -7.9811, postes: 55 },
+  { name: 'Fès', lat: 34.0331, lon: -5.0003, postes: 45 },
+  { name: 'Oujda', lat: 34.6867, lon: -1.9114, postes: 30 },
+  { name: 'Agadir', lat: 30.4278, lon: -9.5981, postes: 40 },
+];
+
 const HomeScreen = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  // User state
+  // User auth state
   const userLogin = useSelector((state) => state.userLogin) || {};
   const { userInfo } = userLogin;
 
@@ -175,7 +185,6 @@ const HomeScreen = () => {
   const [simNiveau, setSimNiveau] = useState('bac5');
   const [simMention, setSimMention] = useState('bien');
   const [simExp, setSimExp] = useState(3);
-  const [simEnPoste, setSimEnPoste] = useState(true);
 
   // Scroll Progress
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -185,7 +194,7 @@ const HomeScreen = () => {
   const [cursorVisible, setCursorVisible] = useState(false);
   const [cursorHovered, setCursorHovered] = useState(false);
 
-  // Canvas Ref
+  // Canvas Ref for 3D Globe & Particles
   const canvasRef = useRef(null);
 
   // 1. Fetch Offres from API if available
@@ -240,7 +249,7 @@ const HomeScreen = () => {
     document.addEventListener('mouseleave', handleMouseLeave);
 
     const handleOver = (e) => {
-      const target = e.target.closest('a, button, input, select, .nr-clickable, [role="button"]');
+      const target = e.target.closest('a, button, input, select, .xr-clickable, [role="button"]');
       setCursorHovered(!!target);
     };
 
@@ -253,7 +262,7 @@ const HomeScreen = () => {
     };
   }, [cursorVisible]);
 
-  // 4. Interactive Particle Canvas (Constellation & Cyber Glow)
+  // 4. Interactive 3D Moroccan Digital Globe & Constellation Engine
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -269,30 +278,42 @@ const HomeScreen = () => {
     };
     window.addEventListener('resize', handleResize);
 
-    const particleCount = Math.min(Math.floor((width * height) / 12000), 80);
+    // Floating Particles
+    const particleCount = Math.min(Math.floor((width * height) / 11000), 85);
     const particles = [];
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
         radius: Math.random() * 2 + 0.8,
         alpha: Math.random() * 0.6 + 0.2,
       });
     }
 
-    let mouse = { x: -1000, y: -1000 };
+    // 3D Sphere Parameters
+    let rotX = 0.2;
+    let rotY = 0;
+    let mouse = { x: width / 2, y: height / 2 };
+
     const handleCanvasMouse = (e) => {
       const rect = canvas.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
       mouse.y = e.clientY - rect.top;
+      rotY = (mouse.x / width - 0.5) * 1.2;
+      rotX = (mouse.y / height - 0.5) * 0.8;
     };
     window.addEventListener('mousemove', handleCanvasMouse);
+
+    const globeRadius = Math.min(width, height) * 0.32;
+    const globeCenterX = width * 0.5;
+    const globeCenterY = height * 0.52;
 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
+      // 1. Draw Starfield Particles
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         p.x += p.vx;
@@ -303,19 +324,20 @@ const HomeScreen = () => {
         if (p.y < 0) p.y = height;
         if (p.y > height) p.y = 0;
 
+        // Interaction with mouse
         const dxMouse = mouse.x - p.x;
         const dyMouse = mouse.y - p.y;
         const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
-        if (distMouse < 140) {
-          p.x -= (dxMouse / distMouse) * 0.9;
-          p.y -= (dyMouse / distMouse) * 0.9;
+        if (distMouse < 130) {
+          p.x -= (dxMouse / distMouse) * 0.8;
+          p.y -= (dyMouse / distMouse) * 0.8;
         }
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
         ctx.fillStyle = `rgba(0, 242, 169, ${p.alpha})`;
-        ctx.shadowColor = 'rgba(0, 242, 169, 0.9)';
-        ctx.shadowBlur = 8;
+        ctx.shadowColor = 'rgba(0, 242, 169, 0.8)';
+        ctx.shadowBlur = 6;
         ctx.fill();
 
         for (let j = i + 1; j < particles.length; j++) {
@@ -324,17 +346,87 @@ const HomeScreen = () => {
           const dy = p.y - p2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 125) {
+          if (dist < 115) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(0, 242, 169, ${0.18 * (1 - dist / 125)})`;
+            ctx.strokeStyle = `rgba(0, 242, 169, ${0.16 * (1 - dist / 115)})`;
             ctx.lineWidth = 0.8;
             ctx.shadowBlur = 0;
             ctx.stroke();
           }
         }
       }
+
+      // 2. Draw 3D Holographic Wireframe Globe in center
+      rotY += 0.003; // Auto slow rotation
+      const time = Date.now() * 0.0015;
+
+      // Draw 3D Latitude Rings
+      for (let lat = -60; lat <= 60; lat += 20) {
+        const radLat = (lat * Math.PI) / 180;
+        const rLat = globeRadius * Math.cos(radLat);
+        const yLat = globeRadius * Math.sin(radLat);
+
+        ctx.beginPath();
+        for (let lon = 0; lon <= 360; lon += 10) {
+          const radLon = (lon * Math.PI) / 180 + rotY;
+          const x = globeCenterX + rLat * Math.sin(radLon);
+          const y = globeCenterY - yLat * Math.cos(rotX) + rLat * Math.cos(radLon) * Math.sin(rotX);
+          const z = rLat * Math.cos(radLon) * Math.cos(rotX) + yLat * Math.sin(rotX);
+
+          if (z > -globeRadius * 0.6) {
+            if (lon === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+        }
+        ctx.strokeStyle = 'rgba(0, 242, 169, 0.06)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // 3. Draw Moroccan City Beacons & Connected Beams
+      const cityPoints = [];
+      for (let i = 0; i < MOROCCAN_CITIES.length; i++) {
+        const city = MOROCCAN_CITIES[i];
+        // Adjusted spherical projection centered around Morocco (lat ~32, lon ~ -6)
+        const latRad = ((city.lat - 32) * Math.PI) / 70;
+        const lonRad = ((city.lon + 6) * Math.PI) / 70 + rotY;
+
+        const x = globeCenterX + globeRadius * Math.sin(lonRad) * Math.cos(latRad);
+        const y = globeCenterY - globeRadius * Math.sin(latRad) * Math.cos(rotX) + globeRadius * Math.cos(lonRad) * Math.cos(latRad) * Math.sin(rotX);
+        const z = globeRadius * Math.cos(lonRad) * Math.cos(latRad) * Math.cos(rotX) + globeRadius * Math.sin(latRad) * Math.sin(rotX);
+
+        if (z > -50) {
+          cityPoints.push({ x, y, name: city.name, postes: city.postes });
+
+          // Pulsing Beacon
+          const pulse = (Math.sin(time * 3 + i) + 1) * 0.5;
+          ctx.beginPath();
+          ctx.arc(x, y, 4 + pulse * 3, 0, Math.PI * 2);
+          ctx.fillStyle = '#00f2a9';
+          ctx.shadowColor = '#00f2a9';
+          ctx.shadowBlur = 12;
+          ctx.fill();
+
+          // City Label
+          ctx.font = '9px "JetBrains Mono", monospace';
+          ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+          ctx.fillText(`${city.name} (${city.postes})`, x + 8, y + 3);
+        }
+      }
+
+      // Draw connecting laser arcs between Moroccan hubs
+      ctx.beginPath();
+      for (let i = 0; i < cityPoints.length; i++) {
+        for (let j = i + 1; j < cityPoints.length; j++) {
+          ctx.moveTo(cityPoints[i].x, cityPoints[i].y);
+          ctx.lineTo(cityPoints[j].x, cityPoints[j].y);
+        }
+      }
+      ctx.strokeStyle = 'rgba(0, 217, 245, 0.12)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
 
       animationFrameId = requestAnimationFrame(render);
     };
@@ -364,7 +456,7 @@ const HomeScreen = () => {
   // Simulator Score Calculation
   const simScore = useMemo(() => {
     let score = 0;
-    // Diplôme (Max 45 pts)
+    // Diplôme (Max 48 pts)
     if (simNiveau === 'bac2') score += 25;
     else if (simNiveau === 'bac3') score += 35;
     else if (simNiveau === 'bac5') score += 45;
@@ -382,7 +474,7 @@ const HomeScreen = () => {
     return Math.min(score, 100);
   }, [simNiveau, simMention, simExp]);
 
-  // Gauge SVG Math: R=130 -> 2*PI*130 ≈ 816.8
+  // Gauge SVG Math: R=130 -> Circumference = 2 * PI * 130 ≈ 816.8
   const gaugeCircumference = 2 * Math.PI * 130;
   const gaugeDashoffset = gaugeCircumference - (gaugeCircumference * simScore) / 100;
 
@@ -393,13 +485,13 @@ const HomeScreen = () => {
   const currentStage = PIPELINE_STAGES[activeStageIndex];
 
   return (
-    <div className='nr-universe'>
-      {/* 0. Top Glowing Scroll Progress */}
-      <div className='nr-progress-bar' style={{ transform: `scaleX(${scrollProgress})` }} />
+    <div className='xr-universe'>
+      {/* 0. Top Glowing Scroll Progress Bar */}
+      <div className='xr-progress' style={{ transform: `scaleX(${scrollProgress})` }} />
 
       {/* 0. Custom Magnetic Holographic Cursor */}
       <div
-        className='nr-cursor'
+        className='xr-cursor'
         data-visible={cursorVisible ? 'true' : 'false'}
         data-action={cursorHovered ? 'true' : 'false'}
         style={{ transform: `translate3d(${cursorPos.x}px, ${cursorPos.y}px, 0)` }}
@@ -408,30 +500,30 @@ const HomeScreen = () => {
       </div>
 
       {/* ====================================================================
-          1. NAVBAR SUPRÊME FLOTTANTE
+          1. NAVBAR SUPRÊME FLOTTANTE ACRYLIQUE
           ==================================================================== */}
-      <header className='nr-nav'>
-        <Link to='/' className='nr-brand'>
+      <header className='xr-nav'>
+        <Link to='/' className='xr-brand'>
           RECRUTEMENT<span>.MA</span>
-          <span className='nr-brand-badge'>PORTAIL OFFICIEL</span>
+          <span className='xr-brand-badge'>PORTAIL OFFICIEL</span>
         </Link>
 
-        <nav className='nr-nav-links'>
-          <a href='#nr-pipeline'>Le Parcours du Mérite</a>
-          <a href='#nr-offres'>Concours Ouverts</a>
-          <a href='#nr-simulateur'>Simulateur de Barème</a>
-          <a href='#nr-espaces'>Espaces Métier</a>
-          <a href='#nr-securite'>Audit &amp; CNDP</a>
-          <a href='#nr-faq'>FAQ</a>
+        <nav className='xr-nav-links'>
+          <a href='#xr-pipeline'>Le Parcours du Mérite</a>
+          <a href='#xr-offres'>Concours Ouverts</a>
+          <a href='#xr-simulateur'>Simulateur de Barème</a>
+          <a href='#xr-espaces'>Espaces Métier</a>
+          <a href='#xr-securite'>Audit &amp; CNDP</a>
+          <a href='#xr-faq'>FAQ</a>
         </nav>
 
-        <div className='nr-nav-actions'>
+        <div className='xr-nav-actions'>
           {userInfo ? (
             <div className='d-flex align-items-center gap-2'>
               {userInfo.isAdministrateur ? (
                 <button
                   onClick={() => navigate('/administrateur/candidatures')}
-                  className='nr-btn nr-btn-outline'
+                  className='xr-btn xr-btn-outline'
                   style={{ minHeight: '38px', padding: '0 16px', fontSize: '10px' }}
                 >
                   <i className='fas fa-shield-alt me-1 text-warning'></i> Admin Central
@@ -439,7 +531,7 @@ const HomeScreen = () => {
               ) : userInfo.isMaitreOuvrage ? (
                 <button
                   onClick={() => navigate('/maitre-ouvrage/candidatures')}
-                  className='nr-btn nr-btn-outline'
+                  className='xr-btn xr-btn-outline'
                   style={{ minHeight: '38px', padding: '0 16px', fontSize: '10px' }}
                 >
                   <i className='fas fa-building me-1 text-info'></i> Espace Recruteur
@@ -447,7 +539,7 @@ const HomeScreen = () => {
               ) : (
                 <button
                   onClick={() => navigate('/profil')}
-                  className='nr-btn nr-btn-outline'
+                  className='xr-btn xr-btn-outline'
                   style={{ minHeight: '38px', padding: '0 16px', fontSize: '10px' }}
                 >
                   <i className='fas fa-user-check me-1 text-success'></i> Mon Dossier
@@ -464,10 +556,10 @@ const HomeScreen = () => {
             </div>
           ) : (
             <div className='d-flex align-items-center gap-2'>
-              <Link to='/login' className='nr-btn nr-btn-outline' style={{ minHeight: '38px', padding: '0 16px', fontSize: '10.5px' }}>
+              <Link to='/login' className='xr-btn xr-btn-outline' style={{ minHeight: '38px', padding: '0 16px', fontSize: '10.5px' }}>
                 Connexion
               </Link>
-              <Link to='/register' className='nr-btn' style={{ minHeight: '38px', padding: '0 18px', fontSize: '10.5px' }}>
+              <Link to='/register' className='xr-btn' style={{ minHeight: '38px', padding: '0 18px', fontSize: '10.5px' }}>
                 Créer Mon Dossier <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
@@ -476,35 +568,35 @@ const HomeScreen = () => {
       </header>
 
       {/* ====================================================================
-          2. HERO SUPRÊME : PARTICULES, CYBER-GRID & RECHERCHE INSTANTANÉE
+          2. HERO 3D : GLOBE HOLOGRAPHIQUE & RECHERCHE INSTANTANÉE
           ==================================================================== */}
-      <section className='nr-hero'>
-        <div className='nr-hero-bg' />
-        <canvas ref={canvasRef} className='nr-particles-canvas' />
+      <section className='xr-hero'>
+        <div className='xr-hero-bg' />
+        <canvas ref={canvasRef} className='xr-canvas-layer' />
 
-        <div className='nr-hero-content'>
-          <div className='nr-hud-chip'>
-            <span className='nr-dot-live'></span>
+        <div className='xr-hero-content'>
+          <div className='xr-hud-pill'>
+            <span className='xr-pulse-dot'></span>
             <span>SYSTÈME NATIONAL SÉCURISÉ · SÉLECTION AU MÉRITE RÉPUBLICAIN · SESSION 2026</span>
           </div>
 
-          <h1 className='nr-hero-title'>
+          <h1 className='xr-hero-title'>
             L’ÉQUITÉ DU CONCOURS. <em>LA RIGUEUR DE L’AUDIT.</em><br />
             DU DÉPÔT NUMÉRIQUE <em>À L’AFFECTATION NATIONALE.</em>
           </h1>
 
-          <p className='nr-hero-sub'>
+          <p className='xr-hero-sub'>
             Plateforme souveraine de centralisation des concours d’accès aux grandes institutions bancaires,
             organismes financiers et établissements publics au Maroc. Barèmes algorithmiques transparents,
             audit visuel en double-contrôle et récépissé numérique horodaté conforme Loi 09-08 (CNDP).
           </p>
 
           {/* Instant Multi-Criteria Search Engine */}
-          <div className='nr-hero-search'>
+          <div className='xr-search-box'>
             <i className='fas fa-search text-muted'></i>
             <input
               type='text'
-              placeholder='Rechercher un intitulé de poste, diplôme, mot-clé...'
+              placeholder='Rechercher un poste, diplôme, mot-clé (ex: Guichetier, Ingénieur...)'
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
@@ -526,12 +618,12 @@ const HomeScreen = () => {
               <option value='Fès'>Fès / Meknès</option>
               <option value='Agadir'>Agadir / Souss</option>
             </select>
-            <a href='#nr-offres' className='nr-btn' style={{ minHeight: '38px', padding: '0 18px', fontSize: '10.5px' }}>
+            <a href='#xr-offres' className='xr-btn' style={{ minHeight: '38px', padding: '0 18px', fontSize: '10.5px' }}>
               Trouver <i className='fas fa-arrow-down ms-1'></i>
             </a>
           </div>
 
-          <div className='nr-hero-telemetry'>
+          <div className='xr-hero-hud'>
             <span>AUDIT CRYPTOGRAPHIQUE ACTIF (SHA-256)</span>
             <div>
               <i className='hud-bar is-active'></i>
@@ -547,21 +639,21 @@ const HomeScreen = () => {
       {/* ====================================================================
           3. MATRICE DE CONFIANCE (FACTS TELEMETRY STRIP)
           ==================================================================== */}
-      <section className='nr-facts-strip'>
-        <div className='nr-facts-container'>
-          <div className='nr-fact-card'>
+      <section className='xr-facts-strip'>
+        <div className='xr-facts-container'>
+          <div className='xr-fact-card'>
             <b>6</b>
             <span>GRANDES INSTITUTIONS BANCAIRES &amp; ÉTABLISSEMENTS PUBLICS PARTENAIRES</span>
           </div>
-          <div className='nr-fact-card'>
+          <div className='xr-fact-card'>
             <b>100%</b>
             <span>AUDIT VISUEL EN DOUBLE-AVEUGLE SUR ÉCRAN SCINDÉ ANTI-FRAUDE</span>
           </div>
-          <div className='nr-fact-card'>
+          <div className='xr-fact-card'>
             <b>100</b>
             <span>POINTS DU BARÈME ALGORITHMIQUE TRANSPARENT ET VÉRIFIABLE</span>
           </div>
-          <div className='nr-fact-card'>
+          <div className='xr-fact-card'>
             <b>0 ms</b>
             <span>LATENCE DANS LE CALCUL D'EXPÉRIENCE EN POSTE ACTUEL</span>
           </div>
@@ -571,11 +663,11 @@ const HomeScreen = () => {
       {/* ====================================================================
           4. LE PARCOURS DU MÉRITE RÉPUBLICAIN (INTERACTIVE 5-STAGE PIPELINE)
           ==================================================================== */}
-      <section className='nr-pipeline-section' id='nr-pipeline'>
+      <section className='xr-pipeline-section' id='xr-pipeline'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='nr-section-header'>
+          <div className='xr-section-header'>
             <div>
-              <div className='nr-hud-chip mb-2'>
+              <div className='xr-hud-pill mb-2'>
                 <span>TRAÇABILITÉ TOTALE DE BOUT EN BOUT</span>
               </div>
               <h2>
@@ -590,11 +682,11 @@ const HomeScreen = () => {
           </div>
 
           {/* Pipeline Stage Buttons */}
-          <div className='nr-pipeline-nav'>
+          <div className='xr-pipeline-nav'>
             {PIPELINE_STAGES.map((st, idx) => (
               <button
                 key={st.num}
-                className={`nr-pipeline-tab ${activeStageIndex === idx ? 'is-active' : ''}`}
+                className={`xr-pipeline-tab ${activeStageIndex === idx ? 'is-active' : ''}`}
                 onClick={() => setActiveStageIndex(idx)}
               >
                 <span className='num'>ÉTAPE {st.num}</span>
@@ -604,14 +696,14 @@ const HomeScreen = () => {
           </div>
 
           {/* Pipeline Interactive Card */}
-          <div className='nr-pipeline-card' key={currentStage.num}>
-            <div className='nr-pipeline-card-left'>
-              <div className='nr-hud-chip mb-3' style={{ fontSize: '9px' }}>
+          <div className='xr-pipeline-card' key={currentStage.num}>
+            <div className='xr-pipeline-left'>
+              <div className='xr-hud-pill mb-3' style={{ fontSize: '9px' }}>
                 <span>{currentStage.tag}</span>
               </div>
               <h3>{currentStage.title}</h3>
               <p>{currentStage.desc}</p>
-              <ul className='nr-pipeline-points'>
+              <ul className='xr-pipeline-points'>
                 {currentStage.points.map((pt, i) => (
                   <li key={i}>
                     <i className='fas fa-check-circle'></i>
@@ -621,24 +713,24 @@ const HomeScreen = () => {
               </ul>
 
               <div className='d-flex align-items-center gap-3'>
-                <Link to='/register' className='nr-btn'>
+                <Link to='/register' className='xr-btn'>
                   Commencer mon dossier <i className='fas fa-arrow-right ms-1'></i>
                 </Link>
-                <a href='#nr-simulateur' className='nr-btn nr-btn-outline'>
+                <a href='#xr-simulateur' className='xr-btn xr-btn-outline'>
                   Simuler mon barème
                 </a>
               </div>
             </div>
 
             {/* Right Interactive Visualizer Box */}
-            <div className='nr-pipeline-visual'>
-              <div className='nr-pipeline-visual-header'>
+            <div className='xr-pipeline-visual'>
+              <div className='xr-pipeline-visual-header'>
                 <span>MÉTRIQUE OPÉRATIONNELLE</span>
-                <span className='nr-pipeline-visual-badge'>{currentStage.badge}</span>
+                <span className='xr-visual-badge'>{currentStage.badge}</span>
               </div>
 
               <div className='text-center py-4'>
-                <div style={{ fontSize: '48px', color: 'var(--nr-mint)', fontFamily: 'var(--font-serif)', marginBottom: '8px' }}>
+                <div style={{ fontSize: '48px', color: 'var(--xr-mint)', fontFamily: 'var(--font-serif)', marginBottom: '8px' }}>
                   {currentStage.metric}
                 </div>
                 <div className='text-muted small'>Garantie d'intégrité nationale certifiée EHC</div>
@@ -666,9 +758,9 @@ const HomeScreen = () => {
       {/* ====================================================================
           5. RUNNING MARQUEE CINÉTIQUE DU MÉRITE RÉPUBLICAIN
           ==================================================================== */}
-      <div className='nr-marquee'>
-        <div className='nr-marquee-track'>
-          <div className='nr-marquee-group'>
+      <div className='xr-marquee'>
+        <div className='xr-marquee-track'>
+          <div className='xr-marquee-group'>
             <span>AL BARID BANK<i>✦</i></span>
             <span className='outline'>GROUPE OCP<i>✦</i></span>
             <span>CIH BANK<i>✦</i></span>
@@ -678,7 +770,7 @@ const HomeScreen = () => {
             <span>MÉRITE RÉPUBLICAIN<i>✦</i></span>
             <span className='outline'>CONFORMITÉ CNDP<i>✦</i></span>
           </div>
-          <div className='nr-marquee-group'>
+          <div className='xr-marquee-group'>
             <span>AL BARID BANK<i>✦</i></span>
             <span className='outline'>GROUPE OCP<i>✦</i></span>
             <span>CIH BANK<i>✦</i></span>
@@ -694,11 +786,11 @@ const HomeScreen = () => {
       {/* ====================================================================
           6. VITRINE DES CONCOURS NATIONAUX EN COURS
           ==================================================================== */}
-      <section className='nr-offres-section' id='nr-offres'>
+      <section className='xr-offres-section' id='xr-offres'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='nr-section-header'>
+          <div className='xr-section-header'>
             <div>
-              <div className='nr-hud-chip mb-2'>
+              <div className='xr-hud-chip mb-2'>
                 <span>AVIS DE RECRUTEMENT OFFICIELS</span>
               </div>
               <h2>
@@ -711,7 +803,7 @@ const HomeScreen = () => {
             </p>
           </div>
 
-          <div className='nr-filters-row'>
+          <div className='xr-filters-row'>
             {[
               { id: 'ALL', label: 'Toutes les institutions' },
               { id: 'ABB', label: 'Al Barid Bank' },
@@ -723,7 +815,7 @@ const HomeScreen = () => {
             ].map((inst) => (
               <button
                 key={inst.id}
-                className={`nr-filter-btn ${selectedSigle === inst.id ? 'is-active' : ''}`}
+                className={`xr-filter-btn ${selectedSigle === inst.id ? 'is-active' : ''}`}
                 onClick={() => setSelectedSigle(inst.id)}
               >
                 {inst.label}
@@ -731,11 +823,11 @@ const HomeScreen = () => {
             ))}
           </div>
 
-          <div className='nr-offres-grid'>
+          <div className='xr-offres-grid'>
             {filteredOffres.map((offre) => (
-              <div key={offre._id} className='nr-offre-card'>
-                <div className='nr-offre-top-bar'>
-                  <span className='nr-institution-tag'>{offre.entreprise}</span>
+              <div key={offre._id} className='xr-offre-card'>
+                <div className='xr-offre-top-bar'>
+                  <span className='xr-institution-badge'>{offre.entreprise}</span>
                   {offre.urgent && (
                     <span className='badge bg-danger text-white' style={{ fontSize: '9px', letterSpacing: '0.1em' }}>
                       CLÔTURE IMMINENTE
@@ -745,17 +837,17 @@ const HomeScreen = () => {
 
                 <h4>{offre.titre}</h4>
 
-                <div className='nr-offre-details'>
+                <div className='xr-offre-meta'>
                   <span><i className='fas fa-map-marker-alt'></i> {offre.ville}</span>
                   <span><i className='fas fa-graduation-cap'></i> {offre.niveau}</span>
                   <span><i className='fas fa-users'></i> {offre.postes} Postes budgétaires ouverts</span>
                   <span><i className='fas fa-clock'></i> {offre.cloture}</span>
                 </div>
 
-                <div className='nr-offre-footer'>
+                <div className='xr-offre-foot'>
                   <Link
                     to={userInfo ? '/profil' : '/register'}
-                    className='nr-btn'
+                    className='xr-btn'
                     style={{ minHeight: '36px', padding: '0 18px', fontSize: '10px' }}
                   >
                     Postuler en Ligne <i className='fas fa-arrow-right ms-1'></i>
@@ -780,11 +872,11 @@ const HomeScreen = () => {
       {/* ====================================================================
           7. SIMULATEUR DE BARÈME DYNAMIQUE SUR 100 POINTS
           ==================================================================== */}
-      <section className='nr-sim-section' id='nr-simulateur'>
+      <section className='xr-sim-section' id='xr-simulateur'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='nr-section-header'>
+          <div className='xr-section-header'>
             <div>
-              <div className='nr-hud-chip mb-2'>
+              <div className='xr-hud-chip mb-2'>
                 <span>TRANSPARENCE ALGORITHMIQUE TOTALE</span>
               </div>
               <h2>
@@ -797,15 +889,15 @@ const HomeScreen = () => {
             </p>
           </div>
 
-          <div className='nr-sim-layout'>
+          <div className='xr-sim-layout'>
             {/* Left Controls */}
-            <div className='nr-sim-box'>
-              <div className='nr-sim-field'>
+            <div className='xr-sim-box'>
+              <div className='xr-sim-field'>
                 <label>
                   <span>1. Diplôme / Niveau d'études</span>
                   <span className='pts'>{simNiveau === 'bac2' ? '25 pts' : simNiveau === 'bac3' ? '35 pts' : simNiveau === 'bac5' ? '45 pts' : '48 pts'}</span>
                 </label>
-                <select className='nr-sim-select' value={simNiveau} onChange={(e) => setSimNiveau(e.target.value)}>
+                <select className='xr-sim-select' value={simNiveau} onChange={(e) => setSimNiveau(e.target.value)}>
                   <option value='bac2'>Bac +2 (DUT, BTS, DTS, DEUG)</option>
                   <option value='bac3'>Bac +3 (Licence Fondamentale / Professionnelle)</option>
                   <option value='bac5'>Bac +5 (Master, Diplôme d'Ingénieur d'État, ENCG, ISCAE)</option>
@@ -813,12 +905,12 @@ const HomeScreen = () => {
                 </select>
               </div>
 
-              <div className='nr-sim-field'>
+              <div className='xr-sim-field'>
                 <label>
                   <span>2. Mention obtenue au diplôme requis</span>
                   <span className='pts'>{simMention === 'passable' ? '8 pts' : simMention === 'assez_bien' ? '14 pts' : simMention === 'bien' ? '18 pts' : '22 pts'}</span>
                 </label>
-                <select className='nr-sim-select' value={simMention} onChange={(e) => setSimMention(e.target.value)}>
+                <select className='xr-sim-select' value={simMention} onChange={(e) => setSimMention(e.target.value)}>
                   <option value='passable'>Mention Passable (10.00 à 11.99)</option>
                   <option value='assez_bien'>Mention Assez Bien (12.00 à 13.99)</option>
                   <option value='bien'>Mention Bien (14.00 à 15.99)</option>
@@ -826,14 +918,14 @@ const HomeScreen = () => {
                 </select>
               </div>
 
-              <div className='nr-sim-field'>
+              <div className='xr-sim-field'>
                 <label>
                   <span>3. Expérience professionnelle cumulée</span>
                   <span className='pts'>{simExp} an(s) · {Math.min(simExp * 3, 30)} pts</span>
                 </label>
                 <input
                   type='range'
-                  className='nr-sim-range'
+                  className='xr-sim-range'
                   min='0'
                   max='10'
                   step='1'
@@ -862,20 +954,20 @@ const HomeScreen = () => {
             </div>
 
             {/* Right Neon Compass Gauge */}
-            <div className='nr-gauge-wrap'>
+            <div className='xr-gauge-wrap'>
               <svg viewBox='0 0 320 320'>
                 <defs>
-                  <linearGradient id='nr-gauge-gradient' x1='0%' y1='0%' x2='100%' y2='0%'>
+                  <linearGradient id='xr-gauge-gradient' x1='0%' y1='0%' x2='100%' y2='0%'>
                     <stop offset='0%' stopColor='#00f2a9' />
                     <stop offset='100%' stopColor='#00d9f5' />
                   </linearGradient>
                 </defs>
-                <circle cx='160' cy='160' r='130' className='nr-gauge-track' />
+                <circle cx='160' cy='160' r='130' className='xr-gauge-track' />
                 <circle
                   cx='160'
                   cy='160'
                   r='130'
-                  className='nr-gauge-active'
+                  className='xr-gauge-active'
                   style={{
                     strokeDasharray: gaugeCircumference,
                     strokeDashoffset: gaugeDashoffset,
@@ -883,13 +975,13 @@ const HomeScreen = () => {
                 />
               </svg>
 
-              <div className='nr-gauge-center'>
+              <div className='xr-gauge-center'>
                 <span className='lbl'>NOTE PRÉVISIONNELLE</span>
                 <b>
                   {simScore}
                   <em>/100</em>
                 </b>
-                <div className='nr-gauge-verdict'>
+                <div className='xr-gauge-verdict'>
                   <i className='fas fa-check-circle text-success me-1'></i>
                   <span>
                     {simScore >= 75
@@ -908,11 +1000,11 @@ const HomeScreen = () => {
       {/* ====================================================================
           8. LES 4 ESPACES MÉTIER DÉDIÉS
           ==================================================================== */}
-      <section className='nr-espaces-section' id='nr-espaces'>
+      <section className='xr-espaces-section' id='xr-espaces'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='nr-section-header'>
+          <div className='xr-section-header'>
             <div>
-              <div className='nr-hud-chip mb-2'>
+              <div className='xr-hud-chip mb-2'>
                 <span>ENVIRONNEMENTS DÉDIÉS</span>
               </div>
               <h2>
@@ -925,9 +1017,9 @@ const HomeScreen = () => {
             </p>
           </div>
 
-          <div className='nr-espaces-grid'>
-            <div className='nr-espace-card'>
-              <div className='nr-espace-icon'>
+          <div className='xr-espaces-grid'>
+            <div className='xr-espace-card'>
+              <div className='xr-espace-icon'>
                 <i className='fas fa-user-graduate'></i>
               </div>
               <h4>Espace Candidat</h4>
@@ -935,13 +1027,13 @@ const HomeScreen = () => {
                 Créez votre profil, téléversez vos diplômes et justificatifs d'expérience,
                 suivez l'audit en direct et téléchargez votre convocation officielle avec QR-Code.
               </p>
-              <Link to='/register' className='nr-btn nr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+              <Link to='/register' className='xr-btn xr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
                 Créer Mon Espace <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
 
-            <div className='nr-espace-card'>
-              <div className='nr-espace-icon'>
+            <div className='xr-espace-card'>
+              <div className='xr-espace-icon'>
                 <i className='fas fa-balance-scale'></i>
               </div>
               <h4>Commission d'Audit</h4>
@@ -949,13 +1041,13 @@ const HomeScreen = () => {
                 Interface écran scindé pour vérifier les relevés originaux scannés, ajuster immédiatement les notes
                 en cas d'erreur de saisie et certifier l'admissibilité en double contrôle.
               </p>
-              <Link to='/login' className='nr-btn nr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+              <Link to='/login' className='xr-btn xr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
                 Accès Contrôleur <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
 
-            <div className='nr-espace-card'>
-              <div className='nr-espace-icon'>
+            <div className='xr-espace-card'>
+              <div className='xr-espace-icon'>
                 <i className='fas fa-building'></i>
               </div>
               <h4>Recruteur RH (Banques)</h4>
@@ -963,13 +1055,13 @@ const HomeScreen = () => {
                 Publiez des concours au nom de votre institution (Al Barid Bank, OCP, CIH, MEF...), paramétrez le barème
                 et exportez les listes officielles des candidats classés par ordre de mérite.
               </p>
-              <Link to='/login' className='nr-btn nr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+              <Link to='/login' className='xr-btn xr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
                 Espace Recruteur <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
 
-            <div className='nr-espace-card'>
-              <div className='nr-espace-icon'>
+            <div className='xr-espace-card'>
+              <div className='xr-espace-icon'>
                 <i className='fas fa-shield-alt'></i>
               </div>
               <h4>Direction &amp; CNDP</h4>
@@ -977,7 +1069,7 @@ const HomeScreen = () => {
                 Supervision macroscopique, tableaux de bord de parité et d'équité régionale,
                 journal d'audit infalsifiable avec horodatage cryptographique SHA-256.
               </p>
-              <Link to='/login' className='nr-btn nr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+              <Link to='/login' className='xr-btn xr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
                 Supervision CNDP <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
@@ -988,24 +1080,24 @@ const HomeScreen = () => {
       {/* ====================================================================
           9. SÉCURITÉ, GARANTIE ANTI-FRAUDE & ACCRÉDITATION CNDP
           ==================================================================== */}
-      <section className='nr-security-section' id='nr-securite'>
+      <section className='xr-security-section' id='xr-securite'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='nr-security-box'>
+          <div className='xr-security-box'>
             <div>
-              <div className='nr-hud-chip mb-3'>
+              <div className='xr-hud-chip mb-3'>
                 <span>CONFORMITÉ LOI 09-08</span>
               </div>
               <h2 style={{ fontSize: 'clamp(36px, 4vw, 56px)', marginBottom: '20px' }}>
                 La confiance républicaine. <em>Scellée par le code.</em>
               </h2>
-              <p style={{ color: 'var(--nr-muted)', fontSize: '15px', lineHeight: '1.8' }}>
+              <p style={{ color: 'var(--xr-muted)', fontSize: '15px', lineHeight: '1.8' }}>
                 Notre plateforme garantit l'inviolabilité absolue des données personnelles et professionnelles des candidats.
                 Chaque consultation, chaque visa d'auditeur et chaque note réajustée est consignée dans un journal immuable
                 auditable par les autorités nationales compétentes.
               </p>
             </div>
 
-            <div className='nr-seal-card'>
+            <div className='xr-seal-card'>
               <div className='d-flex align-items-center gap-3 mb-4'>
                 <i className='fas fa-certificate text-warning' style={{ fontSize: '32px' }}></i>
                 <div>
@@ -1016,7 +1108,7 @@ const HomeScreen = () => {
                 </div>
               </div>
 
-              <div className='p-3 rounded mb-3' style={{ background: 'rgba(0, 0, 0, 0.4)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--nr-mint)' }}>
+              <div className='p-3 rounded mb-3' style={{ background: 'rgba(0, 0, 0, 0.4)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--xr-mint)' }}>
                 <code>ROOT_HASH: 7f8a9d023bf4e8c1...100%_SECURE</code><br />
                 <code>STATUS: AUDIT_TRAIL_ACTIVE · ZERO_BREACH</code>
               </div>
@@ -1034,23 +1126,23 @@ const HomeScreen = () => {
       {/* ====================================================================
           10. FOIRE AUX QUESTIONS OFFICIELLES (FAQ ACCORDION)
           ==================================================================== */}
-      <section className='nr-faq-section' id='nr-faq'>
+      <section className='xr-faq-section' id='xr-faq'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='nr-faq-layout'>
+          <div className='xr-faq-layout'>
             <div>
-              <div className='nr-hud-chip mb-2'>
+              <div className='xr-hud-chip mb-2'>
                 <span>ASSISTANCE AUX CANDIDATS</span>
               </div>
               <h2 style={{ fontSize: 'clamp(38px, 4.2vw, 65px)', marginBottom: '20px' }}>
                 Questions <em>fréquentes.</em>
               </h2>
-              <p style={{ color: 'var(--nr-muted)', fontSize: '15px', lineHeight: '1.8' }}>
+              <p style={{ color: 'var(--xr-muted)', fontSize: '15px', lineHeight: '1.8' }}>
                 Retrouvez les réponses réglementaires aux questions les plus posées lors du dépôt de dossier,
                 du calcul d'ancienneté et de l'instruction par la commission d'audit.
               </p>
             </div>
 
-            <div className='nr-faq-list'>
+            <div className='xr-faq-list'>
               <details open>
                 <summary>
                   <span>Comment fonctionne l'option « Toujours en poste » pour les expériences ?</span>
@@ -1106,54 +1198,54 @@ const HomeScreen = () => {
       {/* ====================================================================
           11. FOOTER INSTITUTIONNEL HAUTE PRÉCISION
           ==================================================================== */}
-      <footer className='nr-footer'>
-        <div className='nr-footer-inner'>
+      <footer className='xr-footer'>
+        <div className='xr-footer-inner'>
           <div>
-            <div className='nr-brand' style={{ fontSize: '30px', marginBottom: '18px' }}>
+            <div className='xr-brand' style={{ fontSize: '30px', marginBottom: '18px' }}>
               RECRUTEMENT<span>.MA</span>
             </div>
-            <p style={{ maxWidth: '340px', lineHeight: '1.7', fontSize: '13px', color: 'var(--nr-muted)' }}>
+            <p style={{ maxWidth: '340px', lineHeight: '1.7', fontSize: '13px', color: 'var(--xr-muted)' }}>
               Portail National de Centralisation et de Gestion des Concours d’Accès aux Grandes Institutions Bancaires,
               Établissements Publics et Organismes Financiers au Maroc.
             </p>
-            <div className='nr-hud-chip mt-4' style={{ fontSize: '9px' }}>
-              <span className='nr-dot-live'></span>
+            <div className='xr-hud-chip mt-4' style={{ fontSize: '9px' }}>
+              <span className='xr-pulse-dot'></span>
               <span>CONFORME LOI 09-08 · CNDP</span>
             </div>
           </div>
 
-          <div className='nr-footer-col'>
+          <div className='xr-footer-col'>
             <h5>La Plateforme</h5>
-            <a href='#nr-pipeline'>Le Parcours du Mérite</a>
-            <a href='#nr-offres'>Concours Ouverts</a>
-            <a href='#nr-simulateur'>Simulateur de Barème</a>
-            <a href='#nr-espaces'>Espaces Métier</a>
+            <a href='#xr-pipeline'>Le Parcours du Mérite</a>
+            <a href='#xr-offres'>Concours Ouverts</a>
+            <a href='#xr-simulateur'>Simulateur de Barème</a>
+            <a href='#xr-espaces'>Espaces Métier</a>
           </div>
 
-          <div className='nr-footer-col'>
+          <div className='xr-footer-col'>
             <h5>Institutions Partenaires</h5>
-            <a href='#nr-offres'>Al Barid Bank</a>
-            <a href='#nr-offres'>Groupe OCP</a>
-            <a href='#nr-offres'>CIH Bank</a>
-            <a href='#nr-offres'>Ministère de l'Économie &amp; Finances</a>
-            <a href='#nr-offres'>Bank of Africa (BMCE)</a>
-            <a href='#nr-offres'>Caisse de Dépôt et de Gestion</a>
+            <a href='#xr-offres'>Al Barid Bank</a>
+            <a href='#xr-offres'>Groupe OCP</a>
+            <a href='#xr-offres'>CIH Bank</a>
+            <a href='#xr-offres'>Ministère de l'Économie &amp; Finances</a>
+            <a href='#xr-offres'>Bank of Africa (BMCE)</a>
+            <a href='#xr-offres'>Caisse de Dépôt et de Gestion</a>
           </div>
 
-          <div className='nr-footer-col'>
+          <div className='xr-footer-col'>
             <h5>Accès Direct</h5>
             <Link to='/login'>Espace Recruteur RH</Link>
             <Link to='/login'>Espace Commission d'Audit</Link>
             <Link to='/register'>Créer Dossier Candidat</Link>
-            <a href='#nr-faq'>Assistance &amp; Règlement</a>
+            <a href='#xr-faq'>Assistance &amp; Règlement</a>
           </div>
         </div>
 
-        <div className='nr-footer-watermark'>
+        <div className='xr-footer-watermark'>
           RECRUTEMENT<span>.MA</span>
         </div>
 
-        <div className='nr-footer-bottom'>
+        <div className='xr-footer-bottom'>
           <span>© 2026 EHC Experts Human Capital — Portail National Recrutement.ma</span>
           <span>SÉLECTION AU MÉRITE RÉPUBLICAIN · CONFORME CNDP MAROC</span>
         </div>
