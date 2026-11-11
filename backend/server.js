@@ -17,6 +17,10 @@ import uploadRoutes from './routes/uploadRoutes.js';
 
 //Load the env variables
 dotenv.config();
+dotenv.config({ path: path.resolve('backend', '.env') });
+if (!process.env.JWT_SECRET) {
+  process.env.JWT_SECRET = 'albaridbank_recrutement_secret_key_2026_xyz123!';
+}
 
 //connect the database
 connectDB();
