@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
@@ -18,10 +18,7 @@ const DEFAULT_FEATURED_OFFRES = [
     postes: 120,
     cloture: 'Dans 12 jours',
     urgent: true,
-    color: '#003366',
-    initials: 'ABB',
     logo: '/images/logos/abb_logo.png',
-    pdfUrl: '/uploads/Dossier_Candidat_Complet_6_Pages.pdf',
   },
   {
     _id: 'cih-01',
@@ -34,14 +31,11 @@ const DEFAULT_FEATURED_OFFRES = [
     postes: 25,
     cloture: 'Dans 6 jours',
     urgent: false,
-    color: '#0084B6',
-    initials: 'CIH',
     logo: '/images/logos/cih_logo.png',
-    pdfUrl: '/uploads/Dossier_Candidat_Complet_6_Pages.pdf',
   },
   {
     _id: 'ocp-01',
-    titre: 'Ingénieurs d’Exploitation Industrielle & Procédés Chimiques',
+    titre: 'Ingénieurs d’Exploitation Industrielle & Procédés',
     entreprise: 'Groupe OCP',
     sigle: 'OCP',
     secteur: 'Industrie & Mines',
@@ -50,217 +44,214 @@ const DEFAULT_FEATURED_OFFRES = [
     postes: 30,
     cloture: 'Dans 14 jours',
     urgent: true,
-    color: '#00875A',
-    initials: 'OCP',
     logo: '/images/logos/ocp_logo.png',
-    pdfUrl: '/uploads/Dossier_Candidat_Complet_6_Pages.pdf',
   },
   {
     _id: 'mef-01',
     titre: 'Inspecteurs des Finances & Cadres d’Administration',
     entreprise: 'Ministère de l’Économie et des Finances',
     sigle: 'MEF',
-    secteur: 'Fonction Publique / Ministère',
+    secteur: 'Administration Publique',
     ville: 'Rabat (Administration Centrale)',
-    niveau: 'Bac +5 / Master / Ingénieur',
-    postes: 50,
-    cloture: 'Dans 20 jours',
+    niveau: 'Bac +5 / Master / DESA',
+    postes: 45,
+    cloture: 'Dans 18 jours',
     urgent: false,
-    color: '#1E293B',
-    initials: 'MEF',
     logo: '/images/logos/mef_logo.png',
-    pdfUrl: '/uploads/Dossier_Candidat_Complet_6_Pages.pdf',
   },
   {
     _id: 'boa-01',
-    titre: 'Analystes Risques de Crédit & Engagements Bancaires',
-    entreprise: 'Bank of Africa',
+    titre: 'Analystes Risques de Crédit & Financement Entreprises',
+    entreprise: 'Bank of Africa (BMCE)',
     sigle: 'BOA',
     secteur: 'Secteur Bancaire',
-    ville: 'Casablanca Finance City',
-    niveau: 'Bac +5 / Master / Ingénieur',
+    ville: 'Casablanca (Siège)',
+    niveau: 'Bac +5 / Master Finance',
     postes: 15,
-    cloture: 'Dans 18 jours',
-    urgent: false,
-    color: '#0055A5',
-    initials: 'BOA',
+    cloture: 'Dans 8 jours',
+    urgent: true,
     logo: '/images/logos/boa_logo.png',
-    pdfUrl: '/uploads/Dossier_Candidat_Complet_6_Pages.pdf',
   },
   {
     _id: 'cdg-01',
-    titre: 'Auditeurs Internes & Contrôleurs de Gestion Senior',
+    titre: 'Gestionnaires de Portefeuille & Investissements',
     entreprise: 'Caisse de Dépôt et de Gestion',
     sigle: 'CDG',
-    secteur: 'Investissement & Prévoyance',
-    ville: 'Rabat, Casablanca',
-    niveau: 'Bac +5 / Master / ESC',
+    secteur: 'Organisme Financier Public',
+    ville: 'Rabat & Casablanca',
+    niveau: 'Bac +5 / Grande École',
     postes: 10,
-    cloture: 'Dans 25 jours',
+    cloture: 'Dans 21 jours',
     urgent: false,
-    color: '#D97706',
-    initials: 'CDG',
     logo: '/images/logos/cdg_logo.png',
-    pdfUrl: '/uploads/Dossier_Candidat_Complet_6_Pages.pdf',
   },
 ];
 
-const STAGES_CYCLE = [
+const CYCLE_STAGES = [
   {
-    id: 0,
-    code: '01',
-    nom: 'Besoins',
-    titre: 'Recueil des Besoins Budgétaires',
-    desc: 'Les directions métiers et institutions partenaires expriment leurs besoins en compétences et fixent les quotas de postes budgétaires autorisés.',
-    features: [
-      'Identification des profils cibles et spécialités prioritaires',
-      'Validation préalable des ouvertures budgétaires par l’institution',
-      'Formalisation des critères d’éligibilité légale et académique',
+    num: '01',
+    title: 'Recueil & Définition des Besoins',
+    short: 'Besoins',
+    role: 'Direction RH & Établissements',
+    desc: 'Les établissements recruteurs formalisent les postes ouverts, les profils requis, les spécialités et le barème officiel de notation.',
+    points: [
+      'Identification des postes budgétaires et des compétences cibles',
+      'Configuration du barème officiel : diplômes, mentions, expériences',
+      'Validation juridique de la conformité statutaire du concours',
     ],
-    deliverable: 'Fiche d’opportunité et autorisation de concours validée.',
   },
   {
-    id: 1,
-    code: '02',
-    nom: 'Concours',
-    titre: 'Publication Officielle & Avis de Concours',
-    desc: 'Émission de l’arrêté officiel de concours, publication du dossier d’appel à candidature et configuration de la grille de barème sur 100 points.',
-    features: [
-      'Diffusion multi-canale transparente des avis et délais légaux',
-      'Publication du cahier des charges et des épreuves écrites / orales',
-      'Paramétrage du barème de notation mathématique de sélection',
+    num: '02',
+    title: 'Publication Officielle du Concours',
+    short: 'Concours',
+    role: 'Maître d’Ouvrage / Recruteur',
+    desc: 'Lancement public avec publication des avis officiels, dates d’ouverture et de clôture, et critères d’admissibilité stricts.',
+    points: [
+      'Génération automatique de l’avis de recrutement certifié',
+      'Diffusion multi-canal et ouverture de la plateforme numérique',
+      'Affichage des dates limites et des pièces justificatives exigées',
     ],
-    deliverable: 'Avis officiel certifié et grille de barème transparente.',
   },
   {
-    id: 2,
-    code: '03',
-    nom: 'Postulation',
-    titre: 'Dépôt Numérique des Candidatures',
-    desc: 'Les candidats s’inscrivent, renseignent leurs diplômes, notes, mentions et expériences, et téléversent leurs pièces justificatives numérisées.',
-    features: [
-      'Formulaire standardisé avec vérification des âges et diplômes',
-      'Téléversement sécurisé de la CIN, du diplôme et des attestations',
-      'Horodatage officiel et conformité aux normes CNDP (Loi 09-08)',
+    num: '03',
+    title: 'Dépôt Numérique & Récépissé Horodaté',
+    short: 'Dépôt',
+    role: 'Candidat (National)',
+    desc: 'Le candidat remplit son dossier (Bac, diplômes, expériences, pièces scannées) et reçoit un récépissé numérique infalsifiable.',
+    points: [
+      'Saisie intuitive des données académiques et professionnelles',
+      'Téléversement des pièces justificatives en haute définition',
+      'Délivrance d’un récépissé horodaté conforme Loi 09-08 (CNDP)',
     ],
-    deliverable: 'Dossier numérique complet et horodaté dans le registre.',
   },
   {
-    id: 3,
-    code: '04',
-    nom: 'Audit',
-    titre: 'Instruction & Contrôle des Pièces',
-    desc: 'La commission de contrôle audite rigoureusement chaque pièce justificative (CIN, relevés, diplômes) avec zoom haute définition et validation motivée.',
-    features: [
-      'Vérification de l’authenticité des diplômes et des mentions',
-      'Détection automatique des doublons ou des fausses déclarations',
-      'Attribution du statut officiel : Dossier Conforme ou Rejeté motivé',
+    num: '04',
+    title: 'Audit Visuel des Pièces par la Commission',
+    short: 'Audit',
+    role: 'Commission d’Audit & Contrôleurs',
+    desc: 'Interface écran scindé où les membres de la commission comparent chaque note et date déclarée avec le document original officiel.',
+    points: [
+      'Contrôle visuel pièce par pièce (CIN, Relevés de notes, Attestations)',
+      'Possibilité de rectification immédiate des notes en cas de coquille',
+      'Statuts de contrôle en temps réel : Conforme, Rejeté ou Complément',
     ],
-    deliverable: 'Rapport d’audit de conformité et validation de recevabilité.',
   },
   {
-    id: 4,
-    code: '05',
-    nom: 'Barème',
-    titre: 'Notation & Classement par le Mérite',
-    desc: 'Le moteur algorithmique applique le barème officiel sur 100 points : note du diplôme, mention, expérience professionnelle et critères d’âge.',
-    features: [
-      'Calcul instantané et impartial du score sur 100 points',
-      'Valorisation au prorata exact des mois d’expérience métier',
-      'Classement ordonné automatisé sans intervention discrétionnaire',
+    num: '05',
+    title: 'Classement par Barème Algorithmique',
+    short: 'Barème',
+    role: 'Moteur de Scoring Dynamique',
+    desc: 'Calcul automatisé transparent sur 100 points : diplôme, mentions, ancienneté, et établissement d’origine.',
+    points: [
+      'Application stricte du barème validé sans intervention humaine',
+      'Classement instantané des candidats par ordre de mérite républicain',
+      'Génération des listes principales et des listes d’attente',
     ],
-    deliverable: 'Procès-verbal de classement général par ordre de mérite.',
   },
   {
-    id: 5,
-    code: '06',
-    nom: 'Convocations',
-    titre: 'Récépissés Certifiés & Convocations',
-    desc: 'Génération du récépissé électronique infalsifiable avec QR Code de certification et convocation des meilleurs candidats aux épreuves.',
-    features: [
-      'Récépissé PDF officiel avec signature électronique et QR Code',
-      'Notification des candidats retenus pour les épreuves d’admission',
-      'Affectation définitive des lauréats aux postes institutionnels',
+    num: '06',
+    title: 'Convocations Officielles & Affectations',
+    short: 'Convocations',
+    role: 'Direction RH & Centres d’Examen',
+    desc: 'Édition des convocations nominatives avec centre d’examen, salle et QR-Code de sécurité pour les épreuves écrites et orales.',
+    points: [
+      'Téléchargement immédiat de la convocation dans l’espace candidat',
+      'Émargement numérique par QR-Code le jour des épreuves',
+      'Publication des résultats définitifs et suivi de l’affectation',
     ],
-    deliverable: 'Convocation officielle sécurisée et arrêté d’affectation.',
   },
 ];
 
-const ROLES_SPACES = [
+const ROLES_DATA = [
   {
-    id: 0,
-    code: '01',
-    nom: 'Candidat',
-    subtitle: 'Postuler & Suivre.',
-    title: 'Votre parcours de candidature en toute clarté.',
-    desc: 'Consultez les concours ouverts de toutes les grandes institutions, postulez en quelques clics, téléversez vos pièces et téléchargez votre récépissé certifié horodaté.',
-    missions: [
-      'Catalogue unifié des concours bancaires, publics et industriels',
-      'Calcul prévisionnel du score avec le simulateur de barème',
-      'Téléchargement du récépissé officiel avec QR Code sécurisé',
+    id: 'candidat',
+    name: 'Candidat',
+    tag: 'Postuler & Suivre',
+    title: 'Votre candidature. Au même endroit.',
+    desc: 'Créez votre dossier unique, téléversez vos justificatifs, simulez votre note et suivez l’avancement de votre candidature en temps réel.',
+    items: [
+      'Dépôt numérique sécurisé et récépissé officiel avec horodatage',
+      'Calcul immédiat de l’ancienneté d’expérience (même en poste actuel)',
+      'Téléchargement de la convocation officielle avec centre d’examen',
     ],
-    link: '/register',
-    linkText: 'Créer mon dossier candidat',
+    folioTitle: 'Mon dossier.',
+    steps: [
+      { num: '01', title: 'Concours', desc: 'Explorer les offres nationales et vérifier l’éligibilité.' },
+      { num: '02', title: 'Dossier', desc: 'Saisir Bac, diplômes, expériences et pièces jointes.' },
+      { num: '03', title: 'Résultats', desc: 'Suivre le score d’audit et télécharger sa convocation.' },
+    ],
   },
   {
-    id: 1,
-    code: '02',
-    nom: 'Commission & Contrôleurs',
-    subtitle: 'Auditer & Valider.',
-    title: 'L’audit rigoureux des pièces justificatives.',
-    desc: 'Examinez les dossiers déposés, zoomez sur les diplômes, cartes nationales et attestations de travail pour garantir l’exactitude de chaque note déclarée.',
-    missions: [
-      'Interface d’instruction rapide avec visionneuse PDF haute précision',
-      'Contrôle de concordance entre relevés et notes déclarées',
-      'Validation ou rejet motivé avec traçabilité administrative',
+    id: 'commission',
+    name: 'Commission d’Audit',
+    tag: 'Contrôler & Valider',
+    title: 'L’instruction des pièces. Écran scindé.',
+    desc: 'Un espace dédié aux auditeurs pour comparer chaque note déclarée avec le document original scanné par le candidat sans quitter l’écran.',
+    items: [
+      'Visualiseur PDF haute fidélité avec zoom et rotation intégrés',
+      'Ajustement instantané de la note si le relevé officiel diffère',
+      'Validation, rejet motivé ou demande de complément en 1 clic',
     ],
-    link: '/login',
-    linkText: 'Accéder à l’espace contrôle',
+    folioTitle: 'Instruction.',
+    steps: [
+      { num: '01', title: 'Affectation', desc: 'Dossiers répartis équitablement entre les contrôleurs.' },
+      { num: '02', title: 'Vérification', desc: 'Audit visuel de la conformité des diplômes et relevés.' },
+      { num: '03', title: 'Certification', desc: 'Signature numérique du rapport d’instruction.' },
+    ],
   },
   {
-    id: 2,
-    code: '03',
-    nom: 'Recruteur Institutionnel',
-    subtitle: 'Publier & Paramétrer.',
-    title: 'Le pilotage direct des concours de votre institution.',
-    desc: 'Publiez vos avis de concours, définissez vos barèmes de sélection personnalisés (Al Barid Bank, OCP, CIH...) et suivez vos candidats classés par ordre de mérite.',
-    missions: [
-      'Publication des arrêtés et définition des barèmes sur 100 points',
-      'Classement automatique des candidats en temps réel selon le score',
-      'Export Excel / CSV des listes des convoqués pour les commissions',
+    id: 'recruteur',
+    name: 'Recruteur RH',
+    tag: 'Piloter les Concours',
+    title: 'Maîtrise d’Ouvrage des Concours.',
+    desc: 'Créez vos concours au nom de votre institution (Al Barid Bank, OCP, CIH, MEF...), définissez le barème et suivez les inscriptions.',
+    items: [
+      'Choix officiel de l’institution mandataire et du secteur d’activité',
+      'Paramétrage fin des coefficients de notation (études, mention, stages)',
+      'Export des listes officielles pour affichage réglementaire',
     ],
-    link: '/maitre-ouvrage/candidatures',
-    linkText: 'Entrer dans l’espace recruteur',
+    folioTitle: 'Gestion.',
+    steps: [
+      { num: '01', title: 'Création', desc: 'Paramétrage du concours et du cahier des charges.' },
+      { num: '02', title: 'Inscriptions', desc: 'Suivi du flux des candidatures et du taux de complétude.' },
+      { num: '03', title: 'Arrêté', desc: 'Validation définitive des listes des admissibles.' },
+    ],
   },
   {
-    id: 3,
-    code: '04',
-    nom: 'Direction RH',
-    subtitle: 'Superviser & Décider.',
-    title: 'La supervision macroscopique des flux nationaux.',
-    desc: 'Consultez le tableau de bord décisionnel, analysez la répartition géographique et académique des candidats et contrôlez le taux d’avancement des commissions.',
-    missions: [
-      'Tableau de bord décisionnel avec statistiques d’inscriptions en temps réel',
-      'Répartition académique des profils (Bac+2, Bac+3, Bac+5 Ingénieur)',
-      'Suivi des flux d’instruction et des taux de conformité des dossiers',
+    id: 'direction',
+    name: 'Direction RH',
+    tag: 'Superviser & Décider',
+    title: 'Pilotage Stratégique National.',
+    desc: 'Vue d’ensemble sur l’équité régionale, la répartition des profils, la parité et les taux d’admissibilité par académie et université.',
+    items: [
+      'Tableaux de bord consolidés avec télémétrie en temps réel',
+      'Statistiques de répartition géographique et par genre',
+      'Contrôle qualité sur l’ensemble des commissions régionales',
     ],
-    link: '/admin/dashboard',
-    linkText: 'Consulter le tableau de bord',
+    folioTitle: 'Pilotage.',
+    steps: [
+      { num: '01', title: 'Vue Globale', desc: 'Indicateurs clés et volumétrie nationale des candidats.' },
+      { num: '02', title: 'Équité', desc: 'Veille sur le respect strict du mérite républicain.' },
+      { num: '03', title: 'Bilan', desc: 'Rapports finaux d’admission pour les conseils d’administration.' },
+    ],
   },
   {
-    id: 4,
-    code: '05',
-    nom: 'Auditeur & Décideur',
-    subtitle: 'Certifier & Affecter.',
-    title: 'L’assurance d’une sélection irréprochable.',
-    desc: 'Vérifiez la parfaite équité de traitement, l’absence de discrimination et le respect strict du mérite républicain avant validation des résultats définitifs.',
-    missions: [
-      'Vérification de la neutralité mathématique des barèmes',
-      'Certification de conformité légale CNDP et protection des données',
-      'Édition des procès-verbaux officiels d’admission et d’affectation',
+    id: 'auditeur',
+    name: 'Auditeur Externe',
+    tag: 'Certifier & Tracer',
+    title: 'Audit & Conformité CNDP.',
+    desc: 'Traçabilité complète des logs, des modifications de notes et des accès aux dossiers selon les exigences de la Loi 09-08.',
+    items: [
+      'Piste d’audit infalsifiable avec horodatage cryptographique SHA-256',
+      'Journal exhaustif de chaque modification de note par la commission',
+      'Conformité totale avec les préconisations de la CNDP',
     ],
-    link: '/login',
-    linkText: 'Explorer l’espace audit',
+    folioTitle: 'Conformité.',
+    steps: [
+      { num: '01', title: 'Traçabilité', desc: 'Enregistrement de chaque action d’audit horodatée.' },
+      { num: '02', title: 'Contrôle', desc: 'Vérification de l’absence de favoritisme ou de biais.' },
+      { num: '03', title: 'Certification', desc: 'Émission du certificat de conformité légale du concours.' },
+    ],
   },
 ];
 
@@ -268,370 +259,701 @@ const HomeScreen = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const userLogin = useSelector((state) => state.userLogin);
+  // User state
+  const userLogin = useSelector((state) => state.userLogin) || {};
   const { userInfo } = userLogin;
 
-  const [dbOffres, setDbOffres] = useState([]);
-  const [activeStage, setActiveStage] = useState(0);
-  const [activeRole, setActiveRole] = useState(0);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [selectedEntFilter, setSelectedEntFilter] = useState('all');
+  // Search & Filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSigle, setSelectedSigle] = useState('ALL');
+  const [offres, setOffres] = useState(DEFAULT_FEATURED_OFFRES);
 
-  // Interactive Simulator
-  const [simNiveau, setSimNiveau] = useState('bac3');
-  const [simSpecialite, setSimSpecialite] = useState('bancaire');
-  const [simMoyenne, setSimMoyenne] = useState('14.50');
-  const [simExperienceMois, setSimExperienceMois] = useState(18);
+  // Cycle Orbit state
+  const [activeCycleIndex, setActiveCycleIndex] = useState(0);
 
-  const calculatedScore = useMemo(() => {
-    // 1. Diplôme
-    const ptsDiplome = simNiveau === 'bac5' ? 20 : simNiveau === 'bac3' ? 20 : 12;
-    // 2. Note
-    const note = parseFloat(simMoyenne) || 12;
-    let ptsNote = 0;
-    if (note >= 16) ptsNote = 40;
-    else if (note >= 14) ptsNote = 30;
-    else if (note >= 12) ptsNote = 20;
-    else ptsNote = 10;
-    // 3. Mention
-    const ptsMention = note >= 16 ? 15 : note >= 14 ? 12 : note >= 12 ? 8 : 3;
-    // 4. Expérience (max 25 pts)
-    const ptsExp = Math.min(25, (Number(simExperienceMois) || 0) * 0.65);
-    const total = Math.min(100, Math.round((ptsDiplome + ptsNote + ptsMention + ptsExp) * 10) / 10);
+  // Espaces Métier state
+  const [activeRoleIndex, setActiveRoleIndex] = useState(0);
 
-    return {
-      total,
-      eligible: total >= 60,
-      mention: note >= 16 ? 'Très Bien' : note >= 14 ? 'Bien' : note >= 12 ? 'Assez Bien' : 'Passable',
-      percentage: total,
-    };
-  }, [simNiveau, simSpecialite, simMoyenne, simExperienceMois]);
+  // Simulator state
+  const [simNiveau, setSimNiveau] = useState('bac5');
+  const [simMention, setSimMention] = useState('bien');
+  const [simExp, setSimExp] = useState(3);
 
+  // Scroll Progress
+  const [scrollProgress, setScrollProgress] = useState(0);
+
+  // Custom Cursor
+  const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
+  const [cursorVisible, setCursorVisible] = useState(false);
+  const [cursorHovered, setCursorHovered] = useState(false);
+
+  // Particle Canvas Ref
+  const canvasRef = useRef(null);
+
+  // 1. Fetch Offres from API if available
   useEffect(() => {
     const fetchOffres = async () => {
       try {
         const { data } = await axios.get('/api/offres');
-        if (Array.isArray(data) && data.length > 0) {
-          setDbOffres(data);
+        if (data && Array.isArray(data) && data.length > 0) {
+          const mapped = data.map((item, idx) => ({
+            _id: item._id || `off-${idx}`,
+            titre: item.intitule || item.titre || 'Poste à pourvoir',
+            entreprise: item.entreprise || 'Institution Partenaire',
+            sigle: (item.entreprise || 'ABB').split(' ')[0],
+            secteur: item.secteur || 'Secteur Public / Bancaire',
+            ville: item.lieu || 'Réseau National',
+            niveau: item.niveau || 'Bac +2 à Bac +5',
+            postes: item.nombrePostes || 10,
+            cloture: 'En cours',
+            urgent: idx % 2 === 0,
+            logo: '/images/logos/abb_logo.png',
+          }));
+          setOffres(mapped);
         }
-      } catch (err) {
-        console.error('Erreur chargement des offres:', err);
+      } catch (e) {
+        // Fallback to default
+        setOffres(DEFAULT_FEATURED_OFFRES);
       }
     };
     fetchOffres();
   }, []);
 
-  const logoutHandler = () => {
-    dispatch(logout());
-  };
+  // 2. Scroll Progress Tracker
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (totalScroll > 0) {
+        setScrollProgress(window.scrollY / totalScroll);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
-  const combinedOffres = useMemo(() => {
-    if (dbOffres && dbOffres.length > 0) {
-      return dbOffres.map((item, idx) => {
-        let entName = 'Al Barid Bank';
-        let entSigle = 'ABB';
-        let entColor = '#003366';
-        let entSecteur = item.secteur || 'Secteur Bancaire';
+  // 3. Custom Cursor Tracker
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      setCursorPos({ x: e.clientX, y: e.clientY });
+      if (!cursorVisible) setCursorVisible(true);
+    };
 
-        if (item.entreprise) {
-          if (typeof item.entreprise === 'object') {
-            entName = item.entreprise.nom || item.entreprise.sigle || 'Al Barid Bank';
-            entSigle = item.entreprise.sigle || 'ABB';
-            entColor = item.entreprise.couleurPrimaire || '#003366';
-            if (item.entreprise.secteur) entSecteur = item.entreprise.secteur;
-          } else if (typeof item.entreprise === 'string') {
-            entName = item.entrepriseNom || item.entreprise;
-            entSigle = item.entrepriseSigle || 'ABB';
-          }
-        } else if (item.entrepriseNom) {
-          entName = item.entrepriseNom;
-          entSigle = item.entrepriseSigle || 'ABB';
-          entColor = item.entrepriseCouleur || '#003366';
-        }
+    const handleMouseLeave = () => setCursorVisible(false);
 
-        const safeInitials = String(entSigle || 'ABB').substring(0, 4).toUpperCase();
-        const rawDate = item.dateLimite || item.dateFin;
-        const clotureText = rawDate
-          ? `Clôture : ${new Date(rawDate).toLocaleDateString('fr-FR')}`
-          : 'En cours';
+    window.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseleave', handleMouseLeave);
 
-        return {
-          _id: item._id || `db-${idx}`,
-          titre: item.titre || item.title || 'Poste de Recrutement',
-          entreprise: String(entName),
-          sigle: String(entSigle),
-          secteur: String(entSecteur),
-          ville: item.ville || 'Réseau National',
-          niveau: item.niveau || 'Bac +2 / Bac +3',
-          postes: Number(item.postes) || 10,
-          cloture: clotureText,
-          urgent: (Number(item.postes) || 0) > 40,
-          color: entColor,
-          initials: safeInitials,
-          logo: item.entrepriseLogo || (item.entreprise && item.entreprise.logo) || '',
-          pdfUrl: item.pdfUrl || '/uploads/Dossier_Candidat_Complet_6_Pages.pdf',
-        };
+    // Watch hover on interactive elements
+    const handleOver = (e) => {
+      const target = e.target.closest('a, button, input, select, .ref-clickable, [role="button"]');
+      setCursorHovered(!!target);
+    };
+
+    document.addEventListener('mouseover', handleOver);
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseleave', handleMouseLeave);
+      document.removeEventListener('mouseover', handleOver);
+    };
+  }, [cursorVisible]);
+
+  // 4. Auto-Cycle Orbit Timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActiveCycleIndex((prev) => (prev + 1) % CYCLE_STAGES.length);
+    }, 7000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // 5. Interactive Particle Canvas
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let animationFrameId;
+    let width = (canvas.width = canvas.parentElement.offsetWidth);
+    let height = (canvas.height = canvas.parentElement.offsetHeight);
+
+    const handleResize = () => {
+      if (!canvas) return;
+      width = canvas.width = canvas.parentElement.offsetWidth;
+      height = canvas.height = canvas.parentElement.offsetHeight;
+    };
+    window.addEventListener('resize', handleResize);
+
+    // Create particles
+    const particleCount = Math.min(Math.floor((width * height) / 14000), 75);
+    const particles = [];
+    for (let i = 0; i < particleCount; i++) {
+      particles.push({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        vx: (Math.random() - 0.5) * 0.45,
+        vy: (Math.random() - 0.5) * 0.45,
+        radius: Math.random() * 1.8 + 0.8,
+        alpha: Math.random() * 0.5 + 0.2,
       });
     }
 
-    return DEFAULT_FEATURED_OFFRES;
-  }, [dbOffres]);
+    let mouse = { x: -1000, y: -1000 };
+    const handleCanvasMouse = (e) => {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+    };
+    window.addEventListener('mousemove', handleCanvasMouse);
 
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      // Draw and update particles
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.x < 0) p.x = width;
+        if (p.x > width) p.x = 0;
+        if (p.y < 0) p.y = height;
+        if (p.y > height) p.y = 0;
+
+        // Interaction with mouse
+        const dxMouse = mouse.x - p.x;
+        const dyMouse = mouse.y - p.y;
+        const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
+        if (distMouse < 130) {
+          p.x -= (dxMouse / distMouse) * 0.8;
+          p.y -= (dyMouse / distMouse) * 0.8;
+        }
+
+        // Draw particle
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(25, 179, 194, ${p.alpha})`;
+        ctx.shadowColor = 'rgba(127, 219, 227, 0.8)';
+        ctx.shadowBlur = 6;
+        ctx.fill();
+
+        // Connect with nearby particles
+        for (let j = i + 1; j < particles.length; j++) {
+          const p2 = particles[j];
+          const dx = p.x - p2.x;
+          const dy = p.y - p2.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+
+          if (dist < 115) {
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y);
+            ctx.lineTo(p2.x, p2.y);
+            ctx.strokeStyle = `rgba(127, 219, 227, ${0.16 * (1 - dist / 115)})`;
+            ctx.lineWidth = 0.8;
+            ctx.shadowBlur = 0;
+            ctx.stroke();
+          }
+        }
+      }
+
+      animationFrameId = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('mousemove', handleCanvasMouse);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, []);
+
+  // Filtered Offres
   const filteredOffres = useMemo(() => {
-    return combinedOffres.filter((o) => {
-      const matchKeyword =
-        !searchKeyword ||
-        o.titre.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-        o.entreprise.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-        o.secteur.toLowerCase().includes(searchKeyword.toLowerCase()) ||
-        o.ville.toLowerCase().includes(searchKeyword.toLowerCase());
-
-      const matchEnt =
-        selectedEntFilter === 'all' ||
-        o.sigle.toLowerCase() === selectedEntFilter.toLowerCase() ||
-        o.entreprise.toLowerCase().includes(selectedEntFilter.toLowerCase());
-
-      return matchKeyword && matchEnt;
+    return offres.filter((item) => {
+      const matchSearch =
+        item.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.entreprise.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        item.ville.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchSigle = selectedSigle === 'ALL' || item.sigle === selectedSigle;
+      return matchSearch && matchSigle;
     });
-  }, [combinedOffres, searchKeyword, selectedEntFilter]);
+  }, [offres, searchTerm, selectedSigle]);
+
+  // Simulator Score Calculation
+  const simScore = useMemo(() => {
+    let score = 0;
+    // Diplome
+    if (simNiveau === 'bac2') score += 25;
+    else if (simNiveau === 'bac3') score += 35;
+    else if (simNiveau === 'bac5') score += 45;
+    else if (simNiveau === 'doctorat') score += 50;
+
+    // Mention
+    if (simMention === 'passable') score += 8;
+    else if (simMention === 'assez_bien') score += 14;
+    else if (simMention === 'bien') score += 18;
+    else if (simMention === 'tres_bien') score += 20;
+
+    // Experience (3 pts per year, max 30)
+    score += Math.min(Number(simExp) * 3, 30);
+
+    return Math.min(score, 100);
+  }, [simNiveau, simMention, simExp]);
+
+  // Radius for Gauge SVG: 130 -> Circumference = 2 * PI * 130 ≈ 816.8
+  const gaugeCircumference = 2 * Math.PI * 130;
+  const gaugeDashoffset = gaugeCircumference - (gaugeCircumference * simScore) / 100;
+
+  const handleLogout = () => {
+    dispatch(logout());
+  };
+
+  const currentRole = ROLES_DATA[activeRoleIndex];
+  const currentStage = CYCLE_STAGES[activeCycleIndex];
 
   return (
-    <div style={{ background: '#FFFFFF', minHeight: '100vh', width: '100%' }}>
+    <div className='reference'>
+      {/* 0. Top Glowing Scroll Progress */}
+      <div className='ref-progress' style={{ transform: `scaleX(${scrollProgress})` }} />
+
+      {/* 0. Custom Magnetic Cursor */}
+      <div
+        className='ref-cursor'
+        data-visible={cursorVisible ? 'true' : 'false'}
+        data-action={cursorHovered ? 'true' : 'false'}
+        style={{ transform: `translate3d(${cursorPos.x}px, ${cursorPos.y}px, 0)` }}
+      >
+        <span>{cursorHovered ? '↗' : ''}</span>
+      </div>
+
       {/* ====================================================================
-          1. NAVIGATION HEADER (ref-nav)
+          1. STICKY NAVBAR ULTRA-FLUIDE
           ==================================================================== */}
-      <header className='ref-nav-container'>
-        <div className='ref-nav-inner'>
-          <Link to='/' className='ref-brand'>
-            <span style={{ color: '#0F172A' }}>Recrutement</span><span>.ma</span>
-            <span className='ref-brand-tag'>EHC Portail National</span>
-          </Link>
+      <header className='ref-nav'>
+        <Link to='/' className='ref-brand'>
+          Recrutement<span>.ma</span>
+        </Link>
 
-          <nav className='ref-nav-menu'>
-            <a href='#ref-vision' className='ref-nav-link'>La Plateforme</a>
-            <a href='#ref-cycle' className='ref-nav-link'>Le Cycle</a>
-            <a href='#ref-spaces' className='ref-nav-link'>Espaces Métier</a>
-            <a href='#ref-offres' className='ref-nav-link'>Concours & Offres</a>
-            <a href='#ref-budget' className='ref-nav-link'>Simulateur Barème</a>
-            <a href='#ref-questions' className='ref-nav-link'>Repères</a>
-          </nav>
+        <nav className='ref-nav-links'>
+          <a href='#ref-vision'>Vision</a>
+          <a href='#ref-relay'>Le Cycle Radar</a>
+          <a href='#ref-spaces'>Espaces Métier</a>
+          <a href='#ref-offres'>Concours Ouverts</a>
+          <a href='#ref-budget'>Simulateur</a>
+          <a href='#ref-questions'>FAQ</a>
+        </nav>
 
-          <div className='ref-nav-actions'>
-            <button
-              className='ref-search-pill'
-              onClick={() => {
-                const el = document.getElementById('search-input-ref');
-                if (el) {
-                  el.focus();
-                  el.scrollIntoView({ behavior: 'smooth' });
-                }
-              }}
-              title='Rechercher un poste ou concours'
-            >
-              <i className='fas fa-search'></i>
-              <span>Rechercher</span>
-              <kbd style={{ fontSize: '10px', background: '#E2E8F0', padding: '1px 5px', borderRadius: '4px' }}>⌘K</kbd>
-            </button>
-
-            {userInfo ? (
-              <>
-                {userInfo.isAdmin ? (
-                  <Link to='/admin/dashboard' className='ref-button ref-primary'>
-                    <i className='fas fa-cogs'></i> Dashboard Admin
-                  </Link>
-                ) : userInfo.isMaitreOuvrage ? (
-                  <Link to='/maitre-ouvrage/candidatures' className='ref-button ref-primary'>
-                    <i className='fas fa-briefcase'></i> Espace Recruteur
-                  </Link>
-                ) : userInfo.isController ? (
-                  <Link to='/controlleurs/dashboard' className='ref-button ref-primary'>
-                    <i className='fas fa-user-shield'></i> Espace Contrôle
-                  </Link>
-                ) : (
-                  <Link to='/profile' className='ref-button ref-primary'>
-                    <i className='fas fa-user'></i> Mon Espace
-                  </Link>
-                )}
-                <button
-                  onClick={logoutHandler}
-                  className='btn btn-sm btn-outline-danger'
-                  style={{ borderRadius: '9999px', padding: '7px 12px' }}
-                  title='Déconnexion'
-                >
-                  <i className='fas fa-sign-out-alt'></i>
-                </button>
-              </>
-            ) : (
-              <>
-                <Link to='/login' className='ref-button ref-outline'>
-                  Connexion
-                </Link>
-                <a href='#ref-offres' className='ref-button ref-primary'>
-                  Explorer les concours <i className='fas fa-arrow-up-right-from-square ms-1'></i>
-                </a>
-              </>
-            )}
+        <div className='ref-nav-actions'>
+          <div className='ref-hud-pill d-none d-lg-inline-flex'>
+            <span className='ref-dot-pulse'></span>
+            <span>CNDP CERTIFIÉ</span>
           </div>
+
+          <a href='#ref-offres' className='ref-search-button'>
+            <i className='fas fa-search'></i>
+            <span>⌘K</span>
+          </a>
+
+          {userInfo ? (
+            <div className='d-flex align-items-center gap-2'>
+              {userInfo.isAdministrateur ? (
+                <button
+                  onClick={() => navigate('/administrateur/candidatures')}
+                  className='ref-button ref-button-outline'
+                  style={{ minHeight: '38px', padding: '0 16px', fontSize: '10px' }}
+                >
+                  <i className='fas fa-shield-alt me-1'></i> Admin
+                </button>
+              ) : userInfo.isMaitreOuvrage ? (
+                <button
+                  onClick={() => navigate('/maitre-ouvrage/candidatures')}
+                  className='ref-button ref-button-outline'
+                  style={{ minHeight: '38px', padding: '0 16px', fontSize: '10px' }}
+                >
+                  <i className='fas fa-building me-1'></i> Recruteur
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate('/profil')}
+                  className='ref-button ref-button-outline'
+                  style={{ minHeight: '38px', padding: '0 16px', fontSize: '10px' }}
+                >
+                  <i className='fas fa-user-check me-1'></i> Mon Dossier
+                </button>
+              )}
+              <button
+                onClick={handleLogout}
+                className='btn btn-outline-danger btn-sm rounded-circle p-2'
+                title='Déconnexion'
+                style={{ width: '36px', height: '36px', display: 'grid', placeItems: 'center' }}
+              >
+                <i className='fas fa-power-off'></i>
+              </button>
+            </div>
+          ) : (
+            <div className='d-flex align-items-center gap-2'>
+              <Link to='/login' className='ref-button ref-button-outline' style={{ minHeight: '40px', padding: '0 18px', fontSize: '10.5px' }}>
+                Connexion
+              </Link>
+              <Link to='/register' className='ref-button' style={{ minHeight: '40px', padding: '0 18px', fontSize: '10.5px' }}>
+                Créer Dossier <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
+              </Link>
+            </div>
+          )}
         </div>
       </header>
 
       {/* ====================================================================
-          2. HERO SECTION (ref-hero) — SOMBRE & NOBLE AVEC AMBIENT GLOW
+          2. HERO ULTRA-SCI-FI AVEC CANVAS PARTICULES ET GLOW AMBIENT
           ==================================================================== */}
       <section className='ref-hero' id='ref-top'>
-        <div className='ref-hero-glow'></div>
+        <div className='ref-hero-glow' />
+        <canvas ref={canvasRef} className='ref-particles' />
+        <div className='ref-hero-watermark'>RECRUTEMENT.MA</div>
 
         <div className='ref-hero-frame'>
+          <div className='ref-hero-top-badge'>
+            <i className='fas fa-shield-alt text-info me-2'></i>
+            <span>01 — L’ÉQUITÉ NATIONALE · DU DÉPÔT NUMÉRIQUE À L’AFFECTATION</span>
+          </div>
+
+          <h1 className='ref-hero-title'>
+            UN CYCLE COMPLET. <em>UNE SÉLECTION TRANSPARENTE.</em><br />
+            DU DÉPÔT DE DOSSIER <em>À L’AFFECTATION.</em>
+          </h1>
+
+          <p className='ref-hero-sub'>
+            Centralisation nationale des concours d’accès aux institutions bancaires, établissements publics
+            et organismes financiers au Maroc. Garantie absolue de mérite républicain, barèmes dynamiques
+            certifiés et récépissé numérique avec horodatage conforme Loi 09-08 (CNDP).
+          </p>
+
+          <div className='ref-hero-actions'>
+            <a href='#ref-offres' className='ref-button'>
+              Explorer les concours ouverts <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
+            </a>
+            <a href='#ref-budget' className='ref-button ref-button-outline'>
+              <i className='fas fa-chart-line me-2'></i> Simuler mon barème en direct
+            </a>
+          </div>
+
           <div className='ref-hero-hud'>
-            <span>01 — L’ÉQUITÉ NATIONALE</span>
-            <div className='ref-hero-hud-dots'>
+            <span>01 — LE MÉRITE RÉPUBLICAIN</span>
+            <div>
               <i className='is-on'></i>
               <i className='is-on'></i>
               <i className=''></i>
             </div>
-            <span>DU DÉPÔT À L’AFFECTATION</span>
+            <span>CONFORMITÉ LOI 09-08 CNDP · SHA-256</span>
           </div>
 
-          <h1 className='ref-hero-title'>
-            Un cycle complet. <em>Une sélection transparente.</em><br />
-            Du dépôt de dossier <em>à l’affectation.</em>
-          </h1>
+          <a href='#ref-vision' className='ref-scroll-hint'>
+            <i></i>
+            <span>DÉFILER POUR EXPLORER</span>
+          </a>
+        </div>
+      </section>
 
-          <p className='ref-hero-baseline'>
-            Centralisation nationale des concours d’accès aux institutions bancaires et publiques. <strong>Garantie de mérite républicain, barèmes certifiés et récépissé numérique conforme CNDP.</strong>
-          </p>
-
-          <div className='ref-hero-actions'>
-            <a href='#ref-offres' className='ref-button ref-primary'>
-              Explorer les concours ouverts <i className='fas fa-arrow-up-right-from-square'></i>
-            </a>
-            <a href='#ref-budget' className='ref-button ref-outline'>
-              <i className='fas fa-calculator me-1'></i> Simuler mon score barème
-            </a>
+      {/* ====================================================================
+          3. SECTION FACTS TELEMETRY STRIP
+          ==================================================================== */}
+      <section className='ref-facts-strip'>
+        <div className='ref-facts-grid'>
+          <div className='ref-fact-item'>
+            <b>6</b>
+            <span>ÉTAPES AUDITÉES DU CYCLE OFFICIEL</span>
           </div>
-
-          <div className='ref-facts-strip'>
-            <div className='ref-fact-item'>
-              <div className='ref-fact-number'>6</div>
-              <div className='ref-fact-label'>Étapes du Cycle Officiel</div>
-            </div>
-            <div className='ref-fact-item'>
-              <div className='ref-fact-number'>5</div>
-              <div className='ref-fact-label'>Espaces Métier Partagés</div>
-            </div>
-            <div className='ref-fact-item'>
-              <div className='ref-fact-number'>100<span>%</span></div>
-              <div className='ref-fact-label'>Conforme CNDP & Mérite</div>
-            </div>
+          <div className='ref-fact-item'>
+            <b>5</b>
+            <span>ESPACES MÉTIER CENTRALISÉS</span>
+          </div>
+          <div className='ref-fact-item'>
+            <b>100%</b>
+            <span>CONFORME LOI 09-08 (CNDP)</span>
+          </div>
+          <div className='ref-fact-item'>
+            <b>100</b>
+            <span>POINTS DU BARÈME ALGORITHMIQUE</span>
           </div>
         </div>
       </section>
 
       {/* ====================================================================
-          3. SECTION LA PLATEFORME (ref-vision ref-paper)
+          4. SECTION VISION & IMPACT AVEC SVG SIGNAL THREAD
           ==================================================================== */}
-      <section className='ref-paper-section' id='ref-vision'>
-        <div className='ref-section-frame'>
+      <section className='ref-impact' id='ref-vision'>
+        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <div className='ref-section-top'>
             <span>LA PLATEFORME NATIONALE</span>
             <span>DU DOSSIER AU CLASSEMENT OFFICIEL</span>
           </div>
 
-          <h2 className='ref-heading-luxury'>
-            La plateforme relie les besoins, les concours officiels, l’instruction des pièces, la notation sur 100 points, les convocations et les affectations.
-          </h2>
-
-          <p className='ref-lead-text'>
-            Candidats, commissions d’audit, recruteurs RH et auditeurs partagent un <span className='ref-accent-word'>cycle commun</span>, avec un espace adapté à leurs actions. Chaque acteur retrouve ses missions. <strong>Chaque dossier reste certifié et traçable.</strong>
-          </p>
-
-          {/* SENS DU PARCOURS (ref-impact) */}
-          <div className='ref-impact-box'>
-            <div className='ref-impact-header'>
-              <div className='ref-impact-endpoint'>
-                <small>DU DÉPÔT NUMÉRIQUE</small>
-                <span>Un dossier <em>complet.</em></span>
-              </div>
-              <div className='ref-impact-endpoint text-end'>
-                <small>À LA SÉLECTION OFFICIELLE</small>
-                <span>Un barème <em>équitable.</em></span>
-              </div>
+          <div className='ref-impact-headline'>
+            <div className='ref-impact-start'>
+              <small>DU DÉPÔT NUMÉRIQUE</small>
+              <h3>Un dossier <em>complet.</em></h3>
             </div>
+            <div className='ref-impact-end'>
+              <small>À LA SÉLECTION OFFICIELLE</small>
+              <h3>Un barème <em>équitable.</em></h3>
+            </div>
+          </div>
 
-            <svg className='ref-thread-svg' viewBox='0 0 1000 60' preserveAspectRatio='none'>
-              <path className='ref-thread-track' d='M 10 30 L 990 30' />
-              <path className='ref-thread-signal' d='M 10 30 L 990 30' />
-              <circle cx='15' cy='30' r='6' fill='#0284C7' />
-              <circle cx='985' cy='30' r='6' fill='#0284C7' />
+          {/* Animated SVG Signal Path */}
+          <div className='ref-impact-thread-wrap'>
+            <svg className='ref-impact-thread' viewBox='0 0 1000 180' preserveAspectRatio='none'>
+              <path className='ref-impact-track' d='M 30 90 Q 250 10, 500 90 T 970 90' />
+              <path className='ref-impact-signal' d='M 30 90 Q 250 10, 500 90 T 970 90' />
+              <circle cx='30' cy='90' r='6' />
+              <circle cx='500' cy='90' r='5' />
+              <circle cx='970' cy='90' r='6' />
             </svg>
+          </div>
 
-            <div className='d-flex justify-content-between align-items-center text-muted small mt-2'>
-              <span>Horodatage officiel Loi 09-08</span>
-              <span>100% Mérite & Barème Algorithmique</span>
+          <div className='row align-items-center g-5'>
+            <div className='col-lg-7'>
+              <h2 style={{ fontSize: 'clamp(34px, 3.8vw, 54px)', lineHeight: '1.15', marginBottom: '24px' }}>
+                La plateforme relie les besoins, les concours, l’audit des pièces, la notation algorithmique et les convocations.
+              </h2>
+              <p style={{ color: '#adb7b8', fontSize: '16px', lineHeight: '1.8' }}>
+                Candidats, commissions d’audit, recruteurs RH et auditeurs externes partagent un cycle commun.
+                Chaque acteur retrouve ses actions. Chaque dossier reste certifié, infalsifiable et traçable en temps réel.
+              </p>
+            </div>
+            <div className='col-lg-5'>
+              <div style={{ background: 'rgba(10, 18, 21, 0.85)', border: '1px solid rgba(127, 219, 227, 0.25)', borderRadius: '12px', padding: '30px' }}>
+                <div className='ref-hud-pill mb-3'>
+                  <span className='ref-dot-pulse'></span>
+                  <span>GARANTIE DE MÉRITE</span>
+                </div>
+                <h4 style={{ color: '#fff', fontSize: '20px', marginBottom: '14px' }}>Élimination Totale du Biais</h4>
+                <p style={{ color: '#8da4ac', fontSize: '13.5px', lineHeight: '1.7', marginBottom: '20px' }}>
+                  Aucune note ne peut être modifiée sans justificatif visuel certifié par un double contrôle de la commission.
+                  L’algorithme applique le barème sur 100 points de manière égale pour tous les candidats marocains.
+                </p>
+                <a href='#ref-spaces' className='ref-button' style={{ minHeight: '42px', padding: '0 20px', fontSize: '10px' }}>
+                  Découvrir les espaces métier <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
+                </a>
+              </div>
             </div>
           </div>
         </div>
       </section>
 
       {/* ====================================================================
-          4. LE CYCLE DE RECRUTEMENT (ref-cycle) — 6 ÉTAPES INTERACTIVES
+          5. LE SIGNATURE CELESTIAL ORBIT RADAR (ref-relay-orbit)
+          Inspiré directement d'ingfron.ehcgroupe.ma
           ==================================================================== */}
-      <section className='ref-paper-section alt-bg' id='ref-cycle'>
-        <div className='ref-section-frame'>
+      <section className='ref-relay' id='ref-relay'>
+        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <div className='ref-section-top'>
             <span>LE CYCLE OFFICIEL DU RECRUTEMENT</span>
-            <span>0{activeStage + 1} / 06</span>
+            <span>0{activeCycleIndex + 1} / 06 · UNE ÉTAPE · DES ACTEURS</span>
           </div>
 
-          <h2 className='ref-heading-luxury'>
-            Le cycle. <em>De l’expression de besoin au recrutement.</em>
-          </h2>
+          <div className='ref-relay-layout'>
+            <div className='ref-relay-copy'>
+              <h2>
+                <span>Le cycle.</span><br />
+                <span><em>Entre vos institutions.</em></span>
+              </h2>
+              <p>
+                Un besoin s’exprime, une commission audite, le barème classe, une convocation prend vie.
+                Les étapes défilent pour révéler les acteurs qui y contribuent. Vous pouvez aussi choisir un numéro sur l'orbite.
+              </p>
 
-          <div className='ref-cycle-wrapper'>
-            {/* TABS 01..06 */}
-            <div className='ref-cycle-tabs'>
-              {STAGES_CYCLE.map((st, idx) => (
-                <button
-                  key={st.id}
-                  className={`ref-cycle-tab-btn ${activeStage === idx ? 'is-active' : ''}`}
-                  onClick={() => setActiveStage(idx)}
-                >
-                  <span className='tab-num'>{st.code}</span>
-                  <span className='tab-title'>{st.nom}</span>
-                </button>
-              ))}
-            </div>
-
-            {/* STAGE CONTENT */}
-            <div className='ref-cycle-body'>
-              <div>
-                <p className='ref-cycle-eyebrow'>ÉTAPE {STAGES_CYCLE[activeStage].code} — {STAGES_CYCLE[activeStage].nom.toUpperCase()}</p>
-                <h3 className='ref-cycle-stage-title'>
-                  {STAGES_CYCLE[activeStage].titre}
-                </h3>
-                <p className='ref-cycle-desc'>
-                  {STAGES_CYCLE[activeStage].desc}
-                </p>
-
-                <ul className='ref-cycle-features'>
-                  {STAGES_CYCLE[activeStage].features.map((feat, fIdx) => (
-                    <li key={fIdx}>
-                      <i className='fas fa-check-circle'></i>
-                      <span>{feat}</span>
+              <div className='ref-relay-detail' key={activeCycleIndex}>
+                <div className='ref-eyebrow'>
+                  ÉTAPE {currentStage.num} · {currentStage.role.toUpperCase()}
+                </div>
+                <h3>{currentStage.title}</h3>
+                <p>{currentStage.desc}</p>
+                <ul>
+                  {currentStage.points.map((pt, i) => (
+                    <li key={i}>
+                      <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><polyline points='20 6 9 17 4 12'></polyline></svg>
+                      <span>{pt}</span>
                     </li>
                   ))}
                 </ul>
-
-                <a href='#ref-offres' className='ref-button ref-primary'>
-                  Explorer cette étape <i className='fas fa-arrow-up-right-from-square ms-1'></i>
+                <a href='#ref-spaces' className='ref-button' style={{ minHeight: '44px', padding: '0 20px', fontSize: '10.5px' }}>
+                  Explorer cet espace métier <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
                 </a>
               </div>
+            </div>
 
-              <div>
-                <div className='ref-cycle-deliverable'>
-                  <small>CE QUE CETTE ÉTAPE PRODUIT</small>
-                  <h4>{STAGES_CYCLE[activeStage].deliverable}</h4>
-                  <p>Tous les éléments produits sont archivés et consultables dans l’espace dédié des auditeurs.</p>
+            <div className='ref-relay-diagram'>
+              <div className='ref-relay-orbit'>
+                <svg viewBox='0 0 420 420'>
+                  <circle cx='210' cy='210' r='151' className='ref-relay-track'></circle>
+                  <circle cx='210' cy='210' r='112' className='ref-relay-inner'></circle>
+                  <circle cx='210' cy='210' r='151' className='ref-relay-flow'></circle>
+
+                  {/* Radiating connector lines */}
+                  <line x1='210' y1='98' x2='210' y2='59' className={activeCycleIndex === 0 ? 'is-active' : ''}></line>
+                  <line x1='307' y1='154' x2='341' y2='135' className={activeCycleIndex === 1 ? 'is-active' : ''}></line>
+                  <line x1='307' y1='266' x2='341' y2='286' className={activeCycleIndex === 2 ? 'is-active' : ''}></line>
+                  <line x1='210' y1='322' x2='210' y2='361' className={activeCycleIndex === 3 ? 'is-active' : ''}></line>
+                  <line x1='113' y1='266' x2='79' y2='286' className={activeCycleIndex === 4 ? 'is-active' : ''}></line>
+                  <line x1='113' y1='154' x2='79' y2='135' className={activeCycleIndex === 5 ? 'is-active' : ''}></line>
+                </svg>
+
+                <div className='ref-relay-center'>
+                  <span>RECRUTEMENT<span>.MA</span></span>
+                  <p>{currentStage.short}.<br /><em>Certifié.</em></p>
+                  <span>0{activeCycleIndex + 1} / 06</span>
+                </div>
+
+                <div className='ref-relay-nodes'>
+                  <button style={{ left: '50%', top: '14%' }} aria-pressed={activeCycleIndex === 0} onClick={() => setActiveCycleIndex(0)}>
+                    <span>01</span>
+                    <span>Besoins</span>
+                  </button>
+                  <button style={{ left: '81.18%', top: '32%' }} aria-pressed={activeCycleIndex === 1} onClick={() => setActiveCycleIndex(1)}>
+                    <span>02</span>
+                    <span>Concours</span>
+                  </button>
+                  <button style={{ left: '81.18%', top: '68%' }} aria-pressed={activeCycleIndex === 2} onClick={() => setActiveCycleIndex(2)}>
+                    <span>03</span>
+                    <span>Dépôt</span>
+                  </button>
+                  <button style={{ left: '50%', top: '86%' }} aria-pressed={activeCycleIndex === 3} onClick={() => setActiveCycleIndex(3)}>
+                    <span>04</span>
+                    <span>Audit</span>
+                  </button>
+                  <button style={{ left: '18.82%', top: '68%' }} aria-pressed={activeCycleIndex === 4} onClick={() => setActiveCycleIndex(4)}>
+                    <span>05</span>
+                    <span>Barème</span>
+                  </button>
+                  <button style={{ left: '18.82%', top: '32%' }} aria-pressed={activeCycleIndex === 5} onClick={() => setActiveCycleIndex(5)}>
+                    <span>06</span>
+                    <span>Convocations</span>
+                  </button>
+                </div>
+              </div>
+
+              <div className='ref-relay-transport'>
+                <div>
+                  <span>RELAIS AUTOMATIQUE · TEMPO ACTIF</span>
+                  <div className='ref-relay-timer'>
+                    <i key={activeCycleIndex}></i>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 6. Running Marquee Ticker */}
+        <div className='ref-relay-marquee'>
+          <div>
+            <span>
+              <span>Recueillir<i>↗</i></span>
+              <span className='is-outline'>Publier<i>↗</i></span>
+              <span>Postuler<i>↗</i></span>
+              <span className='is-outline'>Auditer<i>↗</i></span>
+              <span>Classer<i>↗</i></span>
+              <span className='is-outline'>Convoquer<i>↗</i></span>
+            </span>
+            <span>
+              <span>Recueillir<i>↗</i></span>
+              <span className='is-outline'>Publier<i>↗</i></span>
+              <span>Postuler<i>↗</i></span>
+              <span className='is-outline'>Auditer<i>↗</i></span>
+              <span>Classer<i>↗</i></span>
+              <span className='is-outline'>Convoquer<i>↗</i></span>
+            </span>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          7. LES 5 ESPACES MÉTIER AVEC FOLIO CARD 3D FLOTTANTE (ref-spaces)
+          ==================================================================== */}
+      <section className='ref-spaces' id='ref-spaces'>
+        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <div className='ref-section-top' style={{ borderColor: 'rgba(17, 20, 21, 0.15)', color: '#626a6c' }}>
+            <span>LES ESPACES MÉTIER</span>
+            <span>CINQ REGARDS · UN MÊME CYCLE NATIONAL</span>
+          </div>
+
+          <div className='ref-spaces-heading'>
+            <h2>
+              <span>Votre rôle.</span><br />
+              <em>Votre espace.</em>
+            </h2>
+            <p>
+              Une plateforme unifiée où chaque acteur retrouve ses outils métiers dédiés,
+              garantissant fluidité opérationnelle et zéro retard de traitement.
+            </p>
+          </div>
+
+          <div className='ref-exhibit-stage'>
+            <div className='ref-exhibit-rail'>
+              <p>CHOISISSEZ VOTRE REGARD</p>
+              <div className='ref-exhibit-tabs'>
+                {ROLES_DATA.map((role, idx) => (
+                  <button
+                    key={role.id}
+                    aria-selected={activeRoleIndex === idx}
+                    onClick={() => setActiveRoleIndex(idx)}
+                  >
+                    <span>0{idx + 1}</span>
+                    <span>
+                      {role.name}
+                      <small>{role.tag}</small>
+                    </span>
+                    <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className='ref-exhibit-panel' key={currentRole.id}>
+              <div className='ref-exhibit-story'>
+                <div className='ref-eyebrow'>ESPACE 0{activeRoleIndex + 1} · {currentRole.name.toUpperCase()}</div>
+                <h3>{currentRole.title}</h3>
+                <p>{currentRole.desc}</p>
+                <ul>
+                  {currentRole.items.map((it, i) => (
+                    <li key={i}>
+                      <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><polyline points='20 6 9 17 4 12'></polyline></svg>
+                      <span>{it}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className='d-flex align-items-center gap-3'>
+                  <Link to='/login' className='ref-button'>
+                    Accéder à cet espace <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
+                  </Link>
+                </div>
+              </div>
+
+              {/* 3D Floating Folio Art */}
+              <div className='ref-exhibit-art'>
+                <span className='ref-exhibit-watermark'>0{activeRoleIndex + 1}</span>
+                <div className='ref-exhibit-spine'>
+                  <span>PORTAIL NATIONAL</span>
+                  <i></i>
+                  <span>{currentRole.name.toUpperCase()}</span>
+                </div>
+                <div className='ref-exhibit-folio'>
+                  <div className='ref-exhibit-folio-top'>
+                    <span>Recrutement<span>.ma</span></span>
+                    <span>ESPACE 0{activeRoleIndex + 1}</span>
+                  </div>
+                  <p className='ref-exhibit-folio-kicker'>{currentRole.name}</p>
+                  <h4>{currentRole.folioTitle}</h4>
+                  <ol>
+                    {currentRole.steps.map((st, i) => (
+                      <li key={i}>
+                        <span>{st.num}</span>
+                        <div>
+                          <strong>{st.title}</strong>
+                          <p>{st.desc}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
                 </div>
               </div>
             </div>
@@ -640,209 +962,85 @@ const HomeScreen = () => {
       </section>
 
       {/* ====================================================================
-          5. LES ESPACES MÉTIER (ref-spaces) — 5 REGARDS
+          8. VITRINE DES CONCOURS NATIONAUX (ref-offres)
           ==================================================================== */}
-      <section className='ref-paper-section' id='ref-spaces'>
-        <div className='ref-section-frame'>
+      <section className='ref-offres' id='ref-offres'>
+        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <div className='ref-section-top'>
-            <span>LES ESPACES MÉTIER</span>
-            <span>CINQ REGARDS. UN MÊME CYCLE.</span>
+            <span>CONCOURS &amp; AVIS OFFICIELS</span>
+            <span>RÉSEAU DES GRANDES INSTITUTIONS BANCAIRES ET PUBLIQUES</span>
           </div>
 
-          <h2 className='ref-heading-luxury'>
-            Votre rôle. <em>Votre mouvement dans la sélection.</em>
-          </h2>
-
-          <div className='ref-spaces-layout'>
-            {/* REGARD SELECTOR */}
-            <div className='ref-spaces-sidebar'>
-              {ROLES_SPACES.map((r, idx) => (
-                <button
-                  key={r.id}
-                  className={`ref-space-btn ${activeRole === idx ? 'is-active' : ''}`}
-                  onClick={() => setActiveRole(idx)}
-                >
-                  <div className='d-flex align-items-center'>
-                    <span className='num'>{r.code}</span>
-                    <div>
-                      <span className='name'>{r.nom}</span>
-                      <small>{r.subtitle}</small>
-                    </div>
-                  </div>
-                  <i className='fas fa-arrow-right text-muted' style={{ fontSize: '12px' }}></i>
-                </button>
-              ))}
+          <div className='ref-offres-header'>
+            <div>
+              <h2>
+                <span>Concours ouverts.</span><br />
+                <em>Postulez en ligne.</em>
+              </h2>
             </div>
-
-            {/* SPACE PANEL */}
-            <div className='ref-space-content-card'>
-              <p className='ref-cycle-eyebrow'>ESPACE 0{activeRole + 1} — {ROLES_SPACES[activeRole].nom.toUpperCase()}</p>
-              <h3>{ROLES_SPACES[activeRole].title}</h3>
-              <p className='ref-lead-text' style={{ fontSize: '15px' }}>
-                {ROLES_SPACES[activeRole].desc}
-              </p>
-
-              <ul className='ref-space-missions'>
-                {ROLES_SPACES[activeRole].missions.map((m, mIdx) => (
-                  <li key={mIdx}>
-                    <i className='fas fa-check text-primary'></i>
-                    <span>{m}</span>
-                  </li>
-                ))}
-              </ul>
-
-              <Link to={ROLES_SPACES[activeRole].link} className='ref-button ref-primary'>
-                {ROLES_SPACES[activeRole].linkText} <i className='fas fa-arrow-up-right-from-square ms-1'></i>
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ====================================================================
-          6. CONCOURS & OFFRES ACTIVES (SHOWCASE)
-          ==================================================================== */}
-      <section className='ref-paper-section alt-bg' id='ref-offres'>
-        <div className='ref-section-frame'>
-          <div className='ref-section-top'>
-            <span>CONCOURS NATIONAUX OUVERTS</span>
-            <span>{filteredOffres.length} OFFRE(S) DISPONIBLE(S)</span>
-          </div>
-
-          <h2 className='ref-heading-luxury'>
-            Postulez aux concours officiels. <em>Al Barid Bank, OCP, CIH, MEF...</em>
-          </h2>
-
-          {/* FILTERS & SEARCH */}
-          <div className='ref-filters-strip'>
-            <div className='ref-pill-filters'>
-              <button
-                className={`ref-pill-btn ${selectedEntFilter === 'all' ? 'is-active' : ''}`}
-                onClick={() => setSelectedEntFilter('all')}
-              >
-                Tous les Organismes
-              </button>
-              <button
-                className={`ref-pill-btn ${selectedEntFilter === 'abb' ? 'is-active' : ''}`}
-                onClick={() => setSelectedEntFilter('abb')}
-              >
-                Al Barid Bank
-              </button>
-              <button
-                className={`ref-pill-btn ${selectedEntFilter === 'ocp' ? 'is-active' : ''}`}
-                onClick={() => setSelectedEntFilter('ocp')}
-              >
-                Groupe OCP
-              </button>
-              <button
-                className={`ref-pill-btn ${selectedEntFilter === 'cih' ? 'is-active' : ''}`}
-                onClick={() => setSelectedEntFilter('cih')}
-              >
-                CIH Bank
-              </button>
-              <button
-                className={`ref-pill-btn ${selectedEntFilter === 'mef' ? 'is-active' : ''}`}
-                onClick={() => setSelectedEntFilter('mef')}
-              >
-                Ministère Finances
-              </button>
-              <button
-                className={`ref-pill-btn ${selectedEntFilter === 'boa' ? 'is-active' : ''}`}
-                onClick={() => setSelectedEntFilter('boa')}
-              >
-                Bank of Africa
-              </button>
-            </div>
-
-            <div className='ref-search-input-box'>
-              <i className='fas fa-search text-muted'></i>
+            <div style={{ maxWidth: '380px' }}>
               <input
-                id='search-input-ref'
                 type='text'
-                placeholder='Rechercher par poste, ville...'
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
+                className='form-control bg-dark text-white border-secondary'
+                placeholder='Rechercher un poste, ville ou institution...'
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                style={{ borderRadius: '999px', padding: '12px 20px', fontSize: '13px' }}
               />
-              {searchKeyword && (
-                <button
-                  onClick={() => setSearchKeyword('')}
-                  style={{ background: 'transparent', border: 'none', color: '#94A3B8', cursor: 'pointer' }}
-                >
-                  <i className='fas fa-times'></i>
-                </button>
-              )}
             </div>
           </div>
 
-          {/* OFFRES GRID */}
+          <div className='ref-filters-strip'>
+            {['ALL', 'ABB', 'CIH', 'OCP', 'MEF', 'BOA', 'CDG'].map((sigle) => (
+              <button
+                key={sigle}
+                className={`ref-filter-pill ${selectedSigle === sigle ? 'is-active' : ''}`}
+                onClick={() => setSelectedSigle(sigle)}
+              >
+                {sigle === 'ALL' ? 'Toutes les institutions' : sigle}
+              </button>
+            ))}
+          </div>
+
           <div className='ref-offres-grid'>
             {filteredOffres.map((offre) => (
               <div key={offre._id} className='ref-offre-card'>
-                <div>
-                  <div className='ref-offre-top'>
-                    <div className='ref-ent-brand'>
-                      <div className='ref-ent-logo-badge' style={{ background: offre.color }}>
-                        {offre.logo ? (
-                          <img
-                            src={offre.logo}
-                            alt={offre.sigle}
-                            onError={(e) => { e.target.style.display = 'none'; }}
-                          />
-                        ) : null}
-                        <span>{offre.initials}</span>
-                      </div>
-                      <div className='ref-ent-info'>
-                        <small>{offre.secteur}</small>
-                        <strong>{offre.entreprise}</strong>
-                      </div>
-                    </div>
-                    {offre.urgent && (
-                      <span className='badge bg-danger bg-opacity-10 text-danger fw-bold border border-danger border-opacity-25 px-2 py-1'>
-                        Prioritaire
-                      </span>
-                    )}
-                  </div>
-
-                  <h3 className='ref-offre-title'>{offre.titre}</h3>
-
-                  <div className='ref-offre-meta'>
-                    <span className='ref-meta-tag'>
-                      <i className='fas fa-map-marker-alt text-primary me-1'></i> {offre.ville}
+                <div className='ref-offre-badge-strip'>
+                  <span className='ref-offre-badge'>{offre.entreprise}</span>
+                  {offre.urgent && (
+                    <span className='badge bg-danger text-white' style={{ fontSize: '9px', letterSpacing: '0.1em' }}>
+                      CLÔTURE IMMINENTE
                     </span>
-                    <span className='ref-meta-tag'>
-                      <i className='fas fa-graduation-cap text-success me-1'></i> {offre.niveau}
-                    </span>
-                    <span className='ref-meta-tag'>
-                      <i className='fas fa-users text-dark me-1'></i> {offre.postes} Postes
-                    </span>
-                  </div>
+                  )}
                 </div>
 
-                <div className='ref-offre-footer'>
-                  <span className='ref-cloture-hint'>
-                    <i className='far fa-clock me-1 text-warning'></i> {offre.cloture}
-                  </span>
-                  <div className='d-flex gap-2'>
-                    {offre.pdfUrl && (
-                      <a
-                        href={offre.pdfUrl}
-                        target='_blank'
-                        rel='noreferrer'
-                        className='btn btn-sm btn-outline-secondary'
-                        style={{ borderRadius: '9999px', fontSize: '12px' }}
-                        title='Voir l’Avis officiel PDF'
-                      >
-                        <i className='fas fa-file-pdf'></i> Avis
-                      </a>
-                    )}
-                    <Link
-                      to={userInfo ? `/poste/${encodeURIComponent(offre.titre)}` : '/login'}
-                      className='ref-button ref-primary'
-                      style={{ padding: '6px 16px', fontSize: '13px' }}
-                    >
-                      Postuler <i className='fas fa-arrow-up-right-from-square'></i>
-                    </Link>
-                  </div>
+                <h4>{offre.titre}</h4>
+
+                <div className='ref-offre-meta'>
+                  <span><i className='fas fa-map-marker-alt'></i> {offre.ville}</span>
+                  <span><i className='fas fa-graduation-cap'></i> {offre.niveau}</span>
+                  <span><i className='fas fa-users'></i> {offre.postes} Postes budgétaires</span>
+                  <span><i className='fas fa-clock'></i> Clôture : {offre.cloture}</span>
+                </div>
+
+                <div className='ref-offre-foot'>
+                  <Link
+                    to={userInfo ? '/profil' : '/register'}
+                    className='ref-button'
+                    style={{ minHeight: '38px', padding: '0 18px', fontSize: '10px' }}
+                  >
+                    Postuler à ce concours <svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
+                  </Link>
+
+                  <a
+                    href='/uploads/Dossier_Candidat_Complet_6_Pages.pdf'
+                    target='_blank'
+                    rel='noreferrer'
+                    className='text-muted small text-decoration-none'
+                    title='Télécharger l’Avis Officiel'
+                  >
+                    <i className='fas fa-file-pdf text-danger me-1'></i> Avis PDF
+                  </a>
                 </div>
               </div>
             ))}
@@ -851,180 +1049,257 @@ const HomeScreen = () => {
       </section>
 
       {/* ====================================================================
-          7. SIMULATEUR DE BARÈME (ref-budget / GAUGE SAAS)
+          9. SIMULATEUR DE BARÈME INTERACTIF COMPASS RADAR (ref-funding)
           ==================================================================== */}
-      <section className='ref-paper-section' id='ref-budget'>
-        <div className='ref-section-frame'>
+      <section className='ref-funding' id='ref-budget'>
+        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
           <div className='ref-section-top'>
-            <span>SIMULATEUR DE BARÈME EN DIRECT</span>
-            <span>NOTATION MATHÉMATIQUE SUR 100 POINTS</span>
+            <span>SIMULATEUR DE BARÈME DYNAMIQUE</span>
+            <span>TRANSPARENCE ALGORITHMIQUE SUR 100 POINTS</span>
           </div>
 
-          <h2 className='ref-heading-luxury'>
-            Simulez votre score. <em>Estimez votre admissibilité en temps réel.</em>
-          </h2>
+          <div className='ref-funding-heading'>
+            <h2>
+              <span>Votre score.</span><br />
+              <em>Avant de postuler.</em>
+            </h2>
+            <p style={{ color: '#9ab4be', maxWidth: '420px', fontSize: '14.5px' }}>
+              Ajustez vos critères réels (diplôme, mention, années d’expérience) et observez la jauge
+              calculer instantanément votre positionnement au barème national.
+            </p>
+          </div>
 
-          <div className='ref-sim-card'>
-            <div>
-              <p className='ref-lead-text' style={{ fontSize: '15px', marginBottom: '24px' }}>
-                Testez vos chances avant de postuler. Le barème officiel prend en compte votre niveau d’études, votre note moyenne, votre mention et vos mois d’expérience métier.
+          <div className='ref-funding-panel'>
+            {/* Left Controls */}
+            <div className='ref-sim-controls'>
+              <div className='ref-sim-group'>
+                <label>
+                  <span>1. Diplôme / Niveau Académique</span>
+                  <span>{simNiveau === 'bac2' ? '25 pts' : simNiveau === 'bac3' ? '35 pts' : simNiveau === 'bac5' ? '45 pts' : '50 pts'}</span>
+                </label>
+                <select className='ref-sim-select' value={simNiveau} onChange={(e) => setSimNiveau(e.target.value)}>
+                  <option value='bac2'>Bac +2 (DUT, BTS, DTS, DEUG)</option>
+                  <option value='bac3'>Bac +3 (Licence Fondamentale / Professionnelle)</option>
+                  <option value='bac5'>Bac +5 (Master, Diplôme d’Ingénieur d’État, ENCG, ISCAE)</option>
+                  <option value='doctorat'>Doctorat / Ph.D Spécialisé</option>
+                </select>
+              </div>
+
+              <div className='ref-sim-group'>
+                <label>
+                  <span>2. Mention au Diplôme Exigé</span>
+                  <span>{simMention === 'passable' ? '8 pts' : simMention === 'assez_bien' ? '14 pts' : simMention === 'bien' ? '18 pts' : '20 pts'}</span>
+                </label>
+                <select className='ref-sim-select' value={simMention} onChange={(e) => setSimMention(e.target.value)}>
+                  <option value='passable'>Mention Passable (10.00 à 11.99)</option>
+                  <option value='assez_bien'>Mention Assez Bien (12.00 à 13.99)</option>
+                  <option value='bien'>Mention Bien (14.00 à 15.99)</option>
+                  <option value='tres_bien'>Mention Très Bien (16.00 et plus)</option>
+                </select>
+              </div>
+
+              <div className='ref-sim-group'>
+                <label>
+                  <span>3. Expérience Professionnelle Validée</span>
+                  <span>{simExp} an(s) · {Math.min(simExp * 3, 30)} pts</span>
+                </label>
+                <input
+                  type='range'
+                  className='ref-sim-range'
+                  min='0'
+                  max='10'
+                  step='1'
+                  value={simExp}
+                  onChange={(e) => setSimExp(Number(e.target.value))}
+                />
+                <div className='d-flex justify-content-between mt-2 text-muted small'>
+                  <span>Débutant (0 an)</span>
+                  <span>5 ans</span>
+                  <span>10 ans et +</span>
+                </div>
+              </div>
+
+              <div className='p-3 rounded' style={{ background: 'rgba(25, 179, 194, 0.08)', border: '1px solid rgba(127, 219, 227, 0.2)' }}>
+                <small className='text-info d-block mb-1'>
+                  <i className='fas fa-info-circle me-1'></i> NOUVELLE FONCTIONNALITÉ POSTE ACTUEL
+                </small>
+                <p className='small text-muted mb-0' style={{ fontSize: '11px', lineHeight: '1.5' }}>
+                  Si vous êtes en poste aujourd'hui, cochez simplement <em>« Toujours en poste »</em> dans votre profil candidat.
+                  L’algorithme calcule automatiquement vos mois jusqu’à aujourd’hui sans bloquer votre date.
+                </p>
+              </div>
+            </div>
+
+            {/* Right Compass Radar Gauge */}
+            <div className='ref-funding-compass'>
+              <svg viewBox='0 0 320 320'>
+                <circle cx='160' cy='160' r='130' className='ref-funding-track' />
+                <circle
+                  cx='160'
+                  cy='160'
+                  r='130'
+                  className='ref-funding-arc-2'
+                  style={{
+                    strokeDasharray: gaugeCircumference,
+                    strokeDashoffset: gaugeDashoffset,
+                  }}
+                />
+              </svg>
+
+              <div className='ref-funding-center'>
+                <span>SCORE SIMULÉ</span>
+                <b>
+                  {simScore}
+                  <em>/100</em>
+                </b>
+                <div className='ref-funding-status'>
+                  <i className='fas fa-check-circle text-success me-1'></i>
+                  <span>
+                    {simScore >= 75
+                      ? 'HAUTE ADMISSIBILITÉ (TOP 10%)'
+                      : simScore >= 55
+                      ? 'ÉLIGIBLE CONVOCATION ORALE'
+                      : 'DOSSIER RECEVABLE'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          10. CYBER PORTAL DOOR (ref-launch)
+          ==================================================================== */}
+      <section className='ref-launch'>
+        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <div className='ref-launch-layout'>
+            <div className='ref-launch-copy'>
+              <div className='ref-eyebrow'>PORTAIL CENTRALISÉ · SESSION 2026</div>
+              <h2>
+                Entrez <em>dans le cycle.</em>
+              </h2>
+              <p>
+                Créez votre dossier candidat sécurisé, téléversez vos justificatifs
+                et bénéficiez d’une égalité républicaine totale garantie par notre commission d'audit.
               </p>
-
-              <div className='row g-3'>
-                <div className='col-md-6'>
-                  <label className='fw-bold small text-muted mb-1'>Niveau de Diplôme</label>
-                  <select
-                    className='form-select fw-semibold'
-                    value={simNiveau}
-                    onChange={(e) => setSimNiveau(e.target.value)}
-                  >
-                    <option value='bac2'>Bac +2 / Diplôme TS (12 pts)</option>
-                    <option value='bac3'>Bac +3 / Licence (20 pts)</option>
-                    <option value='bac5'>Bac +5 / Master / Ingénieur (20 pts)</option>
-                  </select>
-                </div>
-
-                <div className='col-md-6'>
-                  <label className='fw-bold small text-muted mb-1'>Moyenne Générale (/20)</label>
-                  <input
-                    type='number'
-                    step='0.25'
-                    min='10'
-                    max='20'
-                    className='form-control fw-semibold'
-                    value={simMoyenne}
-                    onChange={(e) => setSimMoyenne(e.target.value)}
-                  />
-                </div>
-
-                <div className='col-md-6'>
-                  <label className='fw-bold small text-muted mb-1'>Expérience Métier (Mois)</label>
-                  <input
-                    type='number'
-                    min='0'
-                    max='60'
-                    className='form-control fw-semibold'
-                    value={simExperienceMois}
-                    onChange={(e) => setSimExperienceMois(e.target.value)}
-                  />
-                </div>
-
-                <div className='col-md-6'>
-                  <label className='fw-bold small text-muted mb-1'>Spécialité Demandée</label>
-                  <select
-                    className='form-select fw-semibold'
-                    value={simSpecialite}
-                    onChange={(e) => setSimSpecialite(e.target.value)}
-                  >
-                    <option value='bancaire'>Spécialité Directe (Bancaire / Audit)</option>
-                    <option value='autre'>Autre Domaine Tertiaire / Général</option>
-                  </select>
-                </div>
-              </div>
+              <Link to='/register' className='ref-button'>
+                Créer mon dossier candidat <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
+              </Link>
             </div>
 
-            {/* GAUGE COMPASS */}
-            <div className='ref-gauge-box'>
-              <div
-                className='ref-gauge-circle'
-                style={{
-                  borderTopColor: calculatedScore.eligible ? '#10B981' : '#F59E0B',
-                  borderRightColor: calculatedScore.eligible ? '#10B981' : '#F59E0B',
-                }}
-              >
-                <div className='ref-gauge-score'>{calculatedScore.total}</div>
-                <div className='ref-gauge-max'>SUR 100 POINTS</div>
-              </div>
+            <div className='ref-launch-art'>
+              <svg className='ref-launch-door' viewBox='0 0 400 480'>
+                <path className='ref-launch-frame' d='M80 440 V180 A120 120 0 0 1 320 180 V440' />
+                <path className='ref-launch-flow' d='M80 440 V180 A120 120 0 0 1 320 180 V440' />
+              </svg>
 
-              <div className='fw-bold text-dark mb-1'>
-                Mention : <span className='text-primary'>{calculatedScore.mention}</span>
-              </div>
-              <div className='small text-muted mb-3'>
-                {calculatedScore.eligible ? (
-                  <span className='text-success fw-bold'>
-                    <i className='fas fa-check-circle me-1'></i> Profil Fortement Compétitif
-                  </span>
-                ) : (
-                  <span className='text-warning fw-bold'>
-                    <i className='fas fa-info-circle me-1'></i> Admissible sous conditions
-                  </span>
-                )}
-              </div>
-
-              <a href='#ref-offres' className='ref-button ref-primary' style={{ fontSize: '13px' }}>
-                Postuler avec ce profil <i className='fas fa-arrow-up-right-from-square ms-1'></i>
-              </a>
+              <Link to='/login' className='ref-launch-portal'>
+                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', color: '#067782' }}>ACCÈS SÉCURISÉ</span>
+                <span className='ref-launch-portal-title'>Espace <em>Portail</em></span>
+                <p style={{ fontSize: '11px', color: '#617076', margin: '0' }}>Candidats, Commissions &amp; RH</p>
+                <i className='fas fa-arrow-right text-info mt-2'></i>
+              </Link>
             </div>
           </div>
         </div>
       </section>
 
       {/* ====================================================================
-          8. QUESTIONS FRÉQUENTES (ref-questions)
+          11. FAQ ACCORDION (ref-questions)
           ==================================================================== */}
-      <section className='ref-paper-section alt-bg' id='ref-questions'>
-        <div className='ref-section-frame'>
-          <div className='ref-section-top'>
-            <span>LES REPÈRES AVANT DE POSTULER</span>
-            <span>QUATRE QUESTIONS. LE CHEMIN SE PRÉCISE.</span>
-          </div>
-
-          <h2 className='ref-heading-luxury'>
-            Questions fréquentes. <em>En toute transparence.</em>
-          </h2>
-
-          <div className='ref-faq-grid'>
-            <div className='ref-faq-card'>
-              <div className='ref-faq-num'>01 / CONFORMITÉ LÉGALE</div>
-              <h4>Le récépissé avec QR Code fait-il foi juridiquement ?</h4>
-              <p>Oui. Chaque récépissé généré est certifié, horodaté et conforme à la loi 09-08 relative à la protection des données à caractère personnel (CNDP). Le QR Code permet une vérification instantanée de l’authenticité du dépôt.</p>
+      <section className='ref-questions' id='ref-questions'>
+        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
+          <div className='ref-questions-grid'>
+            <div className='ref-questions-left'>
+              <div className='ref-eyebrow' style={{ color: '#067782' }}>TRANSPARENCE &amp; RÈGLEMENT</div>
+              <h2>
+                Questions <em>fréquentes.</em>
+              </h2>
+              <p>
+                Toutes les réponses officielles concernant la validation des pièces, l’horodatage de votre candidature
+                et le respect strict de la Loi 09-08 (CNDP).
+              </p>
             </div>
 
-            <div className='ref-faq-card'>
-              <div className='ref-faq-num'>02 / CALCUL DU BARÈME</div>
-              <h4>Comment sont comptabilisées mes expériences si je suis toujours en poste ?</h4>
-              <p>Il suffit de cocher l’option <strong>"Poste actuel (Toujours en poste)"</strong> lors de votre postulation. Notre moteur algorithmique calcule automatiquement votre expérience en mois jusqu’au jour du concours.</p>
-            </div>
+            <div className='ref-faq-list'>
+              <details open>
+                <summary>
+                  <span>Comment fonctionne l'option « Toujours en poste » ?</span>
+                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><line x1='12' y1='5' x2='12' y2='19'></line><line x1='5' y1='12' x2='19' y2='12'></line></svg>
+                </summary>
+                <p>
+                  Si vous exercez actuellement une activité professionnelle, il vous suffit de cocher « Poste actuel ».
+                  Le système verrouille la date de fin et calcule automatiquement votre durée d’expérience jusqu’à aujourd’hui,
+                  sans nécessiter de date de fin arbitraire.
+                </p>
+              </details>
 
-            <div className='ref-faq-card'>
-              <div className='ref-faq-num'>03 / VÉRIFICATION DES PIÈCES</div>
-              <h4>Que se passe-t-il si une note déclarée ne correspond pas au relevé ?</h4>
-              <p>Les auditeurs de la commission effectuent un contrôle visuel à l’écran de vos relevés originaux. En cas d’écart non justifié, la note est réajustée selon la pièce officielle et le score est recalculé.</p>
-            </div>
+              <details>
+                <summary>
+                  <span>Que se passe-t-il si une note déclarée ne correspond pas au relevé ?</span>
+                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><line x1='12' y1='5' x2='12' y2='19'></line><line x1='5' y1='12' x2='19' y2='12'></line></svg>
+                </summary>
+                <p>
+                  Les auditeurs de la commission effectuent un contrôle visuel à l’écran de vos relevés originaux scannés.
+                  En cas d’écart ou de faute de frappe, la note est réajustée selon la pièce officielle et le score est recalculé
+                  automatiquement avec traçabilité dans le journal d'audit.
+                </p>
+              </details>
 
-            <div className='ref-faq-card'>
-              <div className='ref-faq-num'>04 / CONVOCATIONS</div>
-              <h4>Quand et comment serai-je informé de mon admission ?</h4>
-              <p>Dès l’audit final des dossiers par la commission, les listes des candidats classés par ordre de mérite sont publiées et les convocations officielles avec date et centre d’examen sont disponibles dans votre espace personnel.</p>
+              <details>
+                <summary>
+                  <span>Mon dossier est-il protégé et conforme aux règles CNDP ?</span>
+                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><line x1='12' y1='5' x2='12' y2='19'></line><line x1='5' y1='12' x2='19' y2='12'></line></svg>
+                </summary>
+                <p>
+                  Absolument. Conformément à la Loi 09-08 relative à la protection des personnes physiques à l'égard du traitement
+                  des données à caractère personnel, vos documents sont chiffrés et accessibles uniquement aux membres habilités
+                  de la commission d'audit officielle.
+                </p>
+              </details>
+
+              <details>
+                <summary>
+                  <span>Quand et comment recevrai-je ma convocation officielle ?</span>
+                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><line x1='12' y1='5' x2='12' y2='19'></line><line x1='5' y1='12' x2='19' y2='12'></line></svg>
+                </summary>
+                <p>
+                  Dès la clôture des audits par la commission, les listes des candidats admissibles sont arrêtées.
+                  Votre convocation nominative (avec centre d’examen, salle et QR-Code) sera téléchargeable directement
+                  depuis votre espace personnel.
+                </p>
+              </details>
             </div>
           </div>
         </div>
       </section>
 
       {/* ====================================================================
-          9. FOOTER DE HAUTE PRÉCISION (ref-footer)
+          12. FOOTER DE HAUTE PRÉCISION (ref-footer)
           ==================================================================== */}
       <footer className='ref-footer'>
         <div className='ref-footer-inner'>
           <div>
-            <div className='ref-footer-brand'>
+            <div className='ref-brand' style={{ fontSize: '32px', marginBottom: '18px' }}>
               Recrutement<span>.ma</span>
             </div>
-            <p style={{ maxWidth: '360px', lineHeight: '1.6', fontSize: '13.5px' }}>
-              Portail National de Recrutement et de Gestion des Concours d’Accès aux Institutions Bancaires, Établissements Publics et Organismes Financiers au Maroc.
+            <p style={{ maxWidth: '340px', lineHeight: '1.7', fontSize: '13px', color: '#8fa5ac' }}>
+              Portail National de Recrutement et de Gestion des Concours d’Accès aux Grandes Institutions Bancaires,
+              Établissements Publics et Organismes Financiers au Maroc.
             </p>
-            <div className='small text-muted mt-3'>
-              <i className='fas fa-shield-alt text-success me-2'></i>
-              Système certifié conforme Loi 09-08 (CNDP)
+            <div className='ref-hud-pill mt-4'>
+              <span className='ref-dot-pulse'></span>
+              <span>LOI 09-08 · CNDP CONFORME</span>
             </div>
           </div>
 
           <div className='ref-footer-col'>
             <h5>La Plateforme</h5>
             <a href='#ref-vision'>Notre Vision</a>
-            <a href='#ref-cycle'>Le Cycle Officiel</a>
+            <a href='#ref-relay'>Le Cycle Radar</a>
             <a href='#ref-spaces'>Les Espaces Métier</a>
-            <a href='#ref-budget'>Simulateur Barème</a>
+            <a href='#ref-budget'>Simulateur de Barème</a>
           </div>
 
           <div className='ref-footer-col'>
@@ -1034,21 +1309,25 @@ const HomeScreen = () => {
             <a href='#ref-offres'>CIH Bank</a>
             <a href='#ref-offres'>Ministère des Finances</a>
             <a href='#ref-offres'>Bank of Africa</a>
-            <a href='#ref-offres'>Caisse de Dépôt et Gestion</a>
+            <a href='#ref-offres'>CDG Maroc</a>
           </div>
 
           <div className='ref-footer-col'>
-            <h5>Accès Rapide</h5>
-            <Link to='/login'>Connexion Espace Recruteur</Link>
-            <Link to='/login'>Espace Commission Audit</Link>
+            <h5>Accès Direct</h5>
+            <Link to='/login'>Espace Recruteur RH</Link>
+            <Link to='/login'>Espace Commission d'Audit</Link>
             <Link to='/register'>Créer Dossier Candidat</Link>
-            <a href='#ref-questions'>Assistance & FAQ</a>
+            <a href='#ref-questions'>Assistance &amp; Règlement</a>
           </div>
+        </div>
+
+        <div className='ref-footer-watermark'>
+          RECRUTEMENT<span>.MA</span>
         </div>
 
         <div className='ref-footer-bottom'>
           <span>© 2026 EHC Experts Human Capital — Portail National Recrutement.ma</span>
-          <span>TOUS DROITS RÉSERVÉS · CONFORME CNDP</span>
+          <span>TOUS DROITS RÉSERVÉS · SÉLECTION AU MÉRITE · CONFORME CNDP</span>
         </div>
       </footer>
     </div>
