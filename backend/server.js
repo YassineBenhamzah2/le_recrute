@@ -6,6 +6,7 @@ import connectDB from './config/db.js';
 import { notFound, errorHandler } from './middleware/errorMiddleware.js';
 import 'moment/locale/fr.js';
 import path from 'path';
+import fs from 'fs';
 import cors from 'cors';
 
 import userRoutes from './routes/userRoutes.js';
@@ -45,14 +46,18 @@ app.use('/assets', express.static(path.join(__dirname, '../frontend/public/asset
 app.use('/assets', express.static(path.join(__dirname, 'frontend', 'public', 'assets')));
 
 
-if (process.env.NODE_ENV === 'production') {
-  app.use(express.static(path.join(__dirname, '../frontend/build')));
+const frontendBuild = path.join(__dirname, 'frontend', 'build', 'index.html');
+const frontendBuildAlt = path.join(__dirname, '../frontend/build', 'index.html');
+
+if (process.env.NODE_ENV === 'production' && (fs.existsSync(frontendBuild) || fs.existsSync(frontendBuildAlt))) {
+  const buildDir = fs.existsSync(frontendBuild) ? path.join(__dirname, 'frontend', 'build') : path.join(__dirname, '../frontend', 'build');
+  app.use(express.static(buildDir));
   app.get('*', (req, res) =>
-    res.sendFile(path.resolve(__dirname, 'frontend', 'build', 'index.html'))
+    res.sendFile(path.join(buildDir, 'index.html'))
   );
 } else {
   app.get('/', (req, res) => {
-    res.send('API is running....');
+    res.json({ status: 'success', message: 'API Recrutement is running....' });
   });
 }
 
