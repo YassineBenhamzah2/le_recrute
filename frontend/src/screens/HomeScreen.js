@@ -14,11 +14,10 @@ const DEFAULT_FEATURED_OFFRES = [
     sigle: 'ABB',
     secteur: 'Secteur Bancaire',
     ville: 'Réseau National (Toutes Régions)',
-    niveau: 'Bac +2 / Diplôme TS',
+    niveau: 'Bac +2 (DUT, BTS, DTS)',
     postes: 120,
     cloture: 'Dans 12 jours',
     urgent: true,
-    logo: '/images/logos/abb_logo.png',
   },
   {
     _id: 'cih-01',
@@ -26,12 +25,11 @@ const DEFAULT_FEATURED_OFFRES = [
     entreprise: 'CIH Bank',
     sigle: 'CIH',
     secteur: 'Secteur Bancaire',
-    ville: 'Casablanca, Rabat, Tanger',
+    ville: 'Casablanca, Rabat, Tanger, Marrakech',
     niveau: 'Bac +3 / Licence',
     postes: 25,
     cloture: 'Dans 6 jours',
     urgent: false,
-    logo: '/images/logos/cih_logo.png',
   },
   {
     _id: 'ocp-01',
@@ -44,7 +42,6 @@ const DEFAULT_FEATURED_OFFRES = [
     postes: 30,
     cloture: 'Dans 14 jours',
     urgent: true,
-    logo: '/images/logos/ocp_logo.png',
   },
   {
     _id: 'mef-01',
@@ -57,7 +54,6 @@ const DEFAULT_FEATURED_OFFRES = [
     postes: 45,
     cloture: 'Dans 18 jours',
     urgent: false,
-    logo: '/images/logos/mef_logo.png',
   },
   {
     _id: 'boa-01',
@@ -70,7 +66,6 @@ const DEFAULT_FEATURED_OFFRES = [
     postes: 15,
     cloture: 'Dans 8 jours',
     urgent: true,
-    logo: '/images/logos/boa_logo.png',
   },
   {
     _id: 'cdg-01',
@@ -83,175 +78,79 @@ const DEFAULT_FEATURED_OFFRES = [
     postes: 10,
     cloture: 'Dans 21 jours',
     urgent: false,
-    logo: '/images/logos/cdg_logo.png',
   },
 ];
 
-const CYCLE_STAGES = [
+const PIPELINE_STAGES = [
   {
     num: '01',
-    title: 'Recueil & Définition des Besoins',
-    short: 'Besoins',
-    role: 'Direction RH & Établissements',
-    desc: 'Les établissements recruteurs formalisent les postes ouverts, les profils requis, les spécialités et le barème officiel de notation.',
+    tag: 'DÉPÔT NUMÉRIQUE SÉCURISÉ',
+    title: 'Constitution du Dossier & Récépissé Horodaté',
+    short: '01. Inscription & Dépôt',
+    desc: 'Le candidat renseigne son état civil, ses diplômes (Bac, DUT, Licence, Master) et ses expériences professionnelles (avec calcul automatique du temps en poste actuel) et téléverse les justificatifs originaux.',
     points: [
-      'Identification des postes budgétaires et des compétences cibles',
-      'Configuration du barème officiel : diplômes, mentions, expériences',
-      'Validation juridique de la conformité statutaire du concours',
+      'Génération d’une empreinte cryptographique SHA-256 infalsifiable pour chaque pièce téléversée',
+      'Calcul automatique de l’expérience professionnelle sans exiger de date de fin pour les candidats en poste',
+      'Délivrance d’un récépissé officiel avec horodatage électronique certifié conforme Loi 09-08 (CNDP)',
     ],
+    metric: '100% Dématérialisé',
+    badge: 'CONFORME CNDP',
   },
   {
     num: '02',
-    title: 'Publication Officielle du Concours',
-    short: 'Concours',
-    role: 'Maître d’Ouvrage / Recruteur',
-    desc: 'Lancement public avec publication des avis officiels, dates d’ouverture et de clôture, et critères d’admissibilité stricts.',
+    tag: 'AUDIT VISUEL ANTI-FRAUDE',
+    title: 'Instruction des Pièces en Double-Aveugle',
+    short: '02. Audit par la Commission',
+    desc: 'Les membres de la commission d’audit examinent les relevés de notes et attestations originaux sur écran scindé en comparant chaque chiffre déclaré à la pièce officielle sans possibilité d’intervention extérieure.',
     points: [
-      'Génération automatique de l’avis de recrutement certifié',
-      'Diffusion multi-canal et ouverture de la plateforme numérique',
-      'Affichage des dates limites et des pièces justificatives exigées',
+      'Visualiseur PDF haute résolution avec détection automatique des coquilles et falsifications',
+      'Rectification transparente de la note déclarée si le relevé officiel scanné comporte un écart',
+      'Double validation indépendante : deux contrôleurs distincts doivent viser le dossier pour validation',
     ],
+    metric: '0 Fraude Tolérée',
+    badge: 'DOUBLE CONTRÔLE',
   },
   {
     num: '03',
-    title: 'Dépôt Numérique & Récépissé Horodaté',
-    short: 'Dépôt',
-    role: 'Candidat (National)',
-    desc: 'Le candidat remplit son dossier (Bac, diplômes, expériences, pièces scannées) et reçoit un récépissé numérique infalsifiable.',
+    tag: 'NOTATION TRANSPARENTE',
+    title: 'Calcul Algorithmique du Barème sur 100 Points',
+    short: '03. Barème sur 100 Pts',
+    desc: 'L’algorithme applique strictement le barème validé par l’institution recruteuse (diplômes, mentions académiques, ancienneté d’expérience et spécificités métiers) sans aucune intervention humaine arbitraire.',
     points: [
-      'Saisie intuitive des données académiques et professionnelles',
-      'Téléversement des pièces justificatives en haute définition',
-      'Délivrance d’un récépissé horodaté conforme Loi 09-08 (CNDP)',
+      'Score calculé à la milliseconde selon le décret officiel régissant le concours',
+      'Égalité absolue des chances et élimination complète de toute forme de favoritisme ou de népotisme',
+      'Publication immédiate des critères de notation et des seuils d’admissibilité pour chaque région',
     ],
+    metric: '100 / 100 Points',
+    badge: 'ALGORITHME CERTIFIÉ',
   },
   {
     num: '04',
-    title: 'Audit Visuel des Pièces par la Commission',
-    short: 'Audit',
-    role: 'Commission d’Audit & Contrôleurs',
-    desc: 'Interface écran scindé où les membres de la commission comparent chaque note et date déclarée avec le document original officiel.',
+    tag: 'LOGISTIQUE D’EXAMEN',
+    title: 'Édition des Convocations Sécurisées avec QR-Code',
+    short: '04. Convocations QR-Code',
+    desc: 'Les candidats retenus reçoivent leur convocation officielle nominative indiquant le centre d’examen régional, la salle, le numéro de table et un QR-Code crypté pour l’émargement électronique le jour J.',
     points: [
-      'Contrôle visuel pièce par pièce (CIN, Relevés de notes, Attestations)',
-      'Possibilité de rectification immédiate des notes en cas de coquille',
-      'Statuts de contrôle en temps réel : Conforme, Rejeté ou Complément',
+      'Téléchargement instantané de la convocation PDF certifiée dans l’espace personnel du candidat',
+      'Répartition géographique optimisée selon l’adresse de résidence pour réduire les déplacements',
+      'Système anti-substitution d’identité par vérification biométrique et QR-Code à l’entrée des salles',
     ],
+    metric: 'Affectation Immédiate',
+    badge: 'QR SÉCURISÉ',
   },
   {
     num: '05',
-    title: 'Classement par Barème Algorithmique',
-    short: 'Barème',
-    role: 'Moteur de Scoring Dynamique',
-    desc: 'Calcul automatisé transparent sur 100 points : diplôme, mentions, ancienneté, et établissement d’origine.',
+    tag: 'PUBLICATION OFFICIELLE',
+    title: 'Épreuves, Entretien & Affectation Définitive',
+    short: '05. Épreuves & Affectation',
+    desc: 'Après correction anonyme des épreuves écrites et passage devant le jury d’oral, les listes principales et d’attente sont publiées par ordre strict de mérite avec accompagnement à l’intégration en agence ou au siège.',
     points: [
-      'Application stricte du barème validé sans intervention humaine',
-      'Classement instantané des candidats par ordre de mérite républicain',
-      'Génération des listes principales et des listes d’attente',
+      'Double anonymisation des copies d’examen lors de la phase des épreuves écrites nationales',
+      'Grille d’évaluation standardisée pour les entretiens oraux devant la commission paritaire',
+      'Affectation transparente dans les agences bancaires ou directions régionales selon le rang de mérite',
     ],
-  },
-  {
-    num: '06',
-    title: 'Convocations Officielles & Affectations',
-    short: 'Convocations',
-    role: 'Direction RH & Centres d’Examen',
-    desc: 'Édition des convocations nominatives avec centre d’examen, salle et QR-Code de sécurité pour les épreuves écrites et orales.',
-    points: [
-      'Téléchargement immédiat de la convocation dans l’espace candidat',
-      'Émargement numérique par QR-Code le jour des épreuves',
-      'Publication des résultats définitifs et suivi de l’affectation',
-    ],
-  },
-];
-
-const ROLES_DATA = [
-  {
-    id: 'candidat',
-    name: 'Candidat',
-    tag: 'Postuler & Suivre',
-    title: 'Votre candidature. Au même endroit.',
-    desc: 'Créez votre dossier unique, téléversez vos justificatifs, simulez votre note et suivez l’avancement de votre candidature en temps réel.',
-    items: [
-      'Dépôt numérique sécurisé et récépissé officiel avec horodatage',
-      'Calcul immédiat de l’ancienneté d’expérience (même en poste actuel)',
-      'Téléchargement de la convocation officielle avec centre d’examen',
-    ],
-    folioTitle: 'Mon dossier.',
-    steps: [
-      { num: '01', title: 'Concours', desc: 'Explorer les offres nationales et vérifier l’éligibilité.' },
-      { num: '02', title: 'Dossier', desc: 'Saisir Bac, diplômes, expériences et pièces jointes.' },
-      { num: '03', title: 'Résultats', desc: 'Suivre le score d’audit et télécharger sa convocation.' },
-    ],
-  },
-  {
-    id: 'commission',
-    name: 'Commission d’Audit',
-    tag: 'Contrôler & Valider',
-    title: 'L’instruction des pièces. Écran scindé.',
-    desc: 'Un espace dédié aux auditeurs pour comparer chaque note déclarée avec le document original scanné par le candidat sans quitter l’écran.',
-    items: [
-      'Visualiseur PDF haute fidélité avec zoom et rotation intégrés',
-      'Ajustement instantané de la note si le relevé officiel diffère',
-      'Validation, rejet motivé ou demande de complément en 1 clic',
-    ],
-    folioTitle: 'Instruction.',
-    steps: [
-      { num: '01', title: 'Affectation', desc: 'Dossiers répartis équitablement entre les contrôleurs.' },
-      { num: '02', title: 'Vérification', desc: 'Audit visuel de la conformité des diplômes et relevés.' },
-      { num: '03', title: 'Certification', desc: 'Signature numérique du rapport d’instruction.' },
-    ],
-  },
-  {
-    id: 'recruteur',
-    name: 'Recruteur RH',
-    tag: 'Piloter les Concours',
-    title: 'Maîtrise d’Ouvrage des Concours.',
-    desc: 'Créez vos concours au nom de votre institution (Al Barid Bank, OCP, CIH, MEF...), définissez le barème et suivez les inscriptions.',
-    items: [
-      'Choix officiel de l’institution mandataire et du secteur d’activité',
-      'Paramétrage fin des coefficients de notation (études, mention, stages)',
-      'Export des listes officielles pour affichage réglementaire',
-    ],
-    folioTitle: 'Gestion.',
-    steps: [
-      { num: '01', title: 'Création', desc: 'Paramétrage du concours et du cahier des charges.' },
-      { num: '02', title: 'Inscriptions', desc: 'Suivi du flux des candidatures et du taux de complétude.' },
-      { num: '03', title: 'Arrêté', desc: 'Validation définitive des listes des admissibles.' },
-    ],
-  },
-  {
-    id: 'direction',
-    name: 'Direction RH',
-    tag: 'Superviser & Décider',
-    title: 'Pilotage Stratégique National.',
-    desc: 'Vue d’ensemble sur l’équité régionale, la répartition des profils, la parité et les taux d’admissibilité par académie et université.',
-    items: [
-      'Tableaux de bord consolidés avec télémétrie en temps réel',
-      'Statistiques de répartition géographique et par genre',
-      'Contrôle qualité sur l’ensemble des commissions régionales',
-    ],
-    folioTitle: 'Pilotage.',
-    steps: [
-      { num: '01', title: 'Vue Globale', desc: 'Indicateurs clés et volumétrie nationale des candidats.' },
-      { num: '02', title: 'Équité', desc: 'Veille sur le respect strict du mérite républicain.' },
-      { num: '03', title: 'Bilan', desc: 'Rapports finaux d’admission pour les conseils d’administration.' },
-    ],
-  },
-  {
-    id: 'auditeur',
-    name: 'Auditeur Externe',
-    tag: 'Certifier & Tracer',
-    title: 'Audit & Conformité CNDP.',
-    desc: 'Traçabilité complète des logs, des modifications de notes et des accès aux dossiers selon les exigences de la Loi 09-08.',
-    items: [
-      'Piste d’audit infalsifiable avec horodatage cryptographique SHA-256',
-      'Journal exhaustif de chaque modification de note par la commission',
-      'Conformité totale avec les préconisations de la CNDP',
-    ],
-    folioTitle: 'Conformité.',
-    steps: [
-      { num: '01', title: 'Traçabilité', desc: 'Enregistrement de chaque action d’audit horodatée.' },
-      { num: '02', title: 'Contrôle', desc: 'Vérification de l’absence de favoritisme ou de biais.' },
-      { num: '03', title: 'Certification', desc: 'Émission du certificat de conformité légale du concours.' },
-    ],
+    metric: 'Mérite Républicain',
+    badge: 'RÉSULTATS PUBLICS',
   },
 ];
 
@@ -266,18 +165,17 @@ const HomeScreen = () => {
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSigle, setSelectedSigle] = useState('ALL');
+  const [selectedVille, setSelectedVille] = useState('ALL');
   const [offres, setOffres] = useState(DEFAULT_FEATURED_OFFRES);
 
-  // Cycle Orbit state
-  const [activeCycleIndex, setActiveCycleIndex] = useState(0);
-
-  // Espaces Métier state
-  const [activeRoleIndex, setActiveRoleIndex] = useState(0);
+  // Active Pipeline Stage
+  const [activeStageIndex, setActiveStageIndex] = useState(0);
 
   // Simulator state
   const [simNiveau, setSimNiveau] = useState('bac5');
   const [simMention, setSimMention] = useState('bien');
   const [simExp, setSimExp] = useState(3);
+  const [simEnPoste, setSimEnPoste] = useState(true);
 
   // Scroll Progress
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -287,7 +185,7 @@ const HomeScreen = () => {
   const [cursorVisible, setCursorVisible] = useState(false);
   const [cursorHovered, setCursorHovered] = useState(false);
 
-  // Particle Canvas Ref
+  // Canvas Ref
   const canvasRef = useRef(null);
 
   // 1. Fetch Offres from API if available
@@ -307,12 +205,10 @@ const HomeScreen = () => {
             postes: item.nombrePostes || 10,
             cloture: 'En cours',
             urgent: idx % 2 === 0,
-            logo: '/images/logos/abb_logo.png',
           }));
           setOffres(mapped);
         }
       } catch (e) {
-        // Fallback to default
         setOffres(DEFAULT_FEATURED_OFFRES);
       }
     };
@@ -343,9 +239,8 @@ const HomeScreen = () => {
     window.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseleave', handleMouseLeave);
 
-    // Watch hover on interactive elements
     const handleOver = (e) => {
-      const target = e.target.closest('a, button, input, select, .ref-clickable, [role="button"]');
+      const target = e.target.closest('a, button, input, select, .nr-clickable, [role="button"]');
       setCursorHovered(!!target);
     };
 
@@ -358,15 +253,7 @@ const HomeScreen = () => {
     };
   }, [cursorVisible]);
 
-  // 4. Auto-Cycle Orbit Timer
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setActiveCycleIndex((prev) => (prev + 1) % CYCLE_STAGES.length);
-    }, 7000);
-    return () => clearInterval(timer);
-  }, []);
-
-  // 5. Interactive Particle Canvas
+  // 4. Interactive Particle Canvas (Constellation & Cyber Glow)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -382,17 +269,16 @@ const HomeScreen = () => {
     };
     window.addEventListener('resize', handleResize);
 
-    // Create particles
-    const particleCount = Math.min(Math.floor((width * height) / 14000), 75);
+    const particleCount = Math.min(Math.floor((width * height) / 12000), 80);
     const particles = [];
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.45,
-        vy: (Math.random() - 0.5) * 0.45,
-        radius: Math.random() * 1.8 + 0.8,
-        alpha: Math.random() * 0.5 + 0.2,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        radius: Math.random() * 2 + 0.8,
+        alpha: Math.random() * 0.6 + 0.2,
       });
     }
 
@@ -407,7 +293,6 @@ const HomeScreen = () => {
     const render = () => {
       ctx.clearRect(0, 0, width, height);
 
-      // Draw and update particles
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         p.x += p.vx;
@@ -418,35 +303,32 @@ const HomeScreen = () => {
         if (p.y < 0) p.y = height;
         if (p.y > height) p.y = 0;
 
-        // Interaction with mouse
         const dxMouse = mouse.x - p.x;
         const dyMouse = mouse.y - p.y;
         const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
-        if (distMouse < 130) {
-          p.x -= (dxMouse / distMouse) * 0.8;
-          p.y -= (dyMouse / distMouse) * 0.8;
+        if (distMouse < 140) {
+          p.x -= (dxMouse / distMouse) * 0.9;
+          p.y -= (dyMouse / distMouse) * 0.9;
         }
 
-        // Draw particle
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(25, 179, 194, ${p.alpha})`;
-        ctx.shadowColor = 'rgba(127, 219, 227, 0.8)';
-        ctx.shadowBlur = 6;
+        ctx.fillStyle = `rgba(0, 242, 169, ${p.alpha})`;
+        ctx.shadowColor = 'rgba(0, 242, 169, 0.9)';
+        ctx.shadowBlur = 8;
         ctx.fill();
 
-        // Connect with nearby particles
         for (let j = i + 1; j < particles.length; j++) {
           const p2 = particles[j];
           const dx = p.x - p2.x;
           const dy = p.y - p2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
 
-          if (dist < 115) {
+          if (dist < 125) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(127, 219, 227, ${0.16 * (1 - dist / 115)})`;
+            ctx.strokeStyle = `rgba(0, 242, 169, ${0.18 * (1 - dist / 125)})`;
             ctx.lineWidth = 0.8;
             ctx.shadowBlur = 0;
             ctx.stroke();
@@ -474,32 +356,33 @@ const HomeScreen = () => {
         item.entreprise.toLowerCase().includes(searchTerm.toLowerCase()) ||
         item.ville.toLowerCase().includes(searchTerm.toLowerCase());
       const matchSigle = selectedSigle === 'ALL' || item.sigle === selectedSigle;
-      return matchSearch && matchSigle;
+      const matchVille = selectedVille === 'ALL' || item.ville.toLowerCase().includes(selectedVille.toLowerCase());
+      return matchSearch && matchSigle && matchVille;
     });
-  }, [offres, searchTerm, selectedSigle]);
+  }, [offres, searchTerm, selectedSigle, selectedVille]);
 
   // Simulator Score Calculation
   const simScore = useMemo(() => {
     let score = 0;
-    // Diplome
+    // Diplôme (Max 45 pts)
     if (simNiveau === 'bac2') score += 25;
     else if (simNiveau === 'bac3') score += 35;
     else if (simNiveau === 'bac5') score += 45;
-    else if (simNiveau === 'doctorat') score += 50;
+    else if (simNiveau === 'doctorat') score += 48;
 
-    // Mention
+    // Mention (Max 22 pts)
     if (simMention === 'passable') score += 8;
     else if (simMention === 'assez_bien') score += 14;
     else if (simMention === 'bien') score += 18;
-    else if (simMention === 'tres_bien') score += 20;
+    else if (simMention === 'tres_bien') score += 22;
 
-    // Experience (3 pts per year, max 30)
+    // Expérience (3 pts/an, max 30)
     score += Math.min(Number(simExp) * 3, 30);
 
     return Math.min(score, 100);
   }, [simNiveau, simMention, simExp]);
 
-  // Radius for Gauge SVG: 130 -> Circumference = 2 * PI * 130 ≈ 816.8
+  // Gauge SVG Math: R=130 -> 2*PI*130 ≈ 816.8
   const gaugeCircumference = 2 * Math.PI * 130;
   const gaugeDashoffset = gaugeCircumference - (gaugeCircumference * simScore) / 100;
 
@@ -507,17 +390,16 @@ const HomeScreen = () => {
     dispatch(logout());
   };
 
-  const currentRole = ROLES_DATA[activeRoleIndex];
-  const currentStage = CYCLE_STAGES[activeCycleIndex];
+  const currentStage = PIPELINE_STAGES[activeStageIndex];
 
   return (
-    <div className='reference'>
+    <div className='nr-universe'>
       {/* 0. Top Glowing Scroll Progress */}
-      <div className='ref-progress' style={{ transform: `scaleX(${scrollProgress})` }} />
+      <div className='nr-progress-bar' style={{ transform: `scaleX(${scrollProgress})` }} />
 
-      {/* 0. Custom Magnetic Cursor */}
+      {/* 0. Custom Magnetic Holographic Cursor */}
       <div
-        className='ref-cursor'
+        className='nr-cursor'
         data-visible={cursorVisible ? 'true' : 'false'}
         data-action={cursorHovered ? 'true' : 'false'}
         style={{ transform: `translate3d(${cursorPos.x}px, ${cursorPos.y}px, 0)` }}
@@ -526,58 +408,49 @@ const HomeScreen = () => {
       </div>
 
       {/* ====================================================================
-          1. STICKY NAVBAR ULTRA-FLUIDE
+          1. NAVBAR SUPRÊME FLOTTANTE
           ==================================================================== */}
-      <header className='ref-nav'>
-        <Link to='/' className='ref-brand'>
-          Recrutement<span>.ma</span>
+      <header className='nr-nav'>
+        <Link to='/' className='nr-brand'>
+          RECRUTEMENT<span>.MA</span>
+          <span className='nr-brand-badge'>PORTAIL OFFICIEL</span>
         </Link>
 
-        <nav className='ref-nav-links'>
-          <a href='#ref-vision'>Vision</a>
-          <a href='#ref-relay'>Le Cycle Radar</a>
-          <a href='#ref-spaces'>Espaces Métier</a>
-          <a href='#ref-offres'>Concours Ouverts</a>
-          <a href='#ref-budget'>Simulateur</a>
-          <a href='#ref-questions'>FAQ</a>
+        <nav className='nr-nav-links'>
+          <a href='#nr-pipeline'>Le Parcours du Mérite</a>
+          <a href='#nr-offres'>Concours Ouverts</a>
+          <a href='#nr-simulateur'>Simulateur de Barème</a>
+          <a href='#nr-espaces'>Espaces Métier</a>
+          <a href='#nr-securite'>Audit &amp; CNDP</a>
+          <a href='#nr-faq'>FAQ</a>
         </nav>
 
-        <div className='ref-nav-actions'>
-          <div className='ref-hud-pill d-none d-lg-inline-flex'>
-            <span className='ref-dot-pulse'></span>
-            <span>CNDP CERTIFIÉ</span>
-          </div>
-
-          <a href='#ref-offres' className='ref-search-button'>
-            <i className='fas fa-search'></i>
-            <span>⌘K</span>
-          </a>
-
+        <div className='nr-nav-actions'>
           {userInfo ? (
             <div className='d-flex align-items-center gap-2'>
               {userInfo.isAdministrateur ? (
                 <button
                   onClick={() => navigate('/administrateur/candidatures')}
-                  className='ref-button ref-button-outline'
+                  className='nr-btn nr-btn-outline'
                   style={{ minHeight: '38px', padding: '0 16px', fontSize: '10px' }}
                 >
-                  <i className='fas fa-shield-alt me-1'></i> Admin
+                  <i className='fas fa-shield-alt me-1 text-warning'></i> Admin Central
                 </button>
               ) : userInfo.isMaitreOuvrage ? (
                 <button
                   onClick={() => navigate('/maitre-ouvrage/candidatures')}
-                  className='ref-button ref-button-outline'
+                  className='nr-btn nr-btn-outline'
                   style={{ minHeight: '38px', padding: '0 16px', fontSize: '10px' }}
                 >
-                  <i className='fas fa-building me-1'></i> Recruteur
+                  <i className='fas fa-building me-1 text-info'></i> Espace Recruteur
                 </button>
               ) : (
                 <button
                   onClick={() => navigate('/profil')}
-                  className='ref-button ref-button-outline'
+                  className='nr-btn nr-btn-outline'
                   style={{ minHeight: '38px', padding: '0 16px', fontSize: '10px' }}
                 >
-                  <i className='fas fa-user-check me-1'></i> Mon Dossier
+                  <i className='fas fa-user-check me-1 text-success'></i> Mon Dossier
                 </button>
               )}
               <button
@@ -591,11 +464,11 @@ const HomeScreen = () => {
             </div>
           ) : (
             <div className='d-flex align-items-center gap-2'>
-              <Link to='/login' className='ref-button ref-button-outline' style={{ minHeight: '40px', padding: '0 18px', fontSize: '10.5px' }}>
+              <Link to='/login' className='nr-btn nr-btn-outline' style={{ minHeight: '38px', padding: '0 16px', fontSize: '10.5px' }}>
                 Connexion
               </Link>
-              <Link to='/register' className='ref-button' style={{ minHeight: '40px', padding: '0 18px', fontSize: '10.5px' }}>
-                Créer Dossier <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
+              <Link to='/register' className='nr-btn' style={{ minHeight: '38px', padding: '0 18px', fontSize: '10.5px' }}>
+                Créer Mon Dossier <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
           )}
@@ -603,410 +476,266 @@ const HomeScreen = () => {
       </header>
 
       {/* ====================================================================
-          2. HERO ULTRA-SCI-FI AVEC CANVAS PARTICULES ET GLOW AMBIENT
+          2. HERO SUPRÊME : PARTICULES, CYBER-GRID & RECHERCHE INSTANTANÉE
           ==================================================================== */}
-      <section className='ref-hero' id='ref-top'>
-        <div className='ref-hero-glow' />
-        <canvas ref={canvasRef} className='ref-particles' />
-        <div className='ref-hero-watermark'>RECRUTEMENT.MA</div>
+      <section className='nr-hero'>
+        <div className='nr-hero-bg' />
+        <canvas ref={canvasRef} className='nr-particles-canvas' />
 
-        <div className='ref-hero-frame'>
-          <div className='ref-hero-top-badge'>
-            <i className='fas fa-shield-alt text-info me-2'></i>
-            <span>01 — L’ÉQUITÉ NATIONALE · DU DÉPÔT NUMÉRIQUE À L’AFFECTATION</span>
+        <div className='nr-hero-content'>
+          <div className='nr-hud-chip'>
+            <span className='nr-dot-live'></span>
+            <span>SYSTÈME NATIONAL SÉCURISÉ · SÉLECTION AU MÉRITE RÉPUBLICAIN · SESSION 2026</span>
           </div>
 
-          <h1 className='ref-hero-title'>
-            UN CYCLE COMPLET. <em>UNE SÉLECTION TRANSPARENTE.</em><br />
-            DU DÉPÔT DE DOSSIER <em>À L’AFFECTATION.</em>
+          <h1 className='nr-hero-title'>
+            L’ÉQUITÉ DU CONCOURS. <em>LA RIGUEUR DE L’AUDIT.</em><br />
+            DU DÉPÔT NUMÉRIQUE <em>À L’AFFECTATION NATIONALE.</em>
           </h1>
 
-          <p className='ref-hero-sub'>
-            Centralisation nationale des concours d’accès aux institutions bancaires, établissements publics
-            et organismes financiers au Maroc. Garantie absolue de mérite républicain, barèmes dynamiques
-            certifiés et récépissé numérique avec horodatage conforme Loi 09-08 (CNDP).
+          <p className='nr-hero-sub'>
+            Plateforme souveraine de centralisation des concours d’accès aux grandes institutions bancaires,
+            organismes financiers et établissements publics au Maroc. Barèmes algorithmiques transparents,
+            audit visuel en double-contrôle et récépissé numérique horodaté conforme Loi 09-08 (CNDP).
           </p>
 
-          <div className='ref-hero-actions'>
-            <a href='#ref-offres' className='ref-button'>
-              Explorer les concours ouverts <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
-            </a>
-            <a href='#ref-budget' className='ref-button ref-button-outline'>
-              <i className='fas fa-chart-line me-2'></i> Simuler mon barème en direct
+          {/* Instant Multi-Criteria Search Engine */}
+          <div className='nr-hero-search'>
+            <i className='fas fa-search text-muted'></i>
+            <input
+              type='text'
+              placeholder='Rechercher un intitulé de poste, diplôme, mot-clé...'
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            <select value={selectedSigle} onChange={(e) => setSelectedSigle(e.target.value)}>
+              <option value='ALL'>Toutes les institutions</option>
+              <option value='ABB'>Al Barid Bank</option>
+              <option value='CIH'>CIH Bank</option>
+              <option value='OCP'>Groupe OCP</option>
+              <option value='MEF'>Ministère des Finances</option>
+              <option value='BOA'>Bank of Africa</option>
+              <option value='CDG'>Caisse de Dépôt (CDG)</option>
+            </select>
+            <select value={selectedVille} onChange={(e) => setSelectedVille(e.target.value)}>
+              <option value='ALL'>Toutes les régions</option>
+              <option value='Casablanca'>Casablanca</option>
+              <option value='Rabat'>Rabat</option>
+              <option value='Tanger'>Tanger</option>
+              <option value='Marrakech'>Marrakech</option>
+              <option value='Fès'>Fès / Meknès</option>
+              <option value='Agadir'>Agadir / Souss</option>
+            </select>
+            <a href='#nr-offres' className='nr-btn' style={{ minHeight: '38px', padding: '0 18px', fontSize: '10.5px' }}>
+              Trouver <i className='fas fa-arrow-down ms-1'></i>
             </a>
           </div>
 
-          <div className='ref-hero-hud'>
-            <span>01 — LE MÉRITE RÉPUBLICAIN</span>
+          <div className='nr-hero-telemetry'>
+            <span>AUDIT CRYPTOGRAPHIQUE ACTIF (SHA-256)</span>
             <div>
-              <i className='is-on'></i>
-              <i className='is-on'></i>
-              <i className=''></i>
+              <i className='hud-bar is-active'></i>
+              <i className='hud-bar is-active'></i>
+              <i className='hud-bar is-active'></i>
+              <i className='hud-bar'></i>
             </div>
-            <span>CONFORMITÉ LOI 09-08 CNDP · SHA-256</span>
+            <span>CONFORMITÉ LOI 09-08 CNDP · ZÉRO FRAUDE TOLÉRÉE</span>
           </div>
-
-          <a href='#ref-vision' className='ref-scroll-hint'>
-            <i></i>
-            <span>DÉFILER POUR EXPLORER</span>
-          </a>
         </div>
       </section>
 
       {/* ====================================================================
-          3. SECTION FACTS TELEMETRY STRIP
+          3. MATRICE DE CONFIANCE (FACTS TELEMETRY STRIP)
           ==================================================================== */}
-      <section className='ref-facts-strip'>
-        <div className='ref-facts-grid'>
-          <div className='ref-fact-item'>
+      <section className='nr-facts-strip'>
+        <div className='nr-facts-container'>
+          <div className='nr-fact-card'>
             <b>6</b>
-            <span>ÉTAPES AUDITÉES DU CYCLE OFFICIEL</span>
+            <span>GRANDES INSTITUTIONS BANCAIRES &amp; ÉTABLISSEMENTS PUBLICS PARTENAIRES</span>
           </div>
-          <div className='ref-fact-item'>
-            <b>5</b>
-            <span>ESPACES MÉTIER CENTRALISÉS</span>
-          </div>
-          <div className='ref-fact-item'>
+          <div className='nr-fact-card'>
             <b>100%</b>
-            <span>CONFORME LOI 09-08 (CNDP)</span>
+            <span>AUDIT VISUEL EN DOUBLE-AVEUGLE SUR ÉCRAN SCINDÉ ANTI-FRAUDE</span>
           </div>
-          <div className='ref-fact-item'>
+          <div className='nr-fact-card'>
             <b>100</b>
-            <span>POINTS DU BARÈME ALGORITHMIQUE</span>
+            <span>POINTS DU BARÈME ALGORITHMIQUE TRANSPARENT ET VÉRIFIABLE</span>
+          </div>
+          <div className='nr-fact-card'>
+            <b>0 ms</b>
+            <span>LATENCE DANS LE CALCUL D'EXPÉRIENCE EN POSTE ACTUEL</span>
           </div>
         </div>
       </section>
 
       {/* ====================================================================
-          4. SECTION VISION & IMPACT AVEC SVG SIGNAL THREAD
+          4. LE PARCOURS DU MÉRITE RÉPUBLICAIN (INTERACTIVE 5-STAGE PIPELINE)
           ==================================================================== */}
-      <section className='ref-impact' id='ref-vision'>
-        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div className='ref-section-top'>
-            <span>LA PLATEFORME NATIONALE</span>
-            <span>DU DOSSIER AU CLASSEMENT OFFICIEL</span>
-          </div>
-
-          <div className='ref-impact-headline'>
-            <div className='ref-impact-start'>
-              <small>DU DÉPÔT NUMÉRIQUE</small>
-              <h3>Un dossier <em>complet.</em></h3>
-            </div>
-            <div className='ref-impact-end'>
-              <small>À LA SÉLECTION OFFICIELLE</small>
-              <h3>Un barème <em>équitable.</em></h3>
-            </div>
-          </div>
-
-          {/* Animated SVG Signal Path */}
-          <div className='ref-impact-thread-wrap'>
-            <svg className='ref-impact-thread' viewBox='0 0 1000 180' preserveAspectRatio='none'>
-              <path className='ref-impact-track' d='M 30 90 Q 250 10, 500 90 T 970 90' />
-              <path className='ref-impact-signal' d='M 30 90 Q 250 10, 500 90 T 970 90' />
-              <circle cx='30' cy='90' r='6' />
-              <circle cx='500' cy='90' r='5' />
-              <circle cx='970' cy='90' r='6' />
-            </svg>
-          </div>
-
-          <div className='row align-items-center g-5'>
-            <div className='col-lg-7'>
-              <h2 style={{ fontSize: 'clamp(34px, 3.8vw, 54px)', lineHeight: '1.15', marginBottom: '24px' }}>
-                La plateforme relie les besoins, les concours, l’audit des pièces, la notation algorithmique et les convocations.
-              </h2>
-              <p style={{ color: '#adb7b8', fontSize: '16px', lineHeight: '1.8' }}>
-                Candidats, commissions d’audit, recruteurs RH et auditeurs externes partagent un cycle commun.
-                Chaque acteur retrouve ses actions. Chaque dossier reste certifié, infalsifiable et traçable en temps réel.
-              </p>
-            </div>
-            <div className='col-lg-5'>
-              <div style={{ background: 'rgba(10, 18, 21, 0.85)', border: '1px solid rgba(127, 219, 227, 0.25)', borderRadius: '12px', padding: '30px' }}>
-                <div className='ref-hud-pill mb-3'>
-                  <span className='ref-dot-pulse'></span>
-                  <span>GARANTIE DE MÉRITE</span>
-                </div>
-                <h4 style={{ color: '#fff', fontSize: '20px', marginBottom: '14px' }}>Élimination Totale du Biais</h4>
-                <p style={{ color: '#8da4ac', fontSize: '13.5px', lineHeight: '1.7', marginBottom: '20px' }}>
-                  Aucune note ne peut être modifiée sans justificatif visuel certifié par un double contrôle de la commission.
-                  L’algorithme applique le barème sur 100 points de manière égale pour tous les candidats marocains.
-                </p>
-                <a href='#ref-spaces' className='ref-button' style={{ minHeight: '42px', padding: '0 20px', fontSize: '10px' }}>
-                  Découvrir les espaces métier <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
-                </a>
+      <section className='nr-pipeline-section' id='nr-pipeline'>
+        <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div className='nr-section-header'>
+            <div>
+              <div className='nr-hud-chip mb-2'>
+                <span>TRAÇABILITÉ TOTALE DE BOUT EN BOUT</span>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ====================================================================
-          5. LE SIGNATURE CELESTIAL ORBIT RADAR (ref-relay-orbit)
-          Inspiré directement d'ingfron.ehcgroupe.ma
-          ==================================================================== */}
-      <section className='ref-relay' id='ref-relay'>
-        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div className='ref-section-top'>
-            <span>LE CYCLE OFFICIEL DU RECRUTEMENT</span>
-            <span>0{activeCycleIndex + 1} / 06 · UNE ÉTAPE · DES ACTEURS</span>
-          </div>
-
-          <div className='ref-relay-layout'>
-            <div className='ref-relay-copy'>
               <h2>
-                <span>Le cycle.</span><br />
-                <span><em>Entre vos institutions.</em></span>
+                Le Parcours <em>du Mérite.</em><br />
+                En 5 étapes certifiées.
               </h2>
-              <p>
-                Un besoin s’exprime, une commission audite, le barème classe, une convocation prend vie.
-                Les étapes défilent pour révéler les acteurs qui y contribuent. Vous pouvez aussi choisir un numéro sur l'orbite.
-              </p>
-
-              <div className='ref-relay-detail' key={activeCycleIndex}>
-                <div className='ref-eyebrow'>
-                  ÉTAPE {currentStage.num} · {currentStage.role.toUpperCase()}
-                </div>
-                <h3>{currentStage.title}</h3>
-                <p>{currentStage.desc}</p>
-                <ul>
-                  {currentStage.points.map((pt, i) => (
-                    <li key={i}>
-                      <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><polyline points='20 6 9 17 4 12'></polyline></svg>
-                      <span>{pt}</span>
-                    </li>
-                  ))}
-                </ul>
-                <a href='#ref-spaces' className='ref-button' style={{ minHeight: '44px', padding: '0 20px', fontSize: '10.5px' }}>
-                  Explorer cet espace métier <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
-                </a>
-              </div>
             </div>
-
-            <div className='ref-relay-diagram'>
-              <div className='ref-relay-orbit'>
-                <svg viewBox='0 0 420 420'>
-                  <circle cx='210' cy='210' r='151' className='ref-relay-track'></circle>
-                  <circle cx='210' cy='210' r='112' className='ref-relay-inner'></circle>
-                  <circle cx='210' cy='210' r='151' className='ref-relay-flow'></circle>
-
-                  {/* Radiating connector lines */}
-                  <line x1='210' y1='98' x2='210' y2='59' className={activeCycleIndex === 0 ? 'is-active' : ''}></line>
-                  <line x1='307' y1='154' x2='341' y2='135' className={activeCycleIndex === 1 ? 'is-active' : ''}></line>
-                  <line x1='307' y1='266' x2='341' y2='286' className={activeCycleIndex === 2 ? 'is-active' : ''}></line>
-                  <line x1='210' y1='322' x2='210' y2='361' className={activeCycleIndex === 3 ? 'is-active' : ''}></line>
-                  <line x1='113' y1='266' x2='79' y2='286' className={activeCycleIndex === 4 ? 'is-active' : ''}></line>
-                  <line x1='113' y1='154' x2='79' y2='135' className={activeCycleIndex === 5 ? 'is-active' : ''}></line>
-                </svg>
-
-                <div className='ref-relay-center'>
-                  <span>RECRUTEMENT<span>.MA</span></span>
-                  <p>{currentStage.short}.<br /><em>Certifié.</em></p>
-                  <span>0{activeCycleIndex + 1} / 06</span>
-                </div>
-
-                <div className='ref-relay-nodes'>
-                  <button style={{ left: '50%', top: '14%' }} aria-pressed={activeCycleIndex === 0} onClick={() => setActiveCycleIndex(0)}>
-                    <span>01</span>
-                    <span>Besoins</span>
-                  </button>
-                  <button style={{ left: '81.18%', top: '32%' }} aria-pressed={activeCycleIndex === 1} onClick={() => setActiveCycleIndex(1)}>
-                    <span>02</span>
-                    <span>Concours</span>
-                  </button>
-                  <button style={{ left: '81.18%', top: '68%' }} aria-pressed={activeCycleIndex === 2} onClick={() => setActiveCycleIndex(2)}>
-                    <span>03</span>
-                    <span>Dépôt</span>
-                  </button>
-                  <button style={{ left: '50%', top: '86%' }} aria-pressed={activeCycleIndex === 3} onClick={() => setActiveCycleIndex(3)}>
-                    <span>04</span>
-                    <span>Audit</span>
-                  </button>
-                  <button style={{ left: '18.82%', top: '68%' }} aria-pressed={activeCycleIndex === 4} onClick={() => setActiveCycleIndex(4)}>
-                    <span>05</span>
-                    <span>Barème</span>
-                  </button>
-                  <button style={{ left: '18.82%', top: '32%' }} aria-pressed={activeCycleIndex === 5} onClick={() => setActiveCycleIndex(5)}>
-                    <span>06</span>
-                    <span>Convocations</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className='ref-relay-transport'>
-                <div>
-                  <span>RELAIS AUTOMATIQUE · TEMPO ACTIF</span>
-                  <div className='ref-relay-timer'>
-                    <i key={activeCycleIndex}></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* 6. Running Marquee Ticker */}
-        <div className='ref-relay-marquee'>
-          <div>
-            <span>
-              <span>Recueillir<i>↗</i></span>
-              <span className='is-outline'>Publier<i>↗</i></span>
-              <span>Postuler<i>↗</i></span>
-              <span className='is-outline'>Auditer<i>↗</i></span>
-              <span>Classer<i>↗</i></span>
-              <span className='is-outline'>Convoquer<i>↗</i></span>
-            </span>
-            <span>
-              <span>Recueillir<i>↗</i></span>
-              <span className='is-outline'>Publier<i>↗</i></span>
-              <span>Postuler<i>↗</i></span>
-              <span className='is-outline'>Auditer<i>↗</i></span>
-              <span>Classer<i>↗</i></span>
-              <span className='is-outline'>Convoquer<i>↗</i></span>
-            </span>
-          </div>
-        </div>
-      </section>
-
-      {/* ====================================================================
-          7. LES 5 ESPACES MÉTIER AVEC FOLIO CARD 3D FLOTTANTE (ref-spaces)
-          ==================================================================== */}
-      <section className='ref-spaces' id='ref-spaces'>
-        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div className='ref-section-top' style={{ borderColor: 'rgba(17, 20, 21, 0.15)', color: '#626a6c' }}>
-            <span>LES ESPACES MÉTIER</span>
-            <span>CINQ REGARDS · UN MÊME CYCLE NATIONAL</span>
-          </div>
-
-          <div className='ref-spaces-heading'>
-            <h2>
-              <span>Votre rôle.</span><br />
-              <em>Votre espace.</em>
-            </h2>
             <p>
-              Une plateforme unifiée où chaque acteur retrouve ses outils métiers dédiés,
-              garantissant fluidité opérationnelle et zéro retard de traitement.
+              Chaque concours national suit une procédure rigoureusement auditée, garantissant aux candidats
+              comme aux recruteurs un traitement impartial, transparent et conforme aux plus hauts standards réglementaires.
             </p>
           </div>
 
-          <div className='ref-exhibit-stage'>
-            <div className='ref-exhibit-rail'>
-              <p>CHOISISSEZ VOTRE REGARD</p>
-              <div className='ref-exhibit-tabs'>
-                {ROLES_DATA.map((role, idx) => (
-                  <button
-                    key={role.id}
-                    aria-selected={activeRoleIndex === idx}
-                    onClick={() => setActiveRoleIndex(idx)}
-                  >
-                    <span>0{idx + 1}</span>
-                    <span>
-                      {role.name}
-                      <small>{role.tag}</small>
-                    </span>
-                    <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className='ref-exhibit-panel' key={currentRole.id}>
-              <div className='ref-exhibit-story'>
-                <div className='ref-eyebrow'>ESPACE 0{activeRoleIndex + 1} · {currentRole.name.toUpperCase()}</div>
-                <h3>{currentRole.title}</h3>
-                <p>{currentRole.desc}</p>
-                <ul>
-                  {currentRole.items.map((it, i) => (
-                    <li key={i}>
-                      <svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><polyline points='20 6 9 17 4 12'></polyline></svg>
-                      <span>{it}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className='d-flex align-items-center gap-3'>
-                  <Link to='/login' className='ref-button'>
-                    Accéder à cet espace <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
-                  </Link>
-                </div>
-              </div>
-
-              {/* 3D Floating Folio Art */}
-              <div className='ref-exhibit-art'>
-                <span className='ref-exhibit-watermark'>0{activeRoleIndex + 1}</span>
-                <div className='ref-exhibit-spine'>
-                  <span>PORTAIL NATIONAL</span>
-                  <i></i>
-                  <span>{currentRole.name.toUpperCase()}</span>
-                </div>
-                <div className='ref-exhibit-folio'>
-                  <div className='ref-exhibit-folio-top'>
-                    <span>Recrutement<span>.ma</span></span>
-                    <span>ESPACE 0{activeRoleIndex + 1}</span>
-                  </div>
-                  <p className='ref-exhibit-folio-kicker'>{currentRole.name}</p>
-                  <h4>{currentRole.folioTitle}</h4>
-                  <ol>
-                    {currentRole.steps.map((st, i) => (
-                      <li key={i}>
-                        <span>{st.num}</span>
-                        <div>
-                          <strong>{st.title}</strong>
-                          <p>{st.desc}</p>
-                        </div>
-                      </li>
-                    ))}
-                  </ol>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ====================================================================
-          8. VITRINE DES CONCOURS NATIONAUX (ref-offres)
-          ==================================================================== */}
-      <section className='ref-offres' id='ref-offres'>
-        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div className='ref-section-top'>
-            <span>CONCOURS &amp; AVIS OFFICIELS</span>
-            <span>RÉSEAU DES GRANDES INSTITUTIONS BANCAIRES ET PUBLIQUES</span>
-          </div>
-
-          <div className='ref-offres-header'>
-            <div>
-              <h2>
-                <span>Concours ouverts.</span><br />
-                <em>Postulez en ligne.</em>
-              </h2>
-            </div>
-            <div style={{ maxWidth: '380px' }}>
-              <input
-                type='text'
-                className='form-control bg-dark text-white border-secondary'
-                placeholder='Rechercher un poste, ville ou institution...'
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ borderRadius: '999px', padding: '12px 20px', fontSize: '13px' }}
-              />
-            </div>
-          </div>
-
-          <div className='ref-filters-strip'>
-            {['ALL', 'ABB', 'CIH', 'OCP', 'MEF', 'BOA', 'CDG'].map((sigle) => (
+          {/* Pipeline Stage Buttons */}
+          <div className='nr-pipeline-nav'>
+            {PIPELINE_STAGES.map((st, idx) => (
               <button
-                key={sigle}
-                className={`ref-filter-pill ${selectedSigle === sigle ? 'is-active' : ''}`}
-                onClick={() => setSelectedSigle(sigle)}
+                key={st.num}
+                className={`nr-pipeline-tab ${activeStageIndex === idx ? 'is-active' : ''}`}
+                onClick={() => setActiveStageIndex(idx)}
               >
-                {sigle === 'ALL' ? 'Toutes les institutions' : sigle}
+                <span className='num'>ÉTAPE {st.num}</span>
+                <strong>{st.short}</strong>
               </button>
             ))}
           </div>
 
-          <div className='ref-offres-grid'>
+          {/* Pipeline Interactive Card */}
+          <div className='nr-pipeline-card' key={currentStage.num}>
+            <div className='nr-pipeline-card-left'>
+              <div className='nr-hud-chip mb-3' style={{ fontSize: '9px' }}>
+                <span>{currentStage.tag}</span>
+              </div>
+              <h3>{currentStage.title}</h3>
+              <p>{currentStage.desc}</p>
+              <ul className='nr-pipeline-points'>
+                {currentStage.points.map((pt, i) => (
+                  <li key={i}>
+                    <i className='fas fa-check-circle'></i>
+                    <span>{pt}</span>
+                  </li>
+                ))}
+              </ul>
+
+              <div className='d-flex align-items-center gap-3'>
+                <Link to='/register' className='nr-btn'>
+                  Commencer mon dossier <i className='fas fa-arrow-right ms-1'></i>
+                </Link>
+                <a href='#nr-simulateur' className='nr-btn nr-btn-outline'>
+                  Simuler mon barème
+                </a>
+              </div>
+            </div>
+
+            {/* Right Interactive Visualizer Box */}
+            <div className='nr-pipeline-visual'>
+              <div className='nr-pipeline-visual-header'>
+                <span>MÉTRIQUE OPÉRATIONNELLE</span>
+                <span className='nr-pipeline-visual-badge'>{currentStage.badge}</span>
+              </div>
+
+              <div className='text-center py-4'>
+                <div style={{ fontSize: '48px', color: 'var(--nr-mint)', fontFamily: 'var(--font-serif)', marginBottom: '8px' }}>
+                  {currentStage.metric}
+                </div>
+                <div className='text-muted small'>Garantie d'intégrité nationale certifiée EHC</div>
+              </div>
+
+              <div className='p-3 rounded' style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(0, 242, 169, 0.15)' }}>
+                <div className='d-flex justify-content-between text-muted small mb-2' style={{ fontSize: '11px' }}>
+                  <span>Conformité Réglementaire</span>
+                  <span className='text-success'>100% Validé</span>
+                </div>
+                <div className='d-flex justify-content-between text-muted small mb-2' style={{ fontSize: '11px' }}>
+                  <span>Temps Moyen d'Instruction</span>
+                  <span className='text-info'>&lt; 48 Heures</span>
+                </div>
+                <div className='d-flex justify-content-between text-muted small' style={{ fontSize: '11px' }}>
+                  <span>Traçabilité SHA-256</span>
+                  <span className='text-warning'>Immuable</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          5. RUNNING MARQUEE CINÉTIQUE DU MÉRITE RÉPUBLICAIN
+          ==================================================================== */}
+      <div className='nr-marquee'>
+        <div className='nr-marquee-track'>
+          <div className='nr-marquee-group'>
+            <span>AL BARID BANK<i>✦</i></span>
+            <span className='outline'>GROUPE OCP<i>✦</i></span>
+            <span>CIH BANK<i>✦</i></span>
+            <span className='outline'>MINISTÈRE DES FINANCES<i>✦</i></span>
+            <span>BANK OF AFRICA<i>✦</i></span>
+            <span className='outline'>CDG MAROC<i>✦</i></span>
+            <span>MÉRITE RÉPUBLICAIN<i>✦</i></span>
+            <span className='outline'>CONFORMITÉ CNDP<i>✦</i></span>
+          </div>
+          <div className='nr-marquee-group'>
+            <span>AL BARID BANK<i>✦</i></span>
+            <span className='outline'>GROUPE OCP<i>✦</i></span>
+            <span>CIH BANK<i>✦</i></span>
+            <span className='outline'>MINISTÈRE DES FINANCES<i>✦</i></span>
+            <span>BANK OF AFRICA<i>✦</i></span>
+            <span className='outline'>CDG MAROC<i>✦</i></span>
+            <span>MÉRITE RÉPUBLICAIN<i>✦</i></span>
+            <span className='outline'>CONFORMITÉ CNDP<i>✦</i></span>
+          </div>
+        </div>
+      </div>
+
+      {/* ====================================================================
+          6. VITRINE DES CONCOURS NATIONAUX EN COURS
+          ==================================================================== */}
+      <section className='nr-offres-section' id='nr-offres'>
+        <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div className='nr-section-header'>
+            <div>
+              <div className='nr-hud-chip mb-2'>
+                <span>AVIS DE RECRUTEMENT OFFICIELS</span>
+              </div>
+              <h2>
+                Concours ouverts. <em>Postulez en ligne.</em>
+              </h2>
+            </div>
+            <p>
+              Consultez les offres publiées par les institutions habilitées.
+              Chaque concours fait l'objet d'un avis officiel téléchargeable avec cahier des charges et barème détaillé.
+            </p>
+          </div>
+
+          <div className='nr-filters-row'>
+            {[
+              { id: 'ALL', label: 'Toutes les institutions' },
+              { id: 'ABB', label: 'Al Barid Bank' },
+              { id: 'CIH', label: 'CIH Bank' },
+              { id: 'OCP', label: 'Groupe OCP' },
+              { id: 'MEF', label: 'Ministère des Finances' },
+              { id: 'BOA', label: 'Bank of Africa' },
+              { id: 'CDG', label: 'CDG Maroc' },
+            ].map((inst) => (
+              <button
+                key={inst.id}
+                className={`nr-filter-btn ${selectedSigle === inst.id ? 'is-active' : ''}`}
+                onClick={() => setSelectedSigle(inst.id)}
+              >
+                {inst.label}
+              </button>
+            ))}
+          </div>
+
+          <div className='nr-offres-grid'>
             {filteredOffres.map((offre) => (
-              <div key={offre._id} className='ref-offre-card'>
-                <div className='ref-offre-badge-strip'>
-                  <span className='ref-offre-badge'>{offre.entreprise}</span>
+              <div key={offre._id} className='nr-offre-card'>
+                <div className='nr-offre-top-bar'>
+                  <span className='nr-institution-tag'>{offre.entreprise}</span>
                   {offre.urgent && (
                     <span className='badge bg-danger text-white' style={{ fontSize: '9px', letterSpacing: '0.1em' }}>
                       CLÔTURE IMMINENTE
@@ -1016,20 +745,20 @@ const HomeScreen = () => {
 
                 <h4>{offre.titre}</h4>
 
-                <div className='ref-offre-meta'>
+                <div className='nr-offre-details'>
                   <span><i className='fas fa-map-marker-alt'></i> {offre.ville}</span>
                   <span><i className='fas fa-graduation-cap'></i> {offre.niveau}</span>
-                  <span><i className='fas fa-users'></i> {offre.postes} Postes budgétaires</span>
-                  <span><i className='fas fa-clock'></i> Clôture : {offre.cloture}</span>
+                  <span><i className='fas fa-users'></i> {offre.postes} Postes budgétaires ouverts</span>
+                  <span><i className='fas fa-clock'></i> {offre.cloture}</span>
                 </div>
 
-                <div className='ref-offre-foot'>
+                <div className='nr-offre-footer'>
                   <Link
                     to={userInfo ? '/profil' : '/register'}
-                    className='ref-button'
-                    style={{ minHeight: '38px', padding: '0 18px', fontSize: '10px' }}
+                    className='nr-btn'
+                    style={{ minHeight: '36px', padding: '0 18px', fontSize: '10px' }}
                   >
-                    Postuler à ce concours <svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
+                    Postuler en Ligne <i className='fas fa-arrow-right ms-1'></i>
                   </Link>
 
                   <a
@@ -1049,48 +778,47 @@ const HomeScreen = () => {
       </section>
 
       {/* ====================================================================
-          9. SIMULATEUR DE BARÈME INTERACTIF COMPASS RADAR (ref-funding)
+          7. SIMULATEUR DE BARÈME DYNAMIQUE SUR 100 POINTS
           ==================================================================== */}
-      <section className='ref-funding' id='ref-budget'>
-        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div className='ref-section-top'>
-            <span>SIMULATEUR DE BARÈME DYNAMIQUE</span>
-            <span>TRANSPARENCE ALGORITHMIQUE SUR 100 POINTS</span>
-          </div>
-
-          <div className='ref-funding-heading'>
-            <h2>
-              <span>Votre score.</span><br />
-              <em>Avant de postuler.</em>
-            </h2>
-            <p style={{ color: '#9ab4be', maxWidth: '420px', fontSize: '14.5px' }}>
-              Ajustez vos critères réels (diplôme, mention, années d’expérience) et observez la jauge
-              calculer instantanément votre positionnement au barème national.
+      <section className='nr-sim-section' id='nr-simulateur'>
+        <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div className='nr-section-header'>
+            <div>
+              <div className='nr-hud-chip mb-2'>
+                <span>TRANSPARENCE ALGORITHMIQUE TOTALE</span>
+              </div>
+              <h2>
+                Simulateur de Barème. <em>Calculez votre score.</em>
+              </h2>
+            </div>
+            <p>
+              Évaluez votre positionnement prévisionnel avant même de soumettre votre dossier.
+              Ajustez vos critères académiques et professionnels selon le barème officiel sur 100 points.
             </p>
           </div>
 
-          <div className='ref-funding-panel'>
+          <div className='nr-sim-layout'>
             {/* Left Controls */}
-            <div className='ref-sim-controls'>
-              <div className='ref-sim-group'>
+            <div className='nr-sim-box'>
+              <div className='nr-sim-field'>
                 <label>
-                  <span>1. Diplôme / Niveau Académique</span>
-                  <span>{simNiveau === 'bac2' ? '25 pts' : simNiveau === 'bac3' ? '35 pts' : simNiveau === 'bac5' ? '45 pts' : '50 pts'}</span>
+                  <span>1. Diplôme / Niveau d'études</span>
+                  <span className='pts'>{simNiveau === 'bac2' ? '25 pts' : simNiveau === 'bac3' ? '35 pts' : simNiveau === 'bac5' ? '45 pts' : '48 pts'}</span>
                 </label>
-                <select className='ref-sim-select' value={simNiveau} onChange={(e) => setSimNiveau(e.target.value)}>
+                <select className='nr-sim-select' value={simNiveau} onChange={(e) => setSimNiveau(e.target.value)}>
                   <option value='bac2'>Bac +2 (DUT, BTS, DTS, DEUG)</option>
                   <option value='bac3'>Bac +3 (Licence Fondamentale / Professionnelle)</option>
-                  <option value='bac5'>Bac +5 (Master, Diplôme d’Ingénieur d’État, ENCG, ISCAE)</option>
+                  <option value='bac5'>Bac +5 (Master, Diplôme d'Ingénieur d'État, ENCG, ISCAE)</option>
                   <option value='doctorat'>Doctorat / Ph.D Spécialisé</option>
                 </select>
               </div>
 
-              <div className='ref-sim-group'>
+              <div className='nr-sim-field'>
                 <label>
-                  <span>2. Mention au Diplôme Exigé</span>
-                  <span>{simMention === 'passable' ? '8 pts' : simMention === 'assez_bien' ? '14 pts' : simMention === 'bien' ? '18 pts' : '20 pts'}</span>
+                  <span>2. Mention obtenue au diplôme requis</span>
+                  <span className='pts'>{simMention === 'passable' ? '8 pts' : simMention === 'assez_bien' ? '14 pts' : simMention === 'bien' ? '18 pts' : '22 pts'}</span>
                 </label>
-                <select className='ref-sim-select' value={simMention} onChange={(e) => setSimMention(e.target.value)}>
+                <select className='nr-sim-select' value={simMention} onChange={(e) => setSimMention(e.target.value)}>
                   <option value='passable'>Mention Passable (10.00 à 11.99)</option>
                   <option value='assez_bien'>Mention Assez Bien (12.00 à 13.99)</option>
                   <option value='bien'>Mention Bien (14.00 à 15.99)</option>
@@ -1098,47 +826,56 @@ const HomeScreen = () => {
                 </select>
               </div>
 
-              <div className='ref-sim-group'>
+              <div className='nr-sim-field'>
                 <label>
-                  <span>3. Expérience Professionnelle Validée</span>
-                  <span>{simExp} an(s) · {Math.min(simExp * 3, 30)} pts</span>
+                  <span>3. Expérience professionnelle cumulée</span>
+                  <span className='pts'>{simExp} an(s) · {Math.min(simExp * 3, 30)} pts</span>
                 </label>
                 <input
                   type='range'
-                  className='ref-sim-range'
+                  className='nr-sim-range'
                   min='0'
                   max='10'
                   step='1'
                   value={simExp}
                   onChange={(e) => setSimExp(Number(e.target.value))}
                 />
-                <div className='d-flex justify-content-between mt-2 text-muted small'>
+                <div className='d-flex justify-content-between mt-2 text-muted small' style={{ fontSize: '11px' }}>
                   <span>Débutant (0 an)</span>
                   <span>5 ans</span>
-                  <span>10 ans et +</span>
+                  <span>10 ans et plus (Max 30 pts)</span>
                 </div>
               </div>
 
-              <div className='p-3 rounded' style={{ background: 'rgba(25, 179, 194, 0.08)', border: '1px solid rgba(127, 219, 227, 0.2)' }}>
-                <small className='text-info d-block mb-1'>
-                  <i className='fas fa-info-circle me-1'></i> NOUVELLE FONCTIONNALITÉ POSTE ACTUEL
-                </small>
-                <p className='small text-muted mb-0' style={{ fontSize: '11px', lineHeight: '1.5' }}>
-                  Si vous êtes en poste aujourd'hui, cochez simplement <em>« Toujours en poste »</em> dans votre profil candidat.
-                  L’algorithme calcule automatiquement vos mois jusqu’à aujourd’hui sans bloquer votre date.
+              <div className='p-3 rounded mt-4' style={{ background: 'rgba(0, 242, 169, 0.08)', border: '1px solid rgba(0, 242, 169, 0.25)' }}>
+                <div className='d-flex align-items-center justify-content-between mb-2'>
+                  <span className='fw-bold text-white small'>
+                    <i className='fas fa-briefcase text-success me-2'></i> Option "Toujours en poste"
+                  </span>
+                  <span className='badge bg-success text-dark fw-bold' style={{ fontSize: '9px' }}>ACTIF</span>
+                </div>
+                <p className='text-muted small mb-0' style={{ fontSize: '11.5px', lineHeight: '1.6' }}>
+                  Dans votre dossier candidat, il vous suffit de cocher <em>« Poste actuel »</em>.
+                  Le moteur calcule automatiquement vos mois d'ancienneté jusqu'à aujourd'hui sans bloquer votre date de fin.
                 </p>
               </div>
             </div>
 
-            {/* Right Compass Radar Gauge */}
-            <div className='ref-funding-compass'>
+            {/* Right Neon Compass Gauge */}
+            <div className='nr-gauge-wrap'>
               <svg viewBox='0 0 320 320'>
-                <circle cx='160' cy='160' r='130' className='ref-funding-track' />
+                <defs>
+                  <linearGradient id='nr-gauge-gradient' x1='0%' y1='0%' x2='100%' y2='0%'>
+                    <stop offset='0%' stopColor='#00f2a9' />
+                    <stop offset='100%' stopColor='#00d9f5' />
+                  </linearGradient>
+                </defs>
+                <circle cx='160' cy='160' r='130' className='nr-gauge-track' />
                 <circle
                   cx='160'
                   cy='160'
                   r='130'
-                  className='ref-funding-arc-2'
+                  className='nr-gauge-active'
                   style={{
                     strokeDasharray: gaugeCircumference,
                     strokeDashoffset: gaugeDashoffset,
@@ -1146,13 +883,13 @@ const HomeScreen = () => {
                 />
               </svg>
 
-              <div className='ref-funding-center'>
-                <span>SCORE SIMULÉ</span>
+              <div className='nr-gauge-center'>
+                <span className='lbl'>NOTE PRÉVISIONNELLE</span>
                 <b>
                   {simScore}
                   <em>/100</em>
                 </b>
-                <div className='ref-funding-status'>
+                <div className='nr-gauge-verdict'>
                   <i className='fas fa-check-circle text-success me-1'></i>
                   <span>
                     {simScore >= 75
@@ -1169,36 +906,79 @@ const HomeScreen = () => {
       </section>
 
       {/* ====================================================================
-          10. CYBER PORTAL DOOR (ref-launch)
+          8. LES 4 ESPACES MÉTIER DÉDIÉS
           ==================================================================== */}
-      <section className='ref-launch'>
-        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div className='ref-launch-layout'>
-            <div className='ref-launch-copy'>
-              <div className='ref-eyebrow'>PORTAIL CENTRALISÉ · SESSION 2026</div>
+      <section className='nr-espaces-section' id='nr-espaces'>
+        <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div className='nr-section-header'>
+            <div>
+              <div className='nr-hud-chip mb-2'>
+                <span>ENVIRONNEMENTS DÉDIÉS</span>
+              </div>
               <h2>
-                Entrez <em>dans le cycle.</em>
+                Quatre espaces. <em>Une seule exigence.</em>
               </h2>
+            </div>
+            <p>
+              La plateforme interconnecte l'ensemble des parties prenantes du concours à travers des interfaces sur-mesure,
+              conçues pour éliminer les retards et fluidifier chaque prise de décision.
+            </p>
+          </div>
+
+          <div className='nr-espaces-grid'>
+            <div className='nr-espace-card'>
+              <div className='nr-espace-icon'>
+                <i className='fas fa-user-graduate'></i>
+              </div>
+              <h4>Espace Candidat</h4>
               <p>
-                Créez votre dossier candidat sécurisé, téléversez vos justificatifs
-                et bénéficiez d’une égalité républicaine totale garantie par notre commission d'audit.
+                Créez votre profil, téléversez vos diplômes et justificatifs d'expérience,
+                suivez l'audit en direct et téléchargez votre convocation officielle avec QR-Code.
               </p>
-              <Link to='/register' className='ref-button'>
-                Créer mon dossier candidat <svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><path d='M7 7h10v10'></path><path d='M7 17 17 7'></path></svg>
+              <Link to='/register' className='nr-btn nr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+                Créer Mon Espace <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
 
-            <div className='ref-launch-art'>
-              <svg className='ref-launch-door' viewBox='0 0 400 480'>
-                <path className='ref-launch-frame' d='M80 440 V180 A120 120 0 0 1 320 180 V440' />
-                <path className='ref-launch-flow' d='M80 440 V180 A120 120 0 0 1 320 180 V440' />
-              </svg>
+            <div className='nr-espace-card'>
+              <div className='nr-espace-icon'>
+                <i className='fas fa-balance-scale'></i>
+              </div>
+              <h4>Commission d'Audit</h4>
+              <p>
+                Interface écran scindé pour vérifier les relevés originaux scannés, ajuster immédiatement les notes
+                en cas d'erreur de saisie et certifier l'admissibilité en double contrôle.
+              </p>
+              <Link to='/login' className='nr-btn nr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+                Accès Contrôleur <i className='fas fa-arrow-right ms-1'></i>
+              </Link>
+            </div>
 
-              <Link to='/login' className='ref-launch-portal'>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '9px', letterSpacing: '0.15em', color: '#067782' }}>ACCÈS SÉCURISÉ</span>
-                <span className='ref-launch-portal-title'>Espace <em>Portail</em></span>
-                <p style={{ fontSize: '11px', color: '#617076', margin: '0' }}>Candidats, Commissions &amp; RH</p>
-                <i className='fas fa-arrow-right text-info mt-2'></i>
+            <div className='nr-espace-card'>
+              <div className='nr-espace-icon'>
+                <i className='fas fa-building'></i>
+              </div>
+              <h4>Recruteur RH (Banques)</h4>
+              <p>
+                Publiez des concours au nom de votre institution (Al Barid Bank, OCP, CIH, MEF...), paramétrez le barème
+                et exportez les listes officielles des candidats classés par ordre de mérite.
+              </p>
+              <Link to='/login' className='nr-btn nr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+                Espace Recruteur <i className='fas fa-arrow-right ms-1'></i>
+              </Link>
+            </div>
+
+            <div className='nr-espace-card'>
+              <div className='nr-espace-icon'>
+                <i className='fas fa-shield-alt'></i>
+              </div>
+              <h4>Direction &amp; CNDP</h4>
+              <p>
+                Supervision macroscopique, tableaux de bord de parité et d'équité régionale,
+                journal d'audit infalsifiable avec horodatage cryptographique SHA-256.
+              </p>
+              <Link to='/login' className='nr-btn nr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+                Supervision CNDP <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
           </div>
@@ -1206,68 +986,116 @@ const HomeScreen = () => {
       </section>
 
       {/* ====================================================================
-          11. FAQ ACCORDION (ref-questions)
+          9. SÉCURITÉ, GARANTIE ANTI-FRAUDE & ACCRÉDITATION CNDP
           ==================================================================== */}
-      <section className='ref-questions' id='ref-questions'>
-        <div className='container' style={{ maxWidth: '1280px', margin: '0 auto' }}>
-          <div className='ref-questions-grid'>
-            <div className='ref-questions-left'>
-              <div className='ref-eyebrow' style={{ color: '#067782' }}>TRANSPARENCE &amp; RÈGLEMENT</div>
-              <h2>
+      <section className='nr-security-section' id='nr-securite'>
+        <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div className='nr-security-box'>
+            <div>
+              <div className='nr-hud-chip mb-3'>
+                <span>CONFORMITÉ LOI 09-08</span>
+              </div>
+              <h2 style={{ fontSize: 'clamp(36px, 4vw, 56px)', marginBottom: '20px' }}>
+                La confiance républicaine. <em>Scellée par le code.</em>
+              </h2>
+              <p style={{ color: 'var(--nr-muted)', fontSize: '15px', lineHeight: '1.8' }}>
+                Notre plateforme garantit l'inviolabilité absolue des données personnelles et professionnelles des candidats.
+                Chaque consultation, chaque visa d'auditeur et chaque note réajustée est consignée dans un journal immuable
+                auditable par les autorités nationales compétentes.
+              </p>
+            </div>
+
+            <div className='nr-seal-card'>
+              <div className='d-flex align-items-center gap-3 mb-4'>
+                <i className='fas fa-certificate text-warning' style={{ fontSize: '32px' }}></i>
+                <div>
+                  <h5 className='text-white mb-1' style={{ fontFamily: 'var(--font-serif)', fontSize: '20px' }}>
+                    Sceau de Sécurité Cryptographique
+                  </h5>
+                  <span className='text-muted small'>Horodatage Certifié Conforme CNDP</span>
+                </div>
+              </div>
+
+              <div className='p-3 rounded mb-3' style={{ background: 'rgba(0, 0, 0, 0.4)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--nr-mint)' }}>
+                <code>ROOT_HASH: 7f8a9d023bf4e8c1...100%_SECURE</code><br />
+                <code>STATUS: AUDIT_TRAIL_ACTIVE · ZERO_BREACH</code>
+              </div>
+
+              <ul className='list-unstyled mb-0 text-muted small' style={{ fontSize: '12px', lineHeight: '1.8' }}>
+                <li><i className='fas fa-check text-success me-2'></i> Chiffrement AES-256 de l’ensemble des pièces scannées</li>
+                <li><i className='fas fa-check text-success me-2'></i> Protection intégrale conforme aux préconisations de la CNDP</li>
+                <li><i className='fas fa-check text-success me-2'></i> Élimination stricte de toute interférence dans le classement</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ====================================================================
+          10. FOIRE AUX QUESTIONS OFFICIELLES (FAQ ACCORDION)
+          ==================================================================== */}
+      <section className='nr-faq-section' id='nr-faq'>
+        <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
+          <div className='nr-faq-layout'>
+            <div>
+              <div className='nr-hud-chip mb-2'>
+                <span>ASSISTANCE AUX CANDIDATS</span>
+              </div>
+              <h2 style={{ fontSize: 'clamp(38px, 4.2vw, 65px)', marginBottom: '20px' }}>
                 Questions <em>fréquentes.</em>
               </h2>
-              <p>
-                Toutes les réponses officielles concernant la validation des pièces, l’horodatage de votre candidature
-                et le respect strict de la Loi 09-08 (CNDP).
+              <p style={{ color: 'var(--nr-muted)', fontSize: '15px', lineHeight: '1.8' }}>
+                Retrouvez les réponses réglementaires aux questions les plus posées lors du dépôt de dossier,
+                du calcul d'ancienneté et de l'instruction par la commission d'audit.
               </p>
             </div>
 
-            <div className='ref-faq-list'>
+            <div className='nr-faq-list'>
               <details open>
                 <summary>
-                  <span>Comment fonctionne l'option « Toujours en poste » ?</span>
-                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><line x1='12' y1='5' x2='12' y2='19'></line><line x1='5' y1='12' x2='19' y2='12'></line></svg>
+                  <span>Comment fonctionne l'option « Toujours en poste » pour les expériences ?</span>
+                  <i className='fas fa-plus'></i>
                 </summary>
                 <p>
-                  Si vous exercez actuellement une activité professionnelle, il vous suffit de cocher « Poste actuel ».
-                  Le système verrouille la date de fin et calcule automatiquement votre durée d’expérience jusqu’à aujourd’hui,
-                  sans nécessiter de date de fin arbitraire.
+                  Si vous exercez actuellement une activité professionnelle, il vous suffit de cocher « Poste actuel »
+                  lors de la saisie de votre expérience. La date de fin est automatiquement verrouillée à « Aujourd'hui »,
+                  et le moteur dynamique calcule précisément vos mois d'ancienneté cumulés sans bloquer votre validation.
                 </p>
               </details>
 
               <details>
                 <summary>
-                  <span>Que se passe-t-il si une note déclarée ne correspond pas au relevé ?</span>
-                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><line x1='12' y1='5' x2='12' y2='19'></line><line x1='5' y1='12' x2='19' y2='12'></line></svg>
+                  <span>Mon expérience dans la même année que le Bac est-elle acceptée ?</span>
+                  <i className='fas fa-plus'></i>
                 </summary>
                 <p>
-                  Les auditeurs de la commission effectuent un contrôle visuel à l’écran de vos relevés originaux scannés.
-                  En cas d’écart ou de faute de frappe, la note est réajustée selon la pièce officielle et le score est recalculé
-                  automatiquement avec traçabilité dans le journal d'audit.
+                  Oui. Le système applique désormais une validation intelligente par année : tant que votre expérience
+                  commence dans l'année d'obtention de votre Baccalauréat ou après, elle est immédiatement acceptée et soumise
+                  au barème de points sans blocage de date.
                 </p>
               </details>
 
               <details>
                 <summary>
-                  <span>Mon dossier est-il protégé et conforme aux règles CNDP ?</span>
-                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><line x1='12' y1='5' x2='12' y2='19'></line><line x1='5' y1='12' x2='19' y2='12'></line></svg>
+                  <span>Que se passe-t-il si j'ai commis une faute de frappe sur ma note ?</span>
+                  <i className='fas fa-plus'></i>
                 </summary>
                 <p>
-                  Absolument. Conformément à la Loi 09-08 relative à la protection des personnes physiques à l'égard du traitement
-                  des données à caractère personnel, vos documents sont chiffrés et accessibles uniquement aux membres habilités
-                  de la commission d'audit officielle.
+                  Les membres de la commission d'audit comparent visuellement chaque relevé de notes original téléversé
+                  avec les chiffres saisis. En cas de coquille mineure, l'auditeur réajuste la note selon le document officiel,
+                  garantissant que votre candidature ne soit pas pénalisée injustement.
                 </p>
               </details>
 
               <details>
                 <summary>
-                  <span>Quand et comment recevrai-je ma convocation officielle ?</span>
-                  <svg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round'><line x1='12' y1='5' x2='12' y2='19'></line><line x1='5' y1='12' x2='19' y2='12'></line></svg>
+                  <span>Comment et quand recevrai-je ma convocation officielle ?</span>
+                  <i className='fas fa-plus'></i>
                 </summary>
                 <p>
-                  Dès la clôture des audits par la commission, les listes des candidats admissibles sont arrêtées.
-                  Votre convocation nominative (avec centre d’examen, salle et QR-Code) sera téléchargeable directement
-                  depuis votre espace personnel.
+                  Dès la clôture de la phase d'audit par la commission, la liste des candidats admissibles est publiée.
+                  Votre convocation officielle nominative (comportant votre centre d'examen, salle, numéro de table et QR-Code)
+                  sera téléchargeable directement depuis votre espace personnel.
                 </p>
               </details>
             </div>
@@ -1276,58 +1104,58 @@ const HomeScreen = () => {
       </section>
 
       {/* ====================================================================
-          12. FOOTER DE HAUTE PRÉCISION (ref-footer)
+          11. FOOTER INSTITUTIONNEL HAUTE PRÉCISION
           ==================================================================== */}
-      <footer className='ref-footer'>
-        <div className='ref-footer-inner'>
+      <footer className='nr-footer'>
+        <div className='nr-footer-inner'>
           <div>
-            <div className='ref-brand' style={{ fontSize: '32px', marginBottom: '18px' }}>
-              Recrutement<span>.ma</span>
+            <div className='nr-brand' style={{ fontSize: '30px', marginBottom: '18px' }}>
+              RECRUTEMENT<span>.MA</span>
             </div>
-            <p style={{ maxWidth: '340px', lineHeight: '1.7', fontSize: '13px', color: '#8fa5ac' }}>
-              Portail National de Recrutement et de Gestion des Concours d’Accès aux Grandes Institutions Bancaires,
+            <p style={{ maxWidth: '340px', lineHeight: '1.7', fontSize: '13px', color: 'var(--nr-muted)' }}>
+              Portail National de Centralisation et de Gestion des Concours d’Accès aux Grandes Institutions Bancaires,
               Établissements Publics et Organismes Financiers au Maroc.
             </p>
-            <div className='ref-hud-pill mt-4'>
-              <span className='ref-dot-pulse'></span>
-              <span>LOI 09-08 · CNDP CONFORME</span>
+            <div className='nr-hud-chip mt-4' style={{ fontSize: '9px' }}>
+              <span className='nr-dot-live'></span>
+              <span>CONFORME LOI 09-08 · CNDP</span>
             </div>
           </div>
 
-          <div className='ref-footer-col'>
+          <div className='nr-footer-col'>
             <h5>La Plateforme</h5>
-            <a href='#ref-vision'>Notre Vision</a>
-            <a href='#ref-relay'>Le Cycle Radar</a>
-            <a href='#ref-spaces'>Les Espaces Métier</a>
-            <a href='#ref-budget'>Simulateur de Barème</a>
+            <a href='#nr-pipeline'>Le Parcours du Mérite</a>
+            <a href='#nr-offres'>Concours Ouverts</a>
+            <a href='#nr-simulateur'>Simulateur de Barème</a>
+            <a href='#nr-espaces'>Espaces Métier</a>
           </div>
 
-          <div className='ref-footer-col'>
-            <h5>Institutions</h5>
-            <a href='#ref-offres'>Al Barid Bank</a>
-            <a href='#ref-offres'>Groupe OCP</a>
-            <a href='#ref-offres'>CIH Bank</a>
-            <a href='#ref-offres'>Ministère des Finances</a>
-            <a href='#ref-offres'>Bank of Africa</a>
-            <a href='#ref-offres'>CDG Maroc</a>
+          <div className='nr-footer-col'>
+            <h5>Institutions Partenaires</h5>
+            <a href='#nr-offres'>Al Barid Bank</a>
+            <a href='#nr-offres'>Groupe OCP</a>
+            <a href='#nr-offres'>CIH Bank</a>
+            <a href='#nr-offres'>Ministère de l'Économie &amp; Finances</a>
+            <a href='#nr-offres'>Bank of Africa (BMCE)</a>
+            <a href='#nr-offres'>Caisse de Dépôt et de Gestion</a>
           </div>
 
-          <div className='ref-footer-col'>
+          <div className='nr-footer-col'>
             <h5>Accès Direct</h5>
             <Link to='/login'>Espace Recruteur RH</Link>
             <Link to='/login'>Espace Commission d'Audit</Link>
             <Link to='/register'>Créer Dossier Candidat</Link>
-            <a href='#ref-questions'>Assistance &amp; Règlement</a>
+            <a href='#nr-faq'>Assistance &amp; Règlement</a>
           </div>
         </div>
 
-        <div className='ref-footer-watermark'>
+        <div className='nr-footer-watermark'>
           RECRUTEMENT<span>.MA</span>
         </div>
 
-        <div className='ref-footer-bottom'>
+        <div className='nr-footer-bottom'>
           <span>© 2026 EHC Experts Human Capital — Portail National Recrutement.ma</span>
-          <span>TOUS DROITS RÉSERVÉS · SÉLECTION AU MÉRITE · CONFORME CNDP</span>
+          <span>SÉLECTION AU MÉRITE RÉPUBLICAIN · CONFORME CNDP MAROC</span>
         </div>
       </footer>
     </div>
