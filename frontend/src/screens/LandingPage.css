@@ -9,8 +9,8 @@
   /* Palette Souveraine : Obsidian Royal, Cyber Mint, Electric Azure, Gold Imperial */
   --xr-bg: #030712;
   --xr-bg-alt: #050d22;
-  --xr-card: rgba(8, 17, 38, 0.75);
-  --xr-card-hover: rgba(14, 28, 62, 0.9);
+  --xr-card: rgba(8, 17, 38, 0.78);
+  --xr-card-hover: rgba(14, 28, 62, 0.92);
   --xr-border: rgba(0, 242, 169, 0.2);
   --xr-border-glow: rgba(0, 242, 169, 0.55);
 
@@ -89,7 +89,326 @@
 }
 
 /* ==========================================================================
-   1. PROGRESSION & CURSEUR DYNAMIQUE HOLOGRAPHIQUE
+   SCROLL-DRIVEN ANIMATION ENGINE (AWWWARDS / APPLE PARALLAX EFFECT)
+   ========================================================================== */
+
+/* Fade Up */
+[data-scroll-reveal="fade-up"] {
+  opacity: 0;
+  transform: translateY(70px) scale(0.96);
+  filter: blur(6px);
+  transition: opacity 0.85s var(--xr-ease), transform 0.85s var(--xr-ease), filter 0.85s var(--xr-ease);
+  will-change: opacity, transform, filter;
+}
+
+[data-scroll-reveal="fade-up"].is-revealed {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  filter: blur(0);
+}
+
+/* Fade Down */
+[data-scroll-reveal="fade-down"] {
+  opacity: 0;
+  transform: translateY(-60px);
+  filter: blur(6px);
+  transition: opacity 0.85s var(--xr-ease), transform 0.85s var(--xr-ease), filter 0.85s var(--xr-ease);
+  will-change: opacity, transform, filter;
+}
+
+[data-scroll-reveal="fade-down"].is-revealed {
+  opacity: 1;
+  transform: translateY(0);
+  filter: blur(0);
+}
+
+/* Fade Left */
+[data-scroll-reveal="fade-left"] {
+  opacity: 0;
+  transform: translateX(-90px);
+  filter: blur(6px);
+  transition: opacity 0.85s var(--xr-ease), transform 0.85s var(--xr-ease), filter 0.85s var(--xr-ease);
+  will-change: opacity, transform, filter;
+}
+
+[data-scroll-reveal="fade-left"].is-revealed {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+}
+
+/* Fade Right */
+[data-scroll-reveal="fade-right"] {
+  opacity: 0;
+  transform: translateX(90px);
+  filter: blur(6px);
+  transition: opacity 0.85s var(--xr-ease), transform 0.85s var(--xr-ease), filter 0.85s var(--xr-ease);
+  will-change: opacity, transform, filter;
+}
+
+[data-scroll-reveal="fade-right"].is-revealed {
+  opacity: 1;
+  transform: translateX(0);
+  filter: blur(0);
+}
+
+/* Zoom In */
+[data-scroll-reveal="zoom-in"] {
+  opacity: 0;
+  transform: scale(0.82);
+  filter: blur(8px);
+  transition: opacity 0.9s var(--xr-ease), transform 0.9s var(--xr-ease), filter 0.9s var(--xr-ease);
+  will-change: opacity, transform, filter;
+}
+
+[data-scroll-reveal="zoom-in"].is-revealed {
+  opacity: 1;
+  transform: scale(1);
+  filter: blur(0);
+}
+
+/* Rotate In 3D */
+[data-scroll-reveal="rotate-in"] {
+  opacity: 0;
+  transform: translateY(70px) rotateX(25deg);
+  filter: blur(6px);
+  transition: opacity 0.95s var(--xr-ease), transform 0.95s var(--xr-ease), filter 0.95s var(--xr-ease);
+  will-change: opacity, transform, filter;
+}
+
+[data-scroll-reveal="rotate-in"].is-revealed {
+  opacity: 1;
+  transform: translateY(0) rotateX(0deg);
+  filter: blur(0);
+}
+
+/* Stagger Children Entrance Engine */
+.xr-stagger > * {
+  opacity: 0;
+  transform: translateY(55px) scale(0.94) rotateX(10deg);
+  filter: blur(4px);
+  transition: opacity 0.85s var(--xr-ease), transform 0.85s var(--xr-ease), filter 0.85s var(--xr-ease);
+  will-change: opacity, transform, filter;
+}
+
+.xr-stagger.is-revealed > * {
+  opacity: 1;
+  transform: translateY(0) scale(1) rotateX(0deg);
+  filter: blur(0);
+}
+
+.xr-stagger > *:nth-child(1) { transition-delay: 0.08s; }
+.xr-stagger > *:nth-child(2) { transition-delay: 0.18s; }
+.xr-stagger > *:nth-child(3) { transition-delay: 0.28s; }
+.xr-stagger > *:nth-child(4) { transition-delay: 0.38s; }
+.xr-stagger > *:nth-child(5) { transition-delay: 0.48s; }
+.xr-stagger > *:nth-child(6) { transition-delay: 0.58s; }
+.xr-stagger > *:nth-child(7) { transition-delay: 0.68s; }
+.xr-stagger > *:nth-child(8) { transition-delay: 0.78s; }
+
+/* ==========================================================================
+   FLOATING PARALLAX CYBER BADGES (AWWWARDS SCI-FI MARGINS)
+   ========================================================================== */
+
+.xr-floating-badges {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 120;
+  overflow: hidden;
+}
+
+.xr-float-badge {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(8, 17, 38, 0.72);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 242, 169, 0.25);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 242, 169, 0.15);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: #e2e8f0;
+  transition: transform 0.2s cubic-bezier(0.2, 0, 0, 1);
+  will-change: transform;
+}
+
+.xr-float-badge i {
+  font-size: 11px;
+}
+
+.xr-float-left-1 {
+  left: 28px;
+  top: 25%;
+  border-color: rgba(0, 242, 169, 0.35);
+}
+
+.xr-float-right-1 {
+  right: 60px;
+  top: 35%;
+  border-color: rgba(255, 209, 102, 0.35);
+  color: var(--xr-gold);
+}
+
+.xr-float-left-2 {
+  left: 32px;
+  top: 65%;
+  border-color: rgba(0, 217, 245, 0.35);
+  color: var(--xr-cyan);
+}
+
+.xr-float-right-2 {
+  right: 65px;
+  top: 75%;
+  border-color: rgba(0, 112, 243, 0.35);
+}
+
+@media (max-width: 1200px) {
+  .xr-floating-badges { display: none; }
+}
+
+/* ==========================================================================
+   SCROLL DOWN INDICATOR IN HERO
+   ========================================================================== */
+
+.xr-scroll-indicator {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 36px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.3s var(--xr-ease), opacity 0.3s;
+}
+
+.xr-scroll-indicator:hover {
+  transform: translateY(4px);
+}
+
+.xr-scroll-indicator-text {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  color: var(--xr-dim);
+  text-transform: uppercase;
+  transition: color 0.3s;
+}
+
+.xr-scroll-indicator:hover .xr-scroll-indicator-text {
+  color: var(--xr-mint);
+}
+
+.xr-scroll-indicator-mouse {
+  width: 20px;
+  height: 32px;
+  border-radius: 12px;
+  border: 1.5px solid rgba(0, 242, 169, 0.4);
+  display: flex;
+  justify-content: center;
+  padding-top: 6px;
+  box-shadow: 0 0 12px rgba(0, 242, 169, 0.15);
+}
+
+.xr-scroll-indicator-wheel {
+  width: 3px;
+  height: 7px;
+  border-radius: 3px;
+  background: var(--xr-mint);
+  animation: xr-wheel-bounce 1.6s infinite ease-in-out;
+}
+
+@keyframes xr-wheel-bounce {
+  0% { transform: translateY(0); opacity: 1; }
+  50% { transform: translateY(8px); opacity: 0.3; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+.xr-scroll-indicator-arrow {
+  color: var(--xr-mint);
+  font-size: 11px;
+  animation: xr-arrow-pulse 1.6s infinite ease-in-out;
+}
+
+@keyframes xr-arrow-pulse {
+  0%, 100% { opacity: 0.4; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(3px); }
+}
+
+/* ==========================================================================
+   VERTICAL HUD SCROLL NAVIGATOR (AWWWARDS SIDEBAR DOTS)
+   ========================================================================== */
+
+.xr-scroll-nav {
+  position: fixed;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 150;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  align-items: flex-end;
+}
+
+.xr-scroll-dot-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+}
+
+.xr-scroll-dot-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 0.15em;
+  color: var(--xr-dim);
+  opacity: 0;
+  transform: translateX(10px);
+  transition: opacity 0.3s, transform 0.3s, color 0.3s;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.xr-scroll-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(0, 242, 169, 0.3);
+  transition: all 0.35s var(--xr-ease);
+}
+
+.xr-scroll-dot-wrap:hover .xr-scroll-dot-label,
+.xr-scroll-dot-wrap.is-active .xr-scroll-dot-label {
+  opacity: 1;
+  transform: translateX(0);
+  color: var(--xr-mint);
+}
+
+.xr-scroll-dot-wrap.is-active .xr-scroll-dot {
+  width: 12px;
+  height: 12px;
+  background: var(--xr-mint);
+  border-color: #fff;
+  box-shadow: 0 0 12px var(--xr-mint);
+}
+
+@media (max-width: 1024px) {
+  .xr-scroll-nav { display: none; }
+}
+
+/* ==========================================================================
+   PROGRESSION & CURSEUR DYNAMIQUE HOLOGRAPHIQUE
    ========================================================================== */
 
 .xr-progress {
@@ -156,7 +475,7 @@
 }
 
 /* ==========================================================================
-   2. NAVBAR SUPRÊME FLOTTANTE ACRYLIQUE
+   NAVBAR SUPRÊME FLOTTANTE ACRYLIQUE
    ========================================================================== */
 
 .xr-nav {
@@ -300,7 +619,7 @@
 }
 
 /* ==========================================================================
-   3. HERO 3D : CANVAS PARTICULES, GLOBE HOLOGRAPHIQUE & RECHERCHE INSTANTANÉE
+   HERO 3D : GLOBE HOLOGRAPHIQUE & RECHERCHE INSTANTANÉE
    ========================================================================== */
 
 .xr-hero {
@@ -477,7 +796,7 @@
 }
 
 /* ==========================================================================
-   4. MATRICE DE CONFIANCE (FACTS TELEMETRY STRIP)
+   MATRICE DE CONFIANCE (FACTS TELEMETRY STRIP)
    ========================================================================== */
 
 .xr-facts-strip {
@@ -523,7 +842,7 @@
 }
 
 /* ==========================================================================
-   5. LE PARCOURS DU MÉRITE RÉPUBLICAIN (INTERACTIVE 5-STAGE PIPELINE)
+   LE PARCOURS DU MÉRITE RÉPUBLICAIN (INTERACTIVE 5-STAGE PIPELINE)
    ========================================================================== */
 
 .xr-pipeline-section {
@@ -697,7 +1016,7 @@
 }
 
 /* ==========================================================================
-   6. RUNNING MARQUEE CINÉTIQUE
+   RUNNING MARQUEE CINÉTIQUE
    ========================================================================== */
 
 .xr-marquee {
@@ -758,7 +1077,7 @@
 }
 
 /* ==========================================================================
-   7. VITRINE DES CONCOURS NATIONAUX (CARDS 3D INTERACTIVES)
+   VITRINE DES CONCOURS NATIONAUX (CARDS 3D INTERACTIVES)
    ========================================================================== */
 
 .xr-offres-section {
@@ -896,7 +1215,7 @@
 }
 
 /* ==========================================================================
-   8. SIMULATEUR DE BARÈME DYNAMIQUE SUR 100 POINTS (JAUGE NEON)
+   SIMULATEUR DE BARÈME DYNAMIQUE SUR 100 POINTS (JAUGE NEON)
    ========================================================================== */
 
 .xr-sim-section {
@@ -1066,7 +1385,7 @@
 }
 
 /* ==========================================================================
-   9. LES 4 ESPACES MÉTIER (CANDIDAT, AUDIT, RECRUTEUR, DIRECTION)
+   LES 4 ESPACES MÉTIER (CANDIDAT, AUDIT, RECRUTEUR, DIRECTION)
    ========================================================================== */
 
 .xr-espaces-section {
@@ -1130,7 +1449,7 @@
 }
 
 /* ==========================================================================
-   10. SÉCURITÉ, GARANTIE ANTI-FRAUDE & ACCRÉDITATION CNDP
+   SÉCURITÉ, GARANTIE ANTI-FRAUDE & ACCRÉDITATION CNDP
    ========================================================================== */
 
 .xr-security-section {
@@ -1159,7 +1478,7 @@
 }
 
 /* ==========================================================================
-   11. FOIRE AUX QUESTIONS OFFICIELLES (FAQ ACCORDION)
+   FOIRE AUX QUESTIONS OFFICIELLES (FAQ ACCORDION)
    ========================================================================== */
 
 .xr-faq-section {
@@ -1218,7 +1537,7 @@
 }
 
 /* ==========================================================================
-   12. FOOTER INSTITUTIONNEL HAUTE PRÉCISION
+   FOOTER INSTITUTIONNEL HAUTE PRÉCISION
    ========================================================================== */
 
 .xr-footer {

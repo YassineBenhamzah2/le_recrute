@@ -164,6 +164,17 @@ const MOROCCAN_CITIES = [
   { name: 'Agadir', lat: 30.4278, lon: -9.5981, postes: 40 },
 ];
 
+const SECTIONS_NAV = [
+  { id: 'xr-top', label: '01 ACCUEIL' },
+  { id: 'xr-facts', label: '02 MATRICE' },
+  { id: 'xr-pipeline', label: '03 PARCOURS' },
+  { id: 'xr-offres', label: '04 CONCOURS' },
+  { id: 'xr-simulateur', label: '05 SIMULATEUR' },
+  { id: 'xr-espaces', label: '06 ESPACES' },
+  { id: 'xr-securite', label: '07 CONFORMITÉ' },
+  { id: 'xr-faq', label: '08 FAQ' },
+];
+
 const HomeScreen = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -186,13 +197,20 @@ const HomeScreen = () => {
   const [simMention, setSimMention] = useState('bien');
   const [simExp, setSimExp] = useState(3);
 
-  // Scroll Progress
+  // Scroll Progress, ScrollY & Active Section Spy
   const [scrollProgress, setScrollProgress] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
+  const [activeSection, setActiveSection] = useState('xr-top');
 
   // Custom Cursor
   const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
   const [cursorVisible, setCursorVisible] = useState(false);
   const [cursorHovered, setCursorHovered] = useState(false);
+
+  // Animated Facts Counters
+  const [countFact1, setCountFact1] = useState(0);
+  const [countFact2, setCountFact2] = useState(0);
+  const [countFact3, setCountFact3] = useState(0);
 
   // Canvas Ref for 3D Globe & Particles
   const canvasRef = useRef(null);
@@ -224,9 +242,98 @@ const HomeScreen = () => {
     fetchOffres();
   }, []);
 
-  // 2. Scroll Progress Tracker
+  // 2. SCROLL ANIMATION ENGINE: Intersection Observer for dynamic entrance
+  useEffect(() => {
+    const revealElements = document.querySelectorAll('[data-scroll-reveal]');
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-revealed');
+          }
+        });
+      },
+      {
+        threshold: 0.1,
+        rootMargin: '0px 0px -30px 0px',
+      }
+    );
+
+    revealElements.forEach((el) => {
+      const rect = el.getBoundingClientRect();
+      if (rect.top < window.innerHeight * 0.95) {
+        el.classList.add('is-revealed');
+      }
+      observer.observe(el);
+    });
+
+    // Section Spy for Vertical Navigation
+    const sectionElements = SECTIONS_NAV.map((s) => document.getElementById(s.id)).filter(Boolean);
+    const sectionObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        });
+      },
+      { threshold: 0.25 }
+    );
+
+    sectionElements.forEach((el) => sectionObserver.observe(el));
+
+    return () => {
+      observer.disconnect();
+      sectionObserver.disconnect();
+    };
+  }, [offres, activeStageIndex]);
+
+  // 3. Animated Numbers Counter Trigger on Scroll
+  useEffect(() => {
+    const factsEl = document.getElementById('xr-facts');
+    if (!factsEl) return;
+
+    let hasCounted = false;
+    const factsObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !hasCounted) {
+          hasCounted = true;
+          // Count Fact 1: 0 -> 6
+          let c1 = 0;
+          const t1 = setInterval(() => {
+            c1++;
+            setCountFact1(c1);
+            if (c1 >= 6) clearInterval(t1);
+          }, 120);
+
+          // Count Fact 2: 0 -> 100
+          let c2 = 0;
+          const t2 = setInterval(() => {
+            c2 += 4;
+            setCountFact2(Math.min(c2, 100));
+            if (c2 >= 100) clearInterval(t2);
+          }, 35);
+
+          // Count Fact 3: 0 -> 100
+          let c3 = 0;
+          const t3 = setInterval(() => {
+            c3 += 4;
+            setCountFact3(Math.min(c3, 100));
+            if (c3 >= 100) clearInterval(t3);
+          }, 35);
+        }
+      },
+      { threshold: 0.25 }
+    );
+
+    factsObserver.observe(factsEl);
+    return () => factsObserver.disconnect();
+  }, []);
+
+  // 4. Scroll Progress & ScrollY Tracker
   useEffect(() => {
     const handleScroll = () => {
+      setScrollY(window.scrollY);
       const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
       if (totalScroll > 0) {
         setScrollProgress(window.scrollY / totalScroll);
@@ -236,7 +343,7 @@ const HomeScreen = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // 3. Custom Cursor Tracker
+  // 5. Custom Magnetic Holographic Cursor Tracker
   useEffect(() => {
     const handleMouseMove = (e) => {
       setCursorPos({ x: e.clientX, y: e.clientY });
@@ -262,7 +369,7 @@ const HomeScreen = () => {
     };
   }, [cursorVisible]);
 
-  // 4. Interactive 3D Moroccan Digital Globe & Constellation Engine
+  // 6. Interactive 3D Moroccan Digital Globe Canvas Engine
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -292,7 +399,6 @@ const HomeScreen = () => {
       });
     }
 
-    // 3D Sphere Parameters
     let rotX = 0.2;
     let rotY = 0;
     let mouse = { x: width / 2, y: height / 2 };
@@ -324,7 +430,6 @@ const HomeScreen = () => {
         if (p.y < 0) p.y = height;
         if (p.y > height) p.y = 0;
 
-        // Interaction with mouse
         const dxMouse = mouse.x - p.x;
         const dyMouse = mouse.y - p.y;
         const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
@@ -359,10 +464,9 @@ const HomeScreen = () => {
       }
 
       // 2. Draw 3D Holographic Wireframe Globe in center
-      rotY += 0.003; // Auto slow rotation
+      rotY += 0.003;
       const time = Date.now() * 0.0015;
 
-      // Draw 3D Latitude Rings
       for (let lat = -60; lat <= 60; lat += 20) {
         const radLat = (lat * Math.PI) / 180;
         const rLat = globeRadius * Math.cos(radLat);
@@ -389,7 +493,6 @@ const HomeScreen = () => {
       const cityPoints = [];
       for (let i = 0; i < MOROCCAN_CITIES.length; i++) {
         const city = MOROCCAN_CITIES[i];
-        // Adjusted spherical projection centered around Morocco (lat ~32, lon ~ -6)
         const latRad = ((city.lat - 32) * Math.PI) / 70;
         const lonRad = ((city.lon + 6) * Math.PI) / 70 + rotY;
 
@@ -400,7 +503,6 @@ const HomeScreen = () => {
         if (z > -50) {
           cityPoints.push({ x, y, name: city.name, postes: city.postes });
 
-          // Pulsing Beacon
           const pulse = (Math.sin(time * 3 + i) + 1) * 0.5;
           ctx.beginPath();
           ctx.arc(x, y, 4 + pulse * 3, 0, Math.PI * 2);
@@ -409,14 +511,12 @@ const HomeScreen = () => {
           ctx.shadowBlur = 12;
           ctx.fill();
 
-          // City Label
           ctx.font = '9px "JetBrains Mono", monospace';
           ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
           ctx.fillText(`${city.name} (${city.postes})`, x + 8, y + 3);
         }
       }
 
-      // Draw connecting laser arcs between Moroccan hubs
       ctx.beginPath();
       for (let i = 0; i < cityPoints.length; i++) {
         for (let j = i + 1; j < cityPoints.length; j++) {
@@ -456,30 +556,31 @@ const HomeScreen = () => {
   // Simulator Score Calculation
   const simScore = useMemo(() => {
     let score = 0;
-    // Diplôme (Max 48 pts)
     if (simNiveau === 'bac2') score += 25;
     else if (simNiveau === 'bac3') score += 35;
     else if (simNiveau === 'bac5') score += 45;
     else if (simNiveau === 'doctorat') score += 48;
 
-    // Mention (Max 22 pts)
     if (simMention === 'passable') score += 8;
     else if (simMention === 'assez_bien') score += 14;
     else if (simMention === 'bien') score += 18;
     else if (simMention === 'tres_bien') score += 22;
 
-    // Expérience (3 pts/an, max 30)
     score += Math.min(Number(simExp) * 3, 30);
 
     return Math.min(score, 100);
   }, [simNiveau, simMention, simExp]);
 
-  // Gauge SVG Math: R=130 -> Circumference = 2 * PI * 130 ≈ 816.8
   const gaugeCircumference = 2 * Math.PI * 130;
   const gaugeDashoffset = gaugeCircumference - (gaugeCircumference * simScore) / 100;
 
   const handleLogout = () => {
     dispatch(logout());
+  };
+
+  const scrollToSection = (id) => {
+    const el = document.getElementById(id);
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
   };
 
   const currentStage = PIPELINE_STAGES[activeStageIndex];
@@ -497,6 +598,53 @@ const HomeScreen = () => {
         style={{ transform: `translate3d(${cursorPos.x}px, ${cursorPos.y}px, 0)` }}
       >
         <span>{cursorHovered ? '↗' : ''}</span>
+      </div>
+
+      {/* 0. Vertical Awwwards HUD Section Scroll Navigator */}
+      <div className='xr-scroll-nav'>
+        {SECTIONS_NAV.map((sec) => (
+          <button
+            key={sec.id}
+            className={`xr-scroll-dot-wrap ${activeSection === sec.id ? 'is-active' : ''}`}
+            onClick={() => scrollToSection(sec.id)}
+            aria-label={`Aller à ${sec.label}`}
+          >
+            <span className='xr-scroll-dot-label'>{sec.label}</span>
+            <div className='xr-scroll-dot'></div>
+          </button>
+        ))}
+      </div>
+
+      {/* 0. Floating Parallax Cyber Badges (Awwwards Sci-Fi Margins) */}
+      <div className='xr-floating-badges'>
+        <div
+          className='xr-float-badge xr-float-left-1'
+          style={{ transform: `translate3d(0, ${scrollY * 0.14}px, 0)` }}
+        >
+          <span className='xr-pulse-dot'></span>
+          <span>CNDP LOI 09-08 SÉCURISÉ</span>
+        </div>
+        <div
+          className='xr-float-badge xr-float-right-1'
+          style={{ transform: `translate3d(0, ${-scrollY * 0.1}px, 0)` }}
+        >
+          <i className='fas fa-shield-alt text-warning'></i>
+          <span>AUDIT DOUBLE-AVEUGLE</span>
+        </div>
+        <div
+          className='xr-float-badge xr-float-left-2'
+          style={{ transform: `translate3d(0, ${scrollY * 0.08}px, 0)` }}
+        >
+          <i className='fas fa-balance-scale text-success'></i>
+          <span>BARÈME 100 POINTS</span>
+        </div>
+        <div
+          className='xr-float-badge xr-float-right-2'
+          style={{ transform: `translate3d(0, ${-scrollY * 0.16}px, 0)` }}
+        >
+          <span className='xr-pulse-dot' style={{ background: '#00d9f5' }}></span>
+          <span>SHA-256 HORODATÉ</span>
+        </div>
       </div>
 
       {/* ====================================================================
@@ -570,11 +718,18 @@ const HomeScreen = () => {
       {/* ====================================================================
           2. HERO 3D : GLOBE HOLOGRAPHIQUE & RECHERCHE INSTANTANÉE
           ==================================================================== */}
-      <section className='xr-hero'>
+      <section className='xr-hero' id='xr-top'>
         <div className='xr-hero-bg' />
         <canvas ref={canvasRef} className='xr-canvas-layer' />
 
-        <div className='xr-hero-content'>
+        <div
+          className='xr-hero-content'
+          data-scroll-reveal='zoom-in'
+          style={{
+            transform: `translate3d(0, ${scrollY * 0.22}px, 0)`,
+            opacity: Math.max(0, 1 - scrollY / 720),
+          }}
+        >
           <div className='xr-hud-pill'>
             <span className='xr-pulse-dot'></span>
             <span>SYSTÈME NATIONAL SÉCURISÉ · SÉLECTION AU MÉRITE RÉPUBLICAIN · SESSION 2026</span>
@@ -592,7 +747,7 @@ const HomeScreen = () => {
           </p>
 
           {/* Instant Multi-Criteria Search Engine */}
-          <div className='xr-search-box'>
+          <div className='xr-search-box' data-scroll-reveal='fade-up'>
             <i className='fas fa-search text-muted'></i>
             <input
               type='text'
@@ -623,7 +778,7 @@ const HomeScreen = () => {
             </a>
           </div>
 
-          <div className='xr-hero-hud'>
+          <div className='xr-hero-hud' data-scroll-reveal='fade-up'>
             <span>AUDIT CRYPTOGRAPHIQUE ACTIF (SHA-256)</span>
             <div>
               <i className='hud-bar is-active'></i>
@@ -633,24 +788,41 @@ const HomeScreen = () => {
             </div>
             <span>CONFORMITÉ LOI 09-08 CNDP · ZÉRO FRAUDE TOLÉRÉE</span>
           </div>
+
+          {/* Animated Scroll Down Indicator */}
+          <a
+            href='#xr-facts'
+            className='xr-scroll-indicator'
+            data-scroll-reveal='fade-up'
+            onClick={(e) => {
+              e.preventDefault();
+              scrollToSection('xr-facts');
+            }}
+          >
+            <span className='xr-scroll-indicator-text'>DÉCOUVRIR LE PARCOURS DU MÉRITE</span>
+            <div className='xr-scroll-indicator-mouse'>
+              <div className='xr-scroll-indicator-wheel'></div>
+            </div>
+            <i className='fas fa-chevron-down xr-scroll-indicator-arrow'></i>
+          </a>
         </div>
       </section>
 
       {/* ====================================================================
-          3. MATRICE DE CONFIANCE (FACTS TELEMETRY STRIP)
+          3. MATRICE DE CONFIANCE (FACTS TELEMETRY STRIP) AVEC COUNTERS DYNAMIQUES
           ==================================================================== */}
-      <section className='xr-facts-strip'>
-        <div className='xr-facts-container'>
+      <section className='xr-facts-strip' id='xr-facts'>
+        <div className='xr-facts-container xr-stagger' data-scroll-reveal='fade-up'>
           <div className='xr-fact-card'>
-            <b>6</b>
+            <b>{countFact1}</b>
             <span>GRANDES INSTITUTIONS BANCAIRES &amp; ÉTABLISSEMENTS PUBLICS PARTENAIRES</span>
           </div>
           <div className='xr-fact-card'>
-            <b>100%</b>
+            <b>{countFact2}%</b>
             <span>AUDIT VISUEL EN DOUBLE-AVEUGLE SUR ÉCRAN SCINDÉ ANTI-FRAUDE</span>
           </div>
           <div className='xr-fact-card'>
-            <b>100</b>
+            <b>{countFact3}</b>
             <span>POINTS DU BARÈME ALGORITHMIQUE TRANSPARENT ET VÉRIFIABLE</span>
           </div>
           <div className='xr-fact-card'>
@@ -665,9 +837,9 @@ const HomeScreen = () => {
           ==================================================================== */}
       <section className='xr-pipeline-section' id='xr-pipeline'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='xr-section-header'>
+          <div className='xr-section-header' data-scroll-reveal='fade-left'>
             <div>
-              <div className='xr-hud-pill mb-2'>
+              <div className='xr-hud-chip mb-2'>
                 <span>TRAÇABILITÉ TOTALE DE BOUT EN BOUT</span>
               </div>
               <h2>
@@ -682,7 +854,7 @@ const HomeScreen = () => {
           </div>
 
           {/* Pipeline Stage Buttons */}
-          <div className='xr-pipeline-nav'>
+          <div className='xr-pipeline-nav' data-scroll-reveal='fade-up'>
             {PIPELINE_STAGES.map((st, idx) => (
               <button
                 key={st.num}
@@ -696,9 +868,9 @@ const HomeScreen = () => {
           </div>
 
           {/* Pipeline Interactive Card */}
-          <div className='xr-pipeline-card' key={currentStage.num}>
+          <div className='xr-pipeline-card' key={currentStage.num} data-scroll-reveal='rotate-in'>
             <div className='xr-pipeline-left'>
-              <div className='xr-hud-pill mb-3' style={{ fontSize: '9px' }}>
+              <div className='xr-hud-chip mb-3' style={{ fontSize: '9px' }}>
                 <span>{currentStage.tag}</span>
               </div>
               <h3>{currentStage.title}</h3>
@@ -788,7 +960,7 @@ const HomeScreen = () => {
           ==================================================================== */}
       <section className='xr-offres-section' id='xr-offres'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='xr-section-header'>
+          <div className='xr-section-header' data-scroll-reveal='fade-right'>
             <div>
               <div className='xr-hud-chip mb-2'>
                 <span>AVIS DE RECRUTEMENT OFFICIELS</span>
@@ -803,7 +975,7 @@ const HomeScreen = () => {
             </p>
           </div>
 
-          <div className='xr-filters-row'>
+          <div className='xr-filters-row' data-scroll-reveal='fade-up'>
             {[
               { id: 'ALL', label: 'Toutes les institutions' },
               { id: 'ABB', label: 'Al Barid Bank' },
@@ -823,7 +995,7 @@ const HomeScreen = () => {
             ))}
           </div>
 
-          <div className='xr-offres-grid'>
+          <div className='xr-offres-grid xr-stagger' data-scroll-reveal='fade-up'>
             {filteredOffres.map((offre) => (
               <div key={offre._id} className='xr-offre-card'>
                 <div className='xr-offre-top-bar'>
@@ -874,7 +1046,7 @@ const HomeScreen = () => {
           ==================================================================== */}
       <section className='xr-sim-section' id='xr-simulateur'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='xr-section-header'>
+          <div className='xr-section-header' data-scroll-reveal='fade-left'>
             <div>
               <div className='xr-hud-chip mb-2'>
                 <span>TRANSPARENCE ALGORITHMIQUE TOTALE</span>
@@ -889,7 +1061,7 @@ const HomeScreen = () => {
             </p>
           </div>
 
-          <div className='xr-sim-layout'>
+          <div className='xr-sim-layout' data-scroll-reveal='zoom-in'>
             {/* Left Controls */}
             <div className='xr-sim-box'>
               <div className='xr-sim-field'>
@@ -1002,7 +1174,7 @@ const HomeScreen = () => {
           ==================================================================== */}
       <section className='xr-espaces-section' id='xr-espaces'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='xr-section-header'>
+          <div className='xr-section-header' data-scroll-reveal='fade-right'>
             <div>
               <div className='xr-hud-chip mb-2'>
                 <span>ENVIRONNEMENTS DÉDIÉS</span>
@@ -1017,7 +1189,7 @@ const HomeScreen = () => {
             </p>
           </div>
 
-          <div className='xr-espaces-grid'>
+          <div className='xr-espaces-grid xr-stagger' data-scroll-reveal='fade-up'>
             <div className='xr-espace-card'>
               <div className='xr-espace-icon'>
                 <i className='fas fa-user-graduate'></i>
@@ -1082,7 +1254,7 @@ const HomeScreen = () => {
           ==================================================================== */}
       <section className='xr-security-section' id='xr-securite'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='xr-security-box'>
+          <div className='xr-security-box' data-scroll-reveal='fade-up'>
             <div>
               <div className='xr-hud-chip mb-3'>
                 <span>CONFORMITÉ LOI 09-08</span>
@@ -1097,7 +1269,7 @@ const HomeScreen = () => {
               </p>
             </div>
 
-            <div className='xr-seal-card'>
+            <div className='xr-seal-card' data-scroll-reveal='zoom-in'>
               <div className='d-flex align-items-center gap-3 mb-4'>
                 <i className='fas fa-certificate text-warning' style={{ fontSize: '32px' }}></i>
                 <div>
@@ -1128,7 +1300,7 @@ const HomeScreen = () => {
           ==================================================================== */}
       <section className='xr-faq-section' id='xr-faq'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='xr-faq-layout'>
+          <div className='xr-faq-layout' data-scroll-reveal='fade-up'>
             <div>
               <div className='xr-hud-chip mb-2'>
                 <span>ASSISTANCE AUX CANDIDATS</span>
@@ -1199,7 +1371,7 @@ const HomeScreen = () => {
           11. FOOTER INSTITUTIONNEL HAUTE PRÉCISION
           ==================================================================== */}
       <footer className='xr-footer'>
-        <div className='xr-footer-inner'>
+        <div className='xr-footer-inner' data-scroll-reveal='fade-up'>
           <div>
             <div className='xr-brand' style={{ fontSize: '30px', marginBottom: '18px' }}>
               RECRUTEMENT<span>.MA</span>
