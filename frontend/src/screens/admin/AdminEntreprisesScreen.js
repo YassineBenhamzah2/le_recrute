@@ -29,6 +29,8 @@ const AdminEntreprisesScreen = () => {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
 
   // Form state for creating / editing enterprise
   const [nom, setNom] = useState('');
@@ -46,6 +48,29 @@ const AdminEntreprisesScreen = () => {
   const [adminEmail, setAdminEmail] = useState('');
   const [adminPassword, setAdminPassword] = useState('');
   const [createdAccountModal, setCreatedAccountModal] = useState(null);
+
+  const uploadLogoHandler = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('document', file);
+    setUploadingLogo(true);
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      };
+      const { data } = await axios.post('/api/upload', formData, config);
+      const url = data.url || `/uploads/${data.fileName}`;
+      setLogo(url);
+      setUploadingLogo(false);
+      addToast('Logo téléversé avec succès !', { appearance: 'success' });
+    } catch (error) {
+      setUploadingLogo(false);
+      addToast(error.response?.data?.message || 'Erreur lors du téléversement du logo', { appearance: 'error' });
+    }
+  };
 
   const fetchEntreprises = async () => {
     try {
@@ -83,39 +108,62 @@ const AdminEntreprisesScreen = () => {
         },
       };
 
-      const { data } = await axios.post(
-        '/api/entreprises',
-        {
-          nom,
-          sigle,
-          secteur,
-          description,
-          couleurPrimaire,
-          logo: logo || '/images/logos/default_org.png',
-          siteWeb,
-          adresse,
-          enteteRecu,
-          adminNom,
-          adminEmail,
-          adminPassword,
-        },
-        config
-      );
+      if (editingId) {
+        await axios.put(
+          `/api/entreprises/${editingId}`,
+          {
+            nom,
+            sigle,
+            secteur,
+            description,
+            couleurPrimaire,
+            logo: logo || '/images/logos/default_org.png',
+            siteWeb,
+            adresse,
+            enteteRecu,
+          },
+          config
+        );
 
-      setSubmitting(false);
-      setShowModal(false);
-      addToast(`Organisation ${nom} créée avec succès`, { appearance: 'success' });
+        setSubmitting(false);
+        setShowModal(false);
+        addToast(`Organisation ${nom} mise à jour avec succès`, { appearance: 'success' });
+      } else {
+        const { data } = await axios.post(
+          '/api/entreprises',
+          {
+            nom,
+            sigle,
+            secteur,
+            description,
+            couleurPrimaire,
+            logo: logo || '/images/logos/default_org.png',
+            siteWeb,
+            adresse,
+            enteteRecu,
+            adminNom,
+            adminEmail,
+            adminPassword,
+          },
+          config
+        );
 
-      if (data.createdAccount) {
-        setCreatedAccountModal({
-          orgNom: nom,
-          email: data.createdAccount.email,
-          password: adminPassword,
-          role: data.createdAccount.role,
-        });
+        setSubmitting(false);
+        setShowModal(false);
+        addToast(`Organisation ${nom} créée avec succès`, { appearance: 'success' });
+
+        if (data.createdAccount) {
+          setCreatedAccountModal({
+            orgNom: nom,
+            email: data.createdAccount.email,
+            password: adminPassword,
+            role: data.createdAccount.role,
+          });
+        }
       }
 
       // Reset form
+      setEditingId(null);
       setNom('');
       setSigle('');
       setDescription('');
@@ -157,7 +205,22 @@ const AdminEntreprisesScreen = () => {
               variant='primary'
               className='fw-bold px-3 py-2 shadow-sm'
               style={{ borderRadius: '8px', background: '#1D4ED8', border: 'none' }}
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setEditingId(null);
+                setNom('');
+                setSigle('');
+                setSecteur('Secteur Bancaire');
+                setDescription('');
+                setCouleurPrimaire('#003366');
+                setLogo('');
+                setSiteWeb('');
+                setAdresse('Casablanca, Maroc');
+                setEnteteRecu('Royaume du Maroc - Portail National de Recrutement');
+                setAdminNom('');
+                setAdminEmail('');
+                setAdminPassword('');
+                setShowModal(true);
+              }}
             >
               <i className='fas fa-plus-circle me-2'></i>
               Ajouter une Entreprise / Banque
@@ -301,7 +364,9 @@ const AdminEntreprisesScreen = () => {
                 <tbody>
                   {entreprises.map((ent) => {
                     const orgLogoUrl =
-                      ent.sigle === 'ABB' || ent.nom?.toLowerCase().includes('barid')
+                      ent.logo && !ent.logo.includes('default_org')
+                        ? ent.logo
+                        : ent.sigle === 'ABB' || ent.nom?.toLowerCase().includes('barid')
                         ? '/assets/images/logoABB.png'
                         : ent.sigle === 'CIH'
                         ? '/images/logos/cih_logo.svg'
@@ -315,9 +380,7 @@ const AdminEntreprisesScreen = () => {
                         ? '/images/logos/cdg_logo.svg'
                         : ent.sigle === 'LRT' || ent.nom?.toLowerCase().includes('recruteur')
                         ? '/images/logos/lrt_logo.svg'
-                        : ent.logo && !ent.logo.includes('default_org') && !ent.logo.includes('logoABB')
-                        ? ent.logo
-                        : '/images/logos/lrt_logo.svg';
+                        : ent.logo || '/images/logos/default_org.png';
 
                     return (
                       <tr key={ent._id}>
@@ -392,7 +455,28 @@ const AdminEntreprisesScreen = () => {
                           <i className='fas fa-check-circle me-1'></i> Actif
                         </span>
                       </td>
-                      <td className='text-end'>
+                      <td className='text-end text-nowrap'>
+                        <Button
+                          variant='outline-secondary'
+                          size='sm'
+                          className='me-1'
+                          onClick={() => {
+                            setEditingId(ent._id);
+                            setNom(ent.nom || '');
+                            setSigle(ent.sigle || '');
+                            setSecteur(ent.secteur || 'Secteur Bancaire');
+                            setCouleurPrimaire(ent.couleurPrimaire || '#003366');
+                            setLogo(ent.logo || '');
+                            setSiteWeb(ent.siteWeb || '');
+                            setAdresse(ent.adresse || 'Casablanca, Maroc');
+                            setDescription(ent.description || '');
+                            setEnteteRecu(ent.enteteRecu || 'Royaume du Maroc - Portail National de Recrutement');
+                            setShowModal(true);
+                          }}
+                          title='Modifier les informations et le Logo'
+                        >
+                          <i className='fas fa-edit me-1'></i> Modifier & Logo
+                        </Button>
                         <Button
                           variant='outline-primary'
                           size='sm'
@@ -412,13 +496,13 @@ const AdminEntreprisesScreen = () => {
           </Card>
         </Container>
 
-        {/* MODAL CRÉATION ENTREPRISE */}
+        {/* MODAL CRÉATION / MODIFICATION ENTREPRISE */}
         <Modal show={showModal} onHide={() => setShowModal(false)} size='lg' centered>
           <Form onSubmit={handleCreateEntreprise}>
             <Modal.Header closeButton className='bg-light'>
               <Modal.Title className='fs-5 fw-bold'>
                 <i className='fas fa-building text-primary me-2'></i>
-                Créer une Nouvelle Entreprise / Institution
+                {editingId ? `Modifier l'Organisation : ${nom}` : 'Créer une Nouvelle Entreprise / Institution'}
               </Modal.Title>
             </Modal.Header>
             <Modal.Body className='p-4'>
@@ -450,6 +534,64 @@ const AdminEntreprisesScreen = () => {
                   </Form.Group>
                 </Col>
               </Row>
+
+              {/* LOGO UPLOAD & LIVE PREVIEW BOX */}
+              <Form.Group className='mb-3 p-3 bg-light rounded-3 border'>
+                <Form.Label className='fw-bold small text-dark d-flex align-items-center justify-content-between mb-2'>
+                  <span>
+                    <i className='fas fa-image text-primary me-2'></i>
+                    Logo Officiel de l'Organisation / Entreprise
+                  </span>
+                  {uploadingLogo && (
+                    <span className='text-primary small'>
+                      <i className='fas fa-spinner fa-spin me-1'></i> Téléversement en cours...
+                    </span>
+                  )}
+                </Form.Label>
+                <div className='d-flex gap-3 align-items-center'>
+                  <div
+                    className='border rounded p-1 bg-white d-flex align-items-center justify-content-center shadow-sm'
+                    style={{ width: '70px', height: '70px', overflow: 'hidden', flexShrink: 0 }}
+                  >
+                    {logo ? (
+                      <img
+                        src={logo}
+                        alt='Aperçu'
+                        style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }}
+                        onError={(e) => {
+                          e.target.src = '/images/logos/default_org.png';
+                        }}
+                      />
+                    ) : (
+                      <i className='fas fa-building fa-2x text-muted opacity-50'></i>
+                    )}
+                  </div>
+                  <div className='flex-grow-1'>
+                    <div className='d-flex gap-2 align-items-center'>
+                      <Form.Control
+                        type='file'
+                        accept='image/*'
+                        onChange={uploadLogoHandler}
+                        disabled={uploadingLogo}
+                        className='form-control-sm'
+                      />
+                      {logo && (
+                        <Button
+                          variant='outline-danger'
+                          size='sm'
+                          onClick={() => setLogo('')}
+                          title='Effacer le logo'
+                        >
+                          <i className='fas fa-times'></i>
+                        </Button>
+                      )}
+                    </div>
+                    <Form.Text className='text-muted d-block mt-1' style={{ fontSize: '11px' }}>
+                      Sélectionnez un fichier PNG, JPG ou SVG depuis votre ordinateur. L'image sera téléversée automatiquement.
+                    </Form.Text>
+                  </div>
+                </div>
+              </Form.Group>
 
               <Row className='g-3 mb-3'>
                 <Col md={6}>
@@ -532,53 +674,59 @@ const AdminEntreprisesScreen = () => {
                 />
               </Form.Group>
 
-              {/* SECTION COMPTE RH RECRUTEUR */}
-              <div className='p-3 bg-light rounded-3 border mt-3'>
-                <h6 className='fw-bold text-dark mb-1'>
-                  <i className='fas fa-user-shield text-success me-2'></i>
-                  Compte Administrateur RH de cette Entreprise (Accès Recruteur)
-                </h6>
-                <p className='text-muted small mb-3'>
-                  Renseignez ces identifiants pour permettre à l'équipe RH de cette entreprise de se connecter à la plateforme pour publier ses concours et gérer ses candidats.
-                </p>
+              {/* SECTION COMPTE RH RECRUTEUR (Visible seulement lors de la création initiale) */}
+              {!editingId && (
+                <div className='p-3 bg-light rounded-3 border mt-3'>
+                  <h6 className='fw-bold text-dark mb-1'>
+                    <i className='fas fa-user-shield text-success me-2'></i>
+                    Compte Administrateur RH de cette Entreprise (Accès Recruteur)
+                  </h6>
+                  <p className='text-muted small mb-3'>
+                    Renseignez ces identifiants pour permettre à l'équipe RH de cette entreprise de se connecter à la plateforme pour publier ses concours et gérer ses candidats.
+                  </p>
 
-                <Row className='g-3'>
-                  <Col md={12}>
-                    <Form.Label className='fw-bold small text-muted'>Nom du Responsable RH</Form.Label>
-                    <Form.Control
-                      type='text'
-                      placeholder='Ex: Direction du Recrutement'
-                      value={adminNom}
-                      onChange={(e) => setAdminNom(e.target.value)}
-                    />
-                  </Col>
-                  <Col md={6}>
-                    <Form.Label className='fw-bold small text-muted'>Email Professionnel de Connexion (Login) *</Form.Label>
-                    <Form.Control
-                      type='email'
-                      placeholder='Ex: rh@banque.ma'
-                      value={adminEmail}
-                      onChange={(e) => setAdminEmail(e.target.value)}
-                    />
-                  </Col>
-                  <Col md={6}>
-                    <Form.Label className='fw-bold small text-muted'>Mot de Passe Initial *</Form.Label>
-                    <Form.Control
-                      type='password'
-                      placeholder='Mot de passe de connexion'
-                      value={adminPassword}
-                      onChange={(e) => setAdminPassword(e.target.value)}
-                    />
-                  </Col>
-                </Row>
-              </div>
+                  <Row className='g-3'>
+                    <Col md={12}>
+                      <Form.Label className='fw-bold small text-muted'>Nom du Responsable RH</Form.Label>
+                      <Form.Control
+                        type='text'
+                        placeholder='Ex: Direction du Recrutement'
+                        value={adminNom}
+                        onChange={(e) => setAdminNom(e.target.value)}
+                      />
+                    </Col>
+                    <Col md={6}>
+                      <Form.Label className='fw-bold small text-muted'>Email Professionnel de Connexion (Login) *</Form.Label>
+                      <Form.Control
+                        type='email'
+                        placeholder='Ex: rh@banque.ma'
+                        value={adminEmail}
+                        onChange={(e) => setAdminEmail(e.target.value)}
+                      />
+                    </Col>
+                    <Col md={6}>
+                      <Form.Label className='fw-bold small text-muted'>Mot de Passe Initial *</Form.Label>
+                      <Form.Control
+                        type='password'
+                        placeholder='Mot de passe de connexion'
+                        value={adminPassword}
+                        onChange={(e) => setAdminPassword(e.target.value)}
+                      />
+                    </Col>
+                  </Row>
+                </div>
+              )}
             </Modal.Body>
             <Modal.Footer className='bg-light'>
               <Button variant='secondary' onClick={() => setShowModal(false)}>
                 Annuler
               </Button>
               <Button variant='primary' type='submit' disabled={submitting}>
-                {submitting ? 'Création en cours...' : "Enregistrer l'Organisation & Générer l'Accès RH"}
+                {submitting
+                  ? 'Enregistrement en cours...'
+                  : editingId
+                  ? 'Enregistrer les Modifications'
+                  : "Enregistrer l'Organisation & Générer l'Accès RH"}
               </Button>
             </Modal.Footer>
           </Form>
