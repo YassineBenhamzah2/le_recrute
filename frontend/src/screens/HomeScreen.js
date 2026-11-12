@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router';
 import { useSelector, useDispatch } from 'react-redux';
 import { Link } from 'react-router-dom';
+import { Modal, Button } from 'react-bootstrap';
 import axios from 'axios';
 import { logout } from '../actions/userActions';
 import './LandingPage.css';
@@ -2130,147 +2131,102 @@ const HomeScreen = () => {
         </div>
       </footer>
 
-      {/* Staff Application Restriction Modal */}
-      {showStaffModal && (
-        <div
-          style={{
-            position: 'fixed',
-            inset: 0,
-            zIndex: 99999,
-            background: 'rgba(0, 0, 0, 0.75)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            padding: '20px',
-          }}
-          onClick={() => setShowStaffModal(false)}
-        >
-          <div
-            style={{
-              background: '#0F172A',
-              border: '1px solid rgba(255, 255, 255, 0.15)',
-              borderRadius: '20px',
-              padding: '36px',
-              maxWidth: '540px',
-              width: '100%',
-              boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
-              color: '#F8FAFC',
-              textAlign: 'center',
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div
+      {/* Staff Application Restriction Modal (Renders via Portal in document.body) */}
+      <Modal
+        show={showStaffModal}
+        onHide={() => setShowStaffModal(false)}
+        centered
+        contentClassName='border-0 shadow-lg'
+        style={{ zIndex: 100000 }}
+      >
+        <Modal.Body className='p-4 p-md-5 text-center' style={{ borderRadius: '20px', background: '#FFFFFF' }}>
+          <div className='mb-3'>
+            <span
               style={{
-                width: '68px',
-                height: '68px',
-                borderRadius: '50%',
-                background: 'rgba(239, 68, 68, 0.15)',
-                color: '#EF4444',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                fontSize: '30px',
-                marginBottom: '18px',
+                width: '76px',
+                height: '76px',
+                borderRadius: '50%',
+                background: 'rgba(239, 68, 68, 0.1)',
+                color: '#EF4444',
+                fontSize: '34px',
               }}
             >
               <i className='fas fa-user-shield'></i>
+            </span>
+          </div>
+
+          <h4 className='fw-bold mb-2' style={{ color: '#0F172A', fontSize: '22px' }}>
+            Accès Réservé aux Candidats
+          </h4>
+
+          <p className='text-muted fs-6 mb-4' style={{ lineHeight: '1.6' }}>
+            Vous êtes actuellement connecté avec le compte institutionnel :<br />
+            <strong className='text-primary'>
+              {userInfo?.prenom} {userInfo?.nom} (
+              {userInfo?.isMaitreOuvrage ? 'Responsable Recrutement RH' : 'Administrateur'}
+              )
+            </strong>.<br />
+            Conformément à la déontologie et à la loi 09-08 (CNDP),{' '}
+            <strong style={{ color: '#DC2626' }}>
+              les recruteurs et administrateurs ne peuvent pas postuler aux concours
+            </strong>.
+          </p>
+
+          <div
+            className='p-3 mb-4 rounded-3 text-start'
+            style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', fontSize: '13px' }}
+          >
+            <div className='d-flex align-items-center gap-2 mb-1 text-dark fw-bold'>
+              <i className='fas fa-info-circle text-primary'></i>
+              <span>Que souhaitez-vous faire ?</span>
             </div>
-
-            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px' }}>
-              Accès Réservé aux Candidats
-            </h3>
-
-            <p style={{ color: '#94A3B8', fontSize: '13.5px', lineHeight: '1.6', marginBottom: '20px' }}>
-              Vous êtes actuellement connecté avec le compte institutionnel :<br />
-              <strong style={{ color: '#38BDF8' }}>
-                {userInfo?.prenom} {userInfo?.nom} (
-                {userInfo?.isMaitreOuvrage ? 'Responsable Recrutement RH' : 'Administrateur'}
-                )
-              </strong>.<br />
-              Conformément à la réglementation (CNDP / Loi 09-08), les recruteurs et administrateurs ne peuvent pas postuler ni déposer de dossier candidat.
+            <p className='text-muted mb-0 small' style={{ lineHeight: '1.6' }}>
+              Pour tester le parcours candidat sur ce poste (<strong>{selectedOffreTitre}</strong>),
+              vous devez vous déconnecter de votre compte RH et créer ou utiliser un compte <strong>Candidat</strong>.
             </p>
+          </div>
 
-            <div
-              style={{
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                borderRadius: '12px',
-                padding: '14px 18px',
-                textAlign: 'left',
-                marginBottom: '24px',
-                fontSize: '12.5px',
-                color: '#CBD5E1',
-                lineHeight: '1.6',
+          <div className='d-grid gap-2'>
+            <Button
+              variant='primary'
+              className='py-2 fw-bold d-flex align-items-center justify-content-center gap-2'
+              style={{ borderRadius: '10px', fontSize: '14px', background: '#2563EB', border: 'none' }}
+              onClick={() => {
+                setShowStaffModal(false);
+                dispatch(logout());
+                navigate(`/register?redirect=/poste/${encodeURIComponent(selectedOffreTitre)}`);
               }}
             >
-              <i className='fas fa-info-circle text-info me-2'></i>
-              Pour tester le parcours candidat sur ce poste (<strong>{selectedOffreTitre}</strong>),
-              veuillez vous déconnecter et créer un compte Candidat dédié.
-            </div>
+              <i className='fas fa-user-plus'></i>
+              Se déconnecter & Créer un compte Candidat
+            </Button>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button
-                type='button'
-                onClick={() => {
-                  dispatch(logout());
-                  navigate(`/register?redirect=/poste/${encodeURIComponent(selectedOffreTitre)}`);
-                }}
-                className='xr-btn'
-                style={{
-                  width: '100%',
-                  padding: '12px 18px',
-                  background: '#00F5A0',
-                  color: '#05131E',
-                  fontWeight: '700',
-                  borderRadius: '10px',
-                  border: 'none',
-                  cursor: 'pointer',
-                  justifyContent: 'center',
-                }}
-              >
-                <i className='fas fa-user-plus me-2'></i> Se déconnecter & Créer un compte Candidat
-              </button>
+            <Button
+              variant='outline-secondary'
+              className='py-2 fw-bold'
+              style={{ borderRadius: '10px', fontSize: '14px' }}
+              onClick={() => {
+                setShowStaffModal(false);
+                if (userInfo?.isMaitreOuvrage) navigate('/maitre-ouvrage/candidatures');
+                else navigate('/admin/dashboard');
+              }}
+            >
+              <i className='fas fa-briefcase me-1'></i> Accéder à mon Espace Recruteur
+            </Button>
 
-              <button
-                type='button'
-                onClick={() => {
-                  setShowStaffModal(false);
-                  if (userInfo?.isMaitreOuvrage) navigate('/maitre-ouvrage/candidatures');
-                  else navigate('/admin/dashboard');
-                }}
-                style={{
-                  width: '100%',
-                  padding: '11px 18px',
-                  background: 'transparent',
-                  color: '#94A3B8',
-                  borderRadius: '10px',
-                  border: '1px solid rgba(255, 255, 255, 0.15)',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                }}
-              >
-                <i className='fas fa-briefcase me-2'></i> Accéder à mon Espace Recruteur
-              </button>
-
-              <button
-                type='button'
-                onClick={() => setShowStaffModal(false)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  color: '#64748B',
-                  fontSize: '12px',
-                  cursor: 'pointer',
-                  marginTop: '4px',
-                }}
-              >
-                Fermer
-              </button>
-            </div>
+            <Button
+              variant='link'
+              className='text-muted small mt-1'
+              onClick={() => setShowStaffModal(false)}
+            >
+              Fermer
+            </Button>
           </div>
-        </div>
-      )}
+        </Modal.Body>
+      </Modal>
     </div>
   );
 };
