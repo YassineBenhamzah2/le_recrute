@@ -12,11 +12,6 @@ dotenv.config({ path: path.resolve('backend', '.env') });
 
 const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/recrutement_ccp';
 
-const hashPassword = async (pwd) => {
-  const salt = await bcrypt.genSalt(10);
-  return await bcrypt.hash(pwd, salt);
-};
-
 const runTestScenario = async () => {
   try {
     console.log('Connexion a MongoDB pour le scenario de test...');
@@ -27,7 +22,6 @@ const runTestScenario = async () => {
     console.log('[OK] Connecte a MongoDB !');
 
     const defaultPassword = 'Password123!';
-    const hashedPassword = await hashPassword(defaultPassword);
 
     // =========================================================================
     // 1. CRÉATION DE L'ENTREPRISE (Logo, Sigle, Nom, Couleurs, Récépissé CNDP)
@@ -66,7 +60,7 @@ const runTestScenario = async () => {
       prenom: 'Siham',
       nom: 'Benjelloun',
       email: rhEmail,
-      mdp: hashedPassword,
+      mdp: defaultPassword,
       cni: 'BK543210',
       phone: '0661998877',
       dateNaissance: '1988-04-12',
@@ -87,7 +81,7 @@ const runTestScenario = async () => {
     } else {
       rhUser.isMaitreOuvrage = true;
       rhUser.entreprise = entreprise._id;
-      rhUser.mdp = hashedPassword;
+      rhUser.mdp = defaultPassword;
       await rhUser.save();
       console.log(`[OK] Compte RH mis a jour : ${rhEmail} (Password: ${defaultPassword})`);
     }
@@ -442,7 +436,7 @@ const runTestScenario = async () => {
           prenom: cData.prenom,
           nom: cData.nom,
           email: cData.email,
-          mdp: hashedPassword,
+          mdp: defaultPassword,
           cni: cData.cni,
           phone: cData.phone,
           dateNaissance: cData.dateNaissance,
@@ -455,7 +449,7 @@ const runTestScenario = async () => {
           isMaitreOuvrage: false,
         });
       } else {
-        user.mdp = hashedPassword;
+        user.mdp = defaultPassword;
         await user.save();
       }
 
