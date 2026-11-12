@@ -125,6 +125,33 @@ const MaitreCandidatures = () => {
       addToast('Erreur lors du téléversement du PDF', { appearance: 'error' });
     }
   };
+
+  const handleUploadPdfForExistingOffre = async (e, offreId) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    try {
+      addToast('Téléversement du PDF en cours...', { appearance: 'info' });
+      const uploadConfig = {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      };
+      const { data: uploadedPdfPath } = await axios.post('/api/upload', formData, uploadConfig);
+
+      const updateConfig = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      await axios.put(`/api/offres/${offreId}`, { pdfUrl: uploadedPdfPath }, updateConfig);
+      addToast('Avis PDF associé à l’offre avec succès !', { appearance: 'success' });
+      fetchOffres();
+    } catch (err) {
+      console.error(err);
+      addToast('Erreur lors de l’association du PDF', { appearance: 'error' });
+    }
+  };
   const [scoring, setScoring] = useState(DEFAULT_SCORING_RULES);
 
   const getOrgLogo = () => {
@@ -795,20 +822,47 @@ const MaitreCandidatures = () => {
                           <span><i className='fas fa-graduation-cap me-1 text-success'></i> {o.niveau}</span>
                           <span><i className='fas fa-users me-1 text-warning'></i> {o.postes} Postes</span>
                         </div>
-                        <Button
-                          variant='outline-primary'
-                          size='sm'
-                          style={{ borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}
-                          onClick={() => {
-                            navigate('/#offres');
-                            setTimeout(() => {
-                              const el = document.getElementById('offres');
-                              if (el) el.scrollIntoView({ behavior: 'smooth' });
-                            }, 200);
-                          }}
-                        >
-                          <i className='fas fa-eye me-1'></i> Voir sur Landing Page
-                        </Button>
+                        <div className='d-flex align-items-center gap-2 flex-wrap'>
+                          {o.pdfUrl ? (
+                            <a
+                              href={o.pdfUrl}
+                              target='_blank'
+                              rel='noreferrer'
+                              className='btn btn-sm btn-outline-danger fw-bold'
+                              style={{ borderRadius: '6px', fontSize: '11.5px' }}
+                              title='Consulter l’Avis PDF'
+                            >
+                              <i className='fas fa-file-pdf me-1'></i> Avis PDF
+                            </a>
+                          ) : null}
+                          <label
+                            className='btn btn-sm btn-outline-secondary fw-bold mb-0'
+                            style={{ borderRadius: '6px', fontSize: '11.5px', cursor: 'pointer' }}
+                            title='Téléverser ou Remplacer l’Avis PDF de ce concours'
+                          >
+                            <i className='fas fa-upload me-1'></i> {o.pdfUrl ? 'Remplacer PDF' : 'Ajouter Avis PDF'}
+                            <input
+                              type='file'
+                              accept='application/pdf'
+                              style={{ display: 'none' }}
+                              onChange={(e) => handleUploadPdfForExistingOffre(e, o._id)}
+                            />
+                          </label>
+                          <Button
+                            variant='outline-primary'
+                            size='sm'
+                            style={{ borderRadius: '6px', fontSize: '12px', fontWeight: '600' }}
+                            onClick={() => {
+                              navigate('/#xr-offres');
+                              setTimeout(() => {
+                                const el = document.getElementById('xr-offres');
+                                if (el) el.scrollIntoView({ behavior: 'smooth' });
+                              }, 200);
+                            }}
+                          >
+                            <i className='fas fa-eye me-1'></i> Voir sur Landing Page
+                          </Button>
+                        </div>
                       </div>
                     </Card>
                   </Col>
@@ -995,30 +1049,34 @@ const MaitreCandidatures = () => {
                   />
                 </Form.Group>
 
-                <Form.Group className='mb-3'>
-                  <Form.Label className='fw-bold small text-muted d-flex align-items-center gap-1'>
-                    <i className='fas fa-file-pdf text-danger'></i>
-                    <span>Avis Officiel de Recrutement / Cahier des Charges (PDF)</span>
+                <Form.Group className='mb-3 p-3 rounded-3' style={{ background: '#F8FAFC', border: '1.5px dashed #CBD5E1' }}>
+                  <Form.Label className='fw-bold small text-dark d-flex align-items-center gap-2 mb-2'>
+                    <i className='fas fa-file-pdf text-danger fs-5'></i>
+                    <span>Avis Officiel de Recrutement / Cahier des Charges (Document PDF)</span>
                   </Form.Label>
                   <Form.Control
                     type='file'
                     accept='application/pdf'
                     onChange={handlePdfUpload}
+                    style={{ background: '#FFFFFF' }}
                   />
                   {uploadingPdf && (
-                    <div className='small text-muted mt-1'>
-                      <i className='fas fa-spinner fa-spin me-1'></i> Téléversement du PDF en cours...
+                    <div className='small text-primary mt-2 fw-semibold'>
+                      <i className='fas fa-spinner fa-spin me-1'></i> Téléversement du fichier PDF en cours...
                     </div>
                   )}
-                  {pdfUrl && (
-                    <div className='mt-2 small text-success d-flex align-items-center gap-1'>
-                      <i className='fas fa-check-circle'></i>
-                      <span>PDF associé avec succès : <strong>{pdfUrl.split('/').pop()}</strong></span>
+                  {pdfUrl ? (
+                    <div className='mt-2 p-2 rounded bg-success bg-opacity-10 text-success small d-flex align-items-center justify-content-between'>
+                      <span><i className='fas fa-check-circle me-1'></i> PDF joint : <strong>{pdfUrl.split('/').pop()}</strong></span>
+                      <a href={pdfUrl} target='_blank' rel='noreferrer' className='btn btn-sm btn-outline-success fw-bold py-0 px-2'>
+                        Aperçu
+                      </a>
                     </div>
+                  ) : (
+                    <Form.Text className='text-muted small mt-1 d-block'>
+                      Téléversez l'avis officiel signé ou le cahier des charges de ce concours (Format PDF).
+                    </Form.Text>
                   )}
-                  <Form.Text className='text-muted small'>
-                    Optionnel. Si aucun PDF n'est fourni, le cahier des charges modèle de la plateforme sera mis à disposition.
-                  </Form.Text>
                 </Form.Group>
               </div>
             </div>
