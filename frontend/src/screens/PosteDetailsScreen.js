@@ -10,6 +10,7 @@ import { logout } from '../actions/userActions';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Heading from '../components/Heading';
+import { getFileUrl } from '../utils/fileUrl';
 
 const PosteDetailsScreen = () => {
   moment.locale('fr');
@@ -429,7 +430,7 @@ const PosteDetailsScreen = () => {
                         </div>
                       </div>
                       <a
-                        href={pdfUrl}
+                        href={getFileUrl(pdfUrl)}
                         target='_blank'
                         rel='noreferrer'
                         className='btn btn-light fw-bold px-4 py-2'

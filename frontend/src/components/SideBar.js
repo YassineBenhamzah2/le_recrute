@@ -18,7 +18,11 @@ const SideBar = ({ children }) => {
   };
 
   const currentInstitution =
-    userInfo?.entrepriseNom || userInfo?.institution || userInfo?.nomEntreprise || 'Portail Recrutement';
+    userInfo?.entreprise?.nom ||
+    userInfo?.entrepriseNom ||
+    userInfo?.institution ||
+    userInfo?.nomEntreprise ||
+    'Portail Recrutement';
 
   return (
     <>

@@ -70,6 +70,24 @@ app.use('/images', express.static(path.join(__dirname, 'frontend', 'public', 'im
 app.use('/assets', express.static(path.join(__dirname, '../frontend/public/assets')));
 app.use('/assets', express.static(path.join(__dirname, 'frontend', 'public', 'assets')));
 
+// Service direct du Worker PDF (garantit un chargement sans faille quel que soit le port ou l'hôte)
+app.get('/pdf.worker.min.js', (req, res) => {
+  const candidates = [
+    path.join(__dirname, 'frontend', 'public', 'pdf.worker.min.js'),
+    path.join(__dirname, 'frontend', 'build', 'pdf.worker.min.js'),
+    path.join(__dirname, 'uploads', 'pdf.worker.min.js'),
+    path.join(__dirname, 'frontend', 'node_modules', 'pdfjs-dist', 'build', 'pdf.worker.min.js'),
+  ];
+  for (const c of candidates) {
+    if (fs.existsSync(c)) {
+      res.setHeader('Content-Type', 'application/javascript');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.sendFile(c);
+    }
+  }
+  res.status(404).send('Worker not found');
+});
+
 
 const frontendBuild = path.join(__dirname, 'frontend', 'build', 'index.html');
 const frontendBuildAlt = path.join(__dirname, '../frontend/build', 'index.html');

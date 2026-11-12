@@ -118,7 +118,8 @@ const MaitreCandidatures = () => {
         headers: { 'Content-Type': 'multipart/form-data' },
       };
       const { data } = await axios.post('/api/upload', formData, config);
-      setPdfUrl(data);
+      const uploadedPath = (data && (data.url || data.filePath || data.fileName)) || (typeof data === 'string' ? data : '');
+      setPdfUrl(uploadedPath);
       setUploadingPdf(false);
       addToast('Avis de concours PDF téléversé avec succès !', { appearance: 'success' });
     } catch (err) {
@@ -137,7 +138,8 @@ const MaitreCandidatures = () => {
       const uploadConfig = {
         headers: { 'Content-Type': 'multipart/form-data' },
       };
-      const { data: uploadedPdfPath } = await axios.post('/api/upload', formData, uploadConfig);
+      const { data: uploadRes } = await axios.post('/api/upload', formData, uploadConfig);
+      const uploadedPdfPath = (uploadRes && (uploadRes.url || uploadRes.filePath || uploadRes.fileName)) || (typeof uploadRes === 'string' ? uploadRes : '');
 
       const updateConfig = {
         headers: {

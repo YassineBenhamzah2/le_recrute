@@ -80,7 +80,10 @@ const createOffre = asyncHandler(async (req, res) => {
     description: description || '',
     profilRecherche: profilRecherche || '',
     dateLimite: dateLimite || null,
-    pdfUrl: pdfUrl || '',
+    pdfUrl:
+      typeof pdfUrl === 'object' && pdfUrl !== null
+        ? pdfUrl.url || pdfUrl.filePath || ''
+        : pdfUrl || '',
     user: req.user ? req.user._id : null,
     ...(scoringRules || req.body.reglesScoring
       ? { scoringRules: scoringRules || req.body.reglesScoring }
@@ -150,7 +153,12 @@ const updateOffre = asyncHandler(async (req, res) => {
     if (description !== undefined) offre.description = description;
     if (profilRecherche !== undefined) offre.profilRecherche = profilRecherche;
     if (dateLimite !== undefined) offre.dateLimite = dateLimite;
-    if (pdfUrl !== undefined) offre.pdfUrl = pdfUrl;
+    const normalizedPdf =
+      typeof pdfUrl === 'object' && pdfUrl !== null
+        ? pdfUrl.url || pdfUrl.filePath || ''
+        : pdfUrl || '';
+
+    if (pdfUrl !== undefined) offre.pdfUrl = normalizedPdf;
     if (scoringRules !== undefined) offre.scoringRules = scoringRules;
 
     const updatedOffre = await offre.save();

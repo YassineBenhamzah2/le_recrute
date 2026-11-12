@@ -18,7 +18,6 @@ import { getFileUrl } from '../../utils/fileUrl';
 import DocumentViewer from '../../components/DocumentViewer';
 
 const CandidaturesDiplomesScreen = () => {
-  pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
   moment.locale('fr');
 
   const navigate = useNavigate();
