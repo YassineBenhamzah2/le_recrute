@@ -246,6 +246,21 @@ const MaitreCandidatures = () => {
     );
   });
 
+  // Métriques KPI dynamiques
+  const totalPostes = (offres || []).reduce((acc, o) => acc + (Number(o.postes) || 0), 0);
+  const avgScore =
+    enrichedCandidatures.length > 0
+      ? (
+          enrichedCandidatures.reduce((acc, c) => acc + (Number(c.scoreTotal) || 0), 0) /
+          enrichedCandidatures.length
+        ).toFixed(1)
+      : null;
+  const conformesCount = enrichedCandidatures.filter((c) => c.conforme === 'CONFORME').length;
+  const conformiteRate =
+    enrichedCandidatures.length > 0
+      ? Math.round((conformesCount / enrichedCandidatures.length) * 100)
+      : null;
+
   const exportCSV = () => {
     const headers = ['Nom', 'Prenom', 'CNI', 'Poste', 'Email', 'Telephone', 'Score / 100', 'Date Depot'];
     const rows = filteredCandidatures.map((c) => [
@@ -462,19 +477,29 @@ const MaitreCandidatures = () => {
             <Col md={3}>
               <Card className='border-0 shadow-sm rounded-3 p-3' style={{ background: '#F8FAFC' }}>
                 <span className='text-muted small fw-bold text-uppercase'>Concours / Postes Déposés</span>
-                <h3 className='fw-bold mb-0 text-primary mt-1'>{offres.length}</h3>
+                <h3 className='fw-bold mb-0 text-primary mt-1'>
+                  {offres.length} {offres.length > 0 && <span className='fs-6 text-muted fw-normal'>({totalPostes} postes)</span>}
+                </h3>
               </Card>
             </Col>
             <Col md={3}>
               <Card className='border-0 shadow-sm rounded-3 p-3' style={{ background: '#F8FAFC' }}>
                 <span className='text-muted small fw-bold text-uppercase'>Score Barème Moyen</span>
-                <h3 className='fw-bold mb-0 text-success mt-1'>68.4 / 100</h3>
+                {avgScore !== null ? (
+                  <h3 className='fw-bold mb-0 text-success mt-1'>{avgScore} / 100</h3>
+                ) : (
+                  <h3 className='fw-bold mb-0 text-muted mt-1'>—</h3>
+                )}
               </Card>
             </Col>
             <Col md={3}>
               <Card className='border-0 shadow-sm rounded-3 p-3' style={{ background: '#F8FAFC' }}>
                 <span className='text-muted small fw-bold text-uppercase'>Conformité Légale CNDP</span>
-                <h3 className='fw-bold mb-0 text-info mt-1'>100% Certifié</h3>
+                {conformiteRate !== null ? (
+                  <h3 className='fw-bold mb-0 text-info mt-1'>{conformiteRate}% Certifié</h3>
+                ) : (
+                  <h3 className='fw-bold mb-0 text-muted mt-1'>En attente</h3>
+                )}
               </Card>
             </Col>
           </Row>
