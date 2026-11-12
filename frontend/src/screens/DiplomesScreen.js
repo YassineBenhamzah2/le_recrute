@@ -13,6 +13,7 @@ import Header from '../components/Header';
 import Footer from '../components/Footer';
 import isUppercase from 'validator/es/lib/isUppercase';
 import axios from 'axios';
+import moment from 'moment';
 
 const DiplomesScreen = () => {
   const navigate = useNavigate();
