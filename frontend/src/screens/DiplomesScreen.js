@@ -302,11 +302,11 @@ const DiplomesScreen = () => {
                   }}
                   required
                 >
-                  <option value=''>Sélectionnez votre niveau d'étude...</option>
-                  <option value='Bac+2'>1- Bac+2</option>
-                  <option value='Bac+3'>2- Bac+3</option>
-                  <option value='Bac+3 PRO'>3- Bac+3 PRO</option>
-                  <option value='Bac+5'>4- Bac+5 / Master / Ingénieur</option>
+                  <option value=''>-- Sélectionnez votre niveau d'études --</option>
+                  <option value='Bac+2'>Bac +2 (DUT, BTS, DTS OFPPT, DEUG)</option>
+                  <option value='Bac+3'>Bac +3 (Licence Fondamentale — 3 ans)</option>
+                  <option value='Bac+3 PRO'>Bac +3 PRO (Licence Professionnelle — Année S5/S6)</option>
+                  <option value='Bac+5'>Bac +5 (Master, Diplôme d'Ingénieur d'État, Bac+5)</option>
                 </Form.Control>
               </InputGroup>
             </Col>
@@ -512,14 +512,16 @@ const DiplomesScreen = () => {
                 <span className='text-danger ms-1'>*</span>
               </Form.Label>
               <InputGroup className='mb-3'>
-                <Calendar
-                  className='form-control'
-                  value={dateObtention}
-                  onChange={(d) => {
-                    setDateObtention(d);
+                <Form.Control
+                  type='date'
+                  max={moment().format('YYYY-MM-DD')}
+                  style={{ borderRadius: '8px', height: '46px' }}
+                  value={dateObtention ? (moment.isMoment(dateObtention) ? dateObtention.format('YYYY-MM-DD') : (typeof dateObtention === 'string' && dateObtention.includes('-') ? dateObtention : (moment(dateObtention).isValid() ? moment(dateObtention).format('YYYY-MM-DD') : ''))) : ''}
+                  onChange={(e) => {
+                    setDateObtention(e.target.value);
                     if (message) setMessage('');
                   }}
-                  date={"Date d'obtention de diplôme"}
+                  required
                 />
               </InputGroup>
             </Col>

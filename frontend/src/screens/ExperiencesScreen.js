@@ -43,6 +43,7 @@ const ExperiencesScreen = () => {
   const [enPoste, setEnPoste] = useState(false);
   const [message, setMessage] = useState('');
   const [modalError, setModalError] = useState('');
+  const [modalFieldErrors, setModalFieldErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const [attestationsTravail, setAttestationsTravail] = useState('');
   const [uploadingAttestations, setUploadingAttestations] = useState(false);
@@ -63,13 +64,13 @@ const ExperiencesScreen = () => {
     fetchCurrentOffre();
   }, [dispatch, params.poste]);
 
+  const posteTitre = currentOffre?.titre || params.poste || 'Poste ciblé';
   const specialitePoste =
-    currentOffre?.scoringRules?.experience?.nomSpecialite ||
-    currentOffre?.specialite ||
-    (params.poste && params.poste.toLowerCase().includes('recrutement') ? 'RH & Recrutement' : null) ||
-    (params.poste && params.poste.toLowerCase().includes('guichet') ? 'Opérations Bancaires' : null) ||
-    (params.poste && params.poste.toLowerCase().includes('ingénieur') ? 'Ingénierie & Procédés' : null) ||
-    'Poste & Spécialité requise';
+    (currentOffre?.specialite && !currentOffre.specialite.includes('Bancaire') ? currentOffre.specialite : null) ||
+    (currentOffre?.scoringRules?.experience?.nomSpecialite && currentOffre.scoringRules.experience.nomSpecialite !== 'Bancaire'
+      ? currentOffre.scoringRules.experience.nomSpecialite
+      : null) ||
+    posteTitre;
 
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
@@ -178,57 +179,55 @@ const ExperiencesScreen = () => {
   const experienceSubmitHandler = (e) => {
     e.preventDefault();
     setModalError('');
+    const errs = {};
 
     if (!domaine) {
-      setModalError("Veuillez sélectionner la nature du domaine de l'expérience");
-      return;
+      errs.domaine = "Veuillez sélectionner le type d'expérience";
     }
     if (!fonctionOccupee || !fonctionOccupee.trim()) {
-      setModalError("Veuillez renseigner la fonction occupée");
-      return;
+      errs.fonctionOccupee = "Veuillez renseigner la fonction occupée";
     }
     if (!entreprise || !entreprise.trim()) {
-      setModalError("Veuillez renseigner l'entreprise ou l'établissement");
-      return;
+      errs.entreprise = "Veuillez renseigner l'entreprise ou l'établissement";
     }
     if (!dateDebut) {
-      setModalError("Veuillez renseigner la date de début");
-      return;
+      errs.dateDebut = "Veuillez renseigner la date de début";
     }
     if (!enPoste && !dateFin) {
-      setModalError("Veuillez renseigner la date de fin ou cocher 'Poste actuel (Toujours en poste)'");
-      return;
+      errs.dateFin = "Veuillez renseigner la date de fin";
     }
 
     const dd = parseMomentSafe(dateDebut);
     const df = enPoste ? moment() : parseMomentSafe(dateFin);
 
-    if (!dd || !dd.isValid()) {
-      setModalError("Date de début invalide");
-      return;
+    if (dateDebut && (!dd || !dd.isValid())) {
+      errs.dateDebut = "Date de début invalide";
     }
-    if (!df || !df.isValid()) {
-      setModalError("Date de fin invalide");
-      return;
+    if (!enPoste && dateFin && (!df || !df.isValid())) {
+      errs.dateFin = "Date de fin invalide";
     }
-    if (dd.isAfter(df)) {
-      setModalError("La date de fin doit être postérieure à la date de début");
-      return;
+    if (dd && df && dd.isValid() && df.isValid() && dd.isAfter(df)) {
+      errs.dateFin = "La date de fin doit être postérieure à la date de début";
     }
-    if (!enPoste && df.isAfter(moment().endOf('day'))) {
-      setModalError("La date de fin ne peut pas être dans le futur");
-      return;
+    if (!enPoste && df && df.isValid() && df.isAfter(moment().endOf('day'))) {
+      errs.dateFin = "La date de fin ne peut pas être dans le futur";
     }
 
     // Validation Bac : uniquement si l'année de début est strictement inférieure à l'année du Bac
-    if (userInfo && userInfo.dateObtentionBac) {
+    if (userInfo && userInfo.dateObtentionBac && dd && dd.isValid()) {
       const dBac = parseMomentSafe(userInfo.dateObtentionBac);
       if (dBac && dBac.isValid() && dd.year() < dBac.year()) {
-        setModalError(`L'année de début de l'expérience (${dd.year()}) ne peut pas être antérieure à l'année d'obtention du Bac (${dBac.year()})`);
-        return;
+        errs.dateDebut = `L'année de début (${dd.year()}) ne peut pas être antérieure au Bac (${dBac.year()})`;
       }
     }
 
+    if (Object.keys(errs).length > 0) {
+      setModalFieldErrors(errs);
+      setModalError("Veuillez renseigner tous les champs obligatoires marqués en rouge");
+      return;
+    }
+
+    setModalFieldErrors({});
     setExperiences((prev) => [
       ...prev,
       {
@@ -248,6 +247,7 @@ const ExperiencesScreen = () => {
     setDateFin('');
     setEnPoste(false);
     setModalError('');
+    setModalFieldErrors({});
     setShowNote(false);
   };
 
@@ -599,26 +599,35 @@ const ExperiencesScreen = () => {
                 <i className='fas fa-layer-group text-primary me-2'></i> Nature / Domaine de l'expérience :
                 <span className='text-danger ms-1'>*</span>
               </Form.Label>
-              <Form.Control
-                as='select'
-                style={{ borderRadius: '8px' }}
+              <Form.Select
+                style={{
+                  borderRadius: '8px',
+                  height: '46px',
+                  border: modalFieldErrors.domaine ? '1.5px solid #EF4444' : '1px solid #ced4da',
+                  background: modalFieldErrors.domaine ? '#FEF2F2' : '#FFFFFF',
+                  fontWeight: '500',
+                }}
                 value={domaine}
                 onChange={(e) => {
                   setDomaine(e.target.value);
                   setModalError('');
+                  setModalFieldErrors((prev) => ({ ...prev, domaine: null }));
                 }}
-                required
               >
-                <option value=''>
-                  Sélectionnez la nature de l'expérience...
-                </option>
+                <option value=''>-- Sélectionnez la nature de votre expérience --</option>
                 <option value='Spécialité directe'>
-                  ★ Expérience directe dans le poste / spécialité ({specialitePoste})
+                  🎯 Expérience directe dans le poste / métier ({specialitePoste})
                 </option>
                 <option value='Autre'>
-                  Expérience générale / autre secteur ou fonction connexe
+                  💼 Autre expérience professionnelle (Secteur public, privé ou connexe)
                 </option>
-              </Form.Control>
+              </Form.Select>
+              {modalFieldErrors.domaine && (
+                <div className='text-danger small mt-1 d-flex align-items-center gap-1' style={{ fontSize: '11.5px', fontWeight: '500' }}>
+                  <i className='fas fa-exclamation-circle'></i>
+                  <span>{modalFieldErrors.domaine}</span>
+                </div>
+              )}
             </Form.Group>
             <Row>
               <Col md={6}>
@@ -629,15 +638,26 @@ const ExperiencesScreen = () => {
                   </Form.Label>
                   <Form.Control
                     type='text'
-                    placeholder='Ex: Chargé de Recrutement'
-                    style={{ borderRadius: '8px' }}
+                    placeholder='Ex: Développeur Web, Analyste...'
+                    style={{
+                      borderRadius: '8px',
+                      height: '44px',
+                      border: modalFieldErrors.fonctionOccupee ? '1.5px solid #EF4444' : '1px solid #ced4da',
+                      background: modalFieldErrors.fonctionOccupee ? '#FEF2F2' : '#FFFFFF',
+                    }}
                     value={fonctionOccupee}
                     onChange={(e) => {
                       setFonctionOccupee(e.target.value);
                       setModalError('');
+                      setModalFieldErrors((prev) => ({ ...prev, fonctionOccupee: null }));
                     }}
-                    required
                   />
+                  {modalFieldErrors.fonctionOccupee && (
+                    <div className='text-danger small mt-1 d-flex align-items-center gap-1' style={{ fontSize: '11.5px', fontWeight: '500' }}>
+                      <i className='fas fa-exclamation-circle'></i>
+                      <span>{modalFieldErrors.fonctionOccupee}</span>
+                    </div>
+                  )}
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -648,15 +668,26 @@ const ExperiencesScreen = () => {
                   </Form.Label>
                   <Form.Control
                     type='text'
-                    placeholder='Ex: Groupe OCP, Société X...'
-                    style={{ borderRadius: '8px' }}
+                    placeholder='Ex: Maroc Telecom, OCP, Société X...'
+                    style={{
+                      borderRadius: '8px',
+                      height: '44px',
+                      border: modalFieldErrors.entreprise ? '1.5px solid #EF4444' : '1px solid #ced4da',
+                      background: modalFieldErrors.entreprise ? '#FEF2F2' : '#FFFFFF',
+                    }}
                     value={entreprise}
                     onChange={(e) => {
                       setEntreprise(e.target.value);
                       setModalError('');
+                      setModalFieldErrors((prev) => ({ ...prev, entreprise: null }));
                     }}
-                    required
                   />
+                  {modalFieldErrors.entreprise && (
+                    <div className='text-danger small mt-1 d-flex align-items-center gap-1' style={{ fontSize: '11.5px', fontWeight: '500' }}>
+                      <i className='fas fa-exclamation-circle'></i>
+                      <span>{modalFieldErrors.entreprise}</span>
+                    </div>
+                  )}
                 </Form.Group>
               </Col>
             </Row>
@@ -686,11 +717,12 @@ const ExperiencesScreen = () => {
                       const checked = e.target.checked;
                       setEnPoste(checked);
                       if (checked) {
-                        setDateFin(new Date());
+                        setDateFin(moment().format('YYYY-MM-DD'));
                       } else {
                         setDateFin('');
                       }
                       setModalError('');
+                      setModalFieldErrors((prev) => ({ ...prev, dateFin: null }));
                     }}
                   />
                 </div>
@@ -703,15 +735,28 @@ const ExperiencesScreen = () => {
                     <i className='fas fa-calendar-alt text-primary me-2'></i> Date de Début :
                     <span className='text-danger ms-1'>*</span>
                   </Form.Label>
-                  <Calendar
-                    date={'Date début'}
-                    className='form-control'
-                    value={dateDebut}
-                    onChange={(d) => {
-                      setDateDebut(d);
+                  <Form.Control
+                    type='date'
+                    max={moment().format('YYYY-MM-DD')}
+                    style={{
+                      borderRadius: '8px',
+                      height: '44px',
+                      border: modalFieldErrors.dateDebut ? '1.5px solid #EF4444' : '1px solid #ced4da',
+                      background: modalFieldErrors.dateDebut ? '#FEF2F2' : '#FFFFFF',
+                    }}
+                    value={dateDebut ? (moment.isMoment(dateDebut) ? dateDebut.format('YYYY-MM-DD') : (parseMomentSafe(dateDebut) ? parseMomentSafe(dateDebut).format('YYYY-MM-DD') : (typeof dateDebut === 'string' && dateDebut.includes('-') ? dateDebut : ''))) : ''}
+                    onChange={(e) => {
+                      setDateDebut(e.target.value);
                       setModalError('');
+                      setModalFieldErrors((prev) => ({ ...prev, dateDebut: null }));
                     }}
                   />
+                  {modalFieldErrors.dateDebut && (
+                    <div className='text-danger small mt-1 d-flex align-items-center gap-1' style={{ fontSize: '11.5px', fontWeight: '500' }}>
+                      <i className='fas fa-exclamation-circle'></i>
+                      <span>{modalFieldErrors.dateDebut}</span>
+                    </div>
+                  )}
                 </Form.Group>
               </Col>
               <Col md={6}>
@@ -723,20 +768,36 @@ const ExperiencesScreen = () => {
                   {enPoste ? (
                     <div
                       className='form-control d-flex align-items-center gap-2 fw-bold'
-                      style={{ background: '#DCFCE7', color: '#15803D', borderColor: '#86EFAC', height: '38px' }}
+                      style={{ background: '#DCFCE7', color: '#15803D', borderColor: '#86EFAC', height: '44px', borderRadius: '8px' }}
                     >
                       <i className='fas fa-check-circle'></i> À ce jour (Aujourd'hui)
                     </div>
                   ) : (
-                    <Calendar
-                      date={'Date fin'}
-                      className='form-control'
-                      value={dateFin}
-                      onChange={(d) => {
-                        setDateFin(d);
-                        setModalError('');
-                      }}
-                    />
+                    <>
+                      <Form.Control
+                        type='date'
+                        max={moment().format('YYYY-MM-DD')}
+                        min={dateDebut ? (parseMomentSafe(dateDebut) ? parseMomentSafe(dateDebut).format('YYYY-MM-DD') : undefined) : undefined}
+                        style={{
+                          borderRadius: '8px',
+                          height: '44px',
+                          border: modalFieldErrors.dateFin ? '1.5px solid #EF4444' : '1px solid #ced4da',
+                          background: modalFieldErrors.dateFin ? '#FEF2F2' : '#FFFFFF',
+                        }}
+                        value={dateFin ? (moment.isMoment(dateFin) ? dateFin.format('YYYY-MM-DD') : (parseMomentSafe(dateFin) ? parseMomentSafe(dateFin).format('YYYY-MM-DD') : (typeof dateFin === 'string' && dateFin.includes('-') ? dateFin : ''))) : ''}
+                        onChange={(e) => {
+                          setDateFin(e.target.value);
+                          setModalError('');
+                          setModalFieldErrors((prev) => ({ ...prev, dateFin: null }));
+                        }}
+                      />
+                      {modalFieldErrors.dateFin && (
+                        <div className='text-danger small mt-1 d-flex align-items-center gap-1' style={{ fontSize: '11.5px', fontWeight: '500' }}>
+                          <i className='fas fa-exclamation-circle'></i>
+                          <span>{modalFieldErrors.dateFin}</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </Form.Group>
               </Col>
