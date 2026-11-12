@@ -196,6 +196,41 @@ const MaitreCandidatures = () => {
     }
   };
 
+  const [updatingConformite, setUpdatingConformite] = useState(false);
+
+  const handleUpdateConformite = async (candidatureId, newConforme) => {
+    try {
+      setUpdatingConformite(true);
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      await axios.put(`/api/candidatures/${candidatureId}`, { conforme: newConforme }, config);
+      dispatch(listCandidatures());
+      if (selectedInspectCandidate && selectedInspectCandidate._id === candidatureId) {
+        setSelectedInspectCandidate((prev) => ({ ...prev, conforme: newConforme }));
+      }
+      addToast(
+        newConforme === 'CONFORME'
+          ? 'Dossier validé avec succès (CONFORME).'
+          : 'Dossier marqué comme NON CONFORME (Rejeté).',
+        {
+          appearance: newConforme === 'CONFORME' ? 'success' : 'error',
+          autoDismiss: true,
+        }
+      );
+    } catch (err) {
+      addToast(err.response?.data?.message || 'Erreur lors de la mise à jour du statut', {
+        appearance: 'error',
+        autoDismiss: true,
+      });
+    } finally {
+      setUpdatingConformite(false);
+    }
+  };
+
   useEffect(() => {
     if (!userInfo || (!userInfo.isMaitreOuvrage && !userInfo.isAdmin)) {
       navigate('/login');
@@ -728,9 +763,19 @@ const MaitreCandidatures = () => {
                             </div>
                           </td>
                           <td>
-                            <span className='badge bg-success-subtle text-success border border-success' style={{ fontSize: '11px', padding: '5px 8px' }}>
-                              <i className='fas fa-check-circle me-1'></i> Enregistré
-                            </span>
+                            {c.conforme === 'CONFORME' ? (
+                              <span className='badge bg-success-subtle text-success border border-success' style={{ fontSize: '11px', padding: '5px 8px' }}>
+                                <i className='fas fa-check-circle me-1'></i> Conforme
+                              </span>
+                            ) : c.conforme === 'NON CONFORME' ? (
+                              <span className='badge bg-danger-subtle text-danger border border-danger' style={{ fontSize: '11px', padding: '5px 8px' }}>
+                                <i className='fas fa-times-circle me-1'></i> Non Conforme
+                              </span>
+                            ) : (
+                              <span className='badge bg-warning-subtle text-dark border border-warning' style={{ fontSize: '11px', padding: '5px 8px' }}>
+                                <i className='fas fa-clock me-1'></i> En Attente
+                              </span>
+                            )}
                           </td>
                           <td className='text-end' style={{ paddingRight: '20px' }}>
                             <Button
@@ -1833,10 +1878,48 @@ const MaitreCandidatures = () => {
               </Col>
             </Row>
           </Modal.Body>
-          <Modal.Footer className='bg-light'>
-            <Button variant='secondary' onClick={() => setSelectedInspectCandidate(null)}>
-              Fermer
-            </Button>
+          <Modal.Footer className='bg-light d-flex justify-content-between align-items-center flex-wrap gap-2'>
+            <div className='d-flex align-items-center gap-2'>
+              <span className='fw-bold small text-muted'>Décision de la Commission :</span>
+              {selectedInspectCandidate.conforme === 'CONFORME' ? (
+                <Badge bg='success' className='px-3 py-2 fs-6'>
+                  <i className='fas fa-check-circle me-1'></i> DOSSIER CONFORME
+                </Badge>
+              ) : selectedInspectCandidate.conforme === 'NON CONFORME' ? (
+                <Badge bg='danger' className='px-3 py-2 fs-6'>
+                  <i className='fas fa-times-circle me-1'></i> NON CONFORME / REJETÉ
+                </Badge>
+              ) : (
+                <Badge bg='warning' text='dark' className='px-3 py-2 fs-6'>
+                  <i className='fas fa-clock me-1'></i> EN ATTENTE D'INSTRUCTION
+                </Badge>
+              )}
+            </div>
+
+            <div className='d-flex align-items-center gap-2'>
+              <Button
+                variant='outline-secondary'
+                onClick={() => setSelectedInspectCandidate(null)}
+              >
+                Fermer
+              </Button>
+              <Button
+                variant='outline-danger'
+                className='fw-bold'
+                onClick={() => handleUpdateConformite(selectedInspectCandidate._id, 'NON CONFORME')}
+                disabled={updatingConformite || selectedInspectCandidate.conforme === 'NON CONFORME'}
+              >
+                <i className='fas fa-times me-1'></i> Marquer Non Conforme
+              </Button>
+              <Button
+                variant='success'
+                className='fw-bold px-3'
+                onClick={() => handleUpdateConformite(selectedInspectCandidate._id, 'CONFORME')}
+                disabled={updatingConformite || selectedInspectCandidate.conforme === 'CONFORME'}
+              >
+                <i className='fas fa-check me-1'></i> Valider Dossier Conforme
+              </Button>
+            </div>
           </Modal.Footer>
         </Modal>
       )}

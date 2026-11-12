@@ -18,6 +18,7 @@ const CandidatureCard = ({ candidature, userInfo, onPreviewReceipt }) => {
 
   const orgNomRaw =
     candidature.entreprise?.nom ||
+    candidature.offre?.entreprise?.nom ||
     candidature.offre?.entrepriseNom ||
     (candidature.poste?.toLowerCase().includes('barid')
       ? 'Al Barid Bank'
@@ -27,7 +28,7 @@ const CandidatureCard = ({ candidature, userInfo, onPreviewReceipt }) => {
       ? 'Groupe OCP'
       : candidature.poste?.toLowerCase().includes('finances')
       ? "Ministère de l'Économie et des Finances"
-      : '1er Recruteur');
+      : 'Institution Recruteuse');
 
   const orgNom =
     orgNomRaw.toLowerCase() === 'lerrecruteur' || orgNomRaw.toLowerCase() === '1errecruteur'

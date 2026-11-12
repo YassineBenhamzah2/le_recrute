@@ -59,17 +59,18 @@ const createOffre = asyncHandler(async (req, res) => {
   }
 
   let entrepriseDoc = null;
-  if (entrepriseId) {
-    entrepriseDoc = await Entreprise.findById(entrepriseId);
+  const targetEntrepriseId = entrepriseId || (req.user && req.user.entreprise ? req.user.entreprise : null);
+  if (targetEntrepriseId && !entrepriseDoc) {
+    entrepriseDoc = await Entreprise.findById(targetEntrepriseId);
   }
 
   const offre = new Offre({
     titre,
-    entreprise: entrepriseId || null,
-    entrepriseNom: entrepriseDoc ? entrepriseDoc.nom : req.body.entrepriseNom || 'Al Barid Bank',
-    entrepriseSigle: entrepriseDoc ? entrepriseDoc.sigle : req.body.entrepriseSigle || 'ABB',
+    entreprise: targetEntrepriseId || null,
+    entrepriseNom: entrepriseDoc ? entrepriseDoc.nom : req.body.entrepriseNom || 'Institution Recruteuse',
+    entrepriseSigle: entrepriseDoc ? entrepriseDoc.sigle : req.body.entrepriseSigle || 'REC',
     entrepriseLogo: entrepriseDoc ? entrepriseDoc.logo : req.body.entrepriseLogo || '',
-    entrepriseCouleur: entrepriseDoc ? entrepriseDoc.couleurPrimaire : req.body.entrepriseCouleur || '#003366',
+    entrepriseCouleur: entrepriseDoc ? entrepriseDoc.couleurPrimaire : req.body.entrepriseCouleur || '#1D4ED8',
     specialite: specialite || 'Réseau Agences Bancaires',
     secteur: secteur || (entrepriseDoc ? entrepriseDoc.secteur : 'Secteur Bancaire'),
     ville: ville || 'Réseau National',
