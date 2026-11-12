@@ -279,7 +279,7 @@ const DiplomesScreen = () => {
         <h3 className='text-center my-3'>
           Veuillez remplir le formulaire suivant
         </h3>
-        <Form onSubmit={submitHandler}>
+        <Form noValidate onSubmit={submitHandler}>
           {message && (
             <Message variant={'danger'}>
               <i className='fas fa-exclamation-triangle'></i> {message}

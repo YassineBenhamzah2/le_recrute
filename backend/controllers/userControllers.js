@@ -147,6 +147,63 @@ const getUserProfile = asyncHandler(async (req, res) => {
 const updateUserProfile = asyncHandler(async (req, res) => {
   const user = await User.findById(req.user._id);
   if (user) {
+    // Validation dynamique des champs obligatoires
+    const errors = {};
+    if (!req.body.civilite && !user.civilite) {
+      errors.civilite = 'La civilité est obligatoire (Madame / Monsieur)';
+    }
+    if (!req.body.nom && !user.nom) {
+      errors.nom = 'Le nom de famille est obligatoire';
+    }
+    if (!req.body.prenom && !user.prenom) {
+      errors.prenom = 'Le prénom est obligatoire';
+    }
+    if (!req.body.dateNaissance && !user.dateNaissance) {
+      errors.dateNaissance = 'La date de naissance est obligatoire';
+    }
+    if (!req.body.lieuNaissance && !user.lieuNaissance) {
+      errors.lieuNaissance = 'Le lieu de naissance est obligatoire';
+    }
+    if (!req.body.nationalite && !user.nationalite) {
+      errors.nationalite = 'La nationalité est obligatoire';
+    }
+    if (!req.body.phone && !user.phone) {
+      errors.phone = 'Le numéro de téléphone est obligatoire';
+    } else if (req.body.phone) {
+      const cleanPhone = req.body.phone.replace(/\s+/g, '');
+      if (!/^(?:(?:\+|00)212|0)[5-7]\d{8}$/.test(cleanPhone)) {
+        errors.phone = 'Numéro de téléphone marocain invalide (ex: 0612345678)';
+      }
+    }
+    if (!req.body.cni && !user.cni) {
+      errors.cni = 'Le numéro de CNI est obligatoire';
+    }
+    if (!req.body.email && !user.email) {
+      errors.email = "L'adresse email est obligatoire";
+    }
+    if (!req.body.adresse && !user.adresse) {
+      errors.adresse = "L'adresse de résidence est obligatoire";
+    }
+    if (!req.body.ville && !user.ville) {
+      errors.ville = 'La ville de résidence est obligatoire';
+    }
+    if (!req.body.codePostale && !user.codePostale) {
+      errors.codePostale = 'Le code postal est obligatoire (5 chiffres)';
+    } else if (req.body.codePostale && !/^\d{5}$/.test(req.body.codePostale.toString().trim())) {
+      errors.codePostale = 'Le code postal doit être composé exactement de 5 chiffres (ex: 20000)';
+    }
+    if (!req.body.copieCNI && !user.copieCNI) {
+      errors.copieCNI = 'La copie de la CNI est obligatoire';
+    }
+
+    if (Object.keys(errors).length > 0) {
+      res.status(400);
+      return res.json({
+        message: 'Veuillez renseigner tous les champs obligatoires marqués d’un astérisque (*)',
+        errors,
+      });
+    }
+
     user.civilite = req.body.civilite || user.civilite;
     user.prenom = req.body.prenom || user.prenom;
     user.nom = req.body.nom || user.nom;

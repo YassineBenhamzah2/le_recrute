@@ -113,6 +113,7 @@ export const userUpdateProfilReducer = (state = {}, action) => {
       return {
         loading: false,
         error: action.payload,
+        errors: action.errors || null,
       };
 
     case USER_UPDATE_PROFILE_RESET:

@@ -311,7 +311,7 @@ const ExperiencesScreen = () => {
       <Heading title='Expériences professionnelles' poste={params.poste} />
       <PostulationSteps step1 step2 step3 step4 now={80} />
       <FormContainer>
-        <Form onSubmit={submitHandler}>
+        <Form noValidate onSubmit={submitHandler}>
           <h3 className='text-center my-3'>
             Veuillez remplir le formulaire suivant
           </h3>
@@ -585,7 +585,7 @@ const ExperiencesScreen = () => {
             <i className='fas fa-briefcase text-primary me-2'></i> Ajouter une Expérience Professionnelle
           </Modal.Title>
         </Modal.Header>
-        <Form onSubmit={experienceSubmitHandler}>
+        <Form noValidate onSubmit={experienceSubmitHandler}>
           <Modal.Body className='p-4'>
             {modalError && (
               <div className='mb-3'>
