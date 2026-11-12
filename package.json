@@ -10,6 +10,9 @@
     "server": "nodemon backend/server",
     "client": "npm start --prefix frontend",
     "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "seed:test": "node backend/seedTestScenario.js",
+    "seed:admin": "node backend/seedAdmin.js",
+    "seed:entreprises": "node backend/seedMultiEntreprises.js",
     "heroku-postbuild": "NPM_CONFIG_PRODUCTION=false npm install --prefix frontend && npm run build --prefix frontend"
   },
   "repository": {
