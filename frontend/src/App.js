@@ -26,6 +26,7 @@ import ProfileScreen from './screens/ProfileScreen';
 import RegisterScreen from './screens/RegisterScreen';
 import VerificationScreen from './screens/VerificationScreen';
 import ErrorBoundary from './components/ErrorBoundary';
+import ProtectedRoute from './components/ProtectedRoute';
 
 const App = () => {
   return (
@@ -33,82 +34,150 @@ const App = () => {
       <ToastProvider autoDismissTimeout='5000'>
         <ErrorBoundary>
           <Routes>
-          <Route path='/' element={<HomeScreen />} exact />
-          <Route path='/about-us' element={<AboutUsScreen />} exact />
-          <Route path='/verification' element={<VerificationScreen />} exact />
-          <Route path='/login' element={<LoginScreen />} exact />
-          <Route path='/register' element={<RegisterScreen />} exact />
-          <Route path='/poste/:poste' element={<PosteDetailsScreen />} exact />
-          <Route path='/profile' element={<ProfileScreen />} exact />
-          <Route path='/al-barid-bank' element={<ABBSreen />} exact />
-          <Route
-            path='/poste/:poste/informations-personnelles'
-            element={<InformationsPersonnellesScreen />}
-          />
-          <Route
-            path='/poste/:poste/diplomes'
-            element={<DiplomesScreen />}
-            exact
-          />
-          <Route
-            path='/poste/:poste/experiences'
-            element={<ExperiencesScreen />}
-          />
-          <Route
-            path='/poste/:poste/candidature/:id'
-            element={<CandidatureScreen />}
-          />
+            <Route path='/' element={<HomeScreen />} exact />
+            <Route path='/about-us' element={<AboutUsScreen />} exact />
+            <Route path='/verification' element={<VerificationScreen />} exact />
+            <Route path='/login' element={<LoginScreen />} exact />
+            <Route path='/register' element={<RegisterScreen />} exact />
+            <Route path='/poste/:poste' element={<PosteDetailsScreen />} exact />
+            <Route
+              path='/profile'
+              element={
+                <ProtectedRoute allowedRoles={['candidat', 'admin', 'maitreOuvrage', 'controleur']}>
+                  <ProfileScreen />
+                </ProtectedRoute>
+              }
+              exact
+            />
+            <Route path='/al-barid-bank' element={<ABBSreen />} exact />
+            <Route
+              path='/poste/:poste/informations-personnelles'
+              element={<InformationsPersonnellesScreen />}
+            />
+            <Route
+              path='/poste/:poste/diplomes'
+              element={<DiplomesScreen />}
+              exact
+            />
+            <Route
+              path='/poste/:poste/experiences'
+              element={<ExperiencesScreen />}
+            />
+            <Route
+              path='/poste/:poste/candidature/:id'
+              element={<CandidatureScreen />}
+            />
 
-          <Route path='/admin/dashboard' element={<AdminDashboardScreen />} />
-          <Route
-            path='/admin/candidatures'
-            element={<AdminCandidaturesScreen />}
-          />
-          <Route
-            path='/admin/utilisateurs'
-            element={<AdminUtilisateursScreen />}
-          />
-          <Route path='/admin/offres' element={<AdminOffresScreen />} />
-          <Route path='/admin/entreprises' element={<AdminEntreprisesScreen />} />
+            {/* ESPACE ADMINISTRATEUR (STRICTEMENT RÉSERVÉ AUX ADMINS) */}
+            <Route
+              path='/admin/dashboard'
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminDashboardScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/admin/candidatures'
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminCandidaturesScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/admin/utilisateurs'
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminUtilisateursScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/admin/offres'
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminOffresScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/admin/entreprises'
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminEntreprisesScreen />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path='/controlleurs/dashboard'
-            element={<ControlleurDashboard />}
-          />
+            {/* ESPACE CONTRÔLEURS EHC (STRICTEMENT RÉSERVÉ AUX CONTRÔLEURS) */}
+            <Route
+              path='/controlleurs/dashboard'
+              element={
+                <ProtectedRoute allowedRoles={['controleur']}>
+                  <ControlleurDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/controlleurs/candidatures/control1'
+              element={
+                <ProtectedRoute allowedRoles={['controleur']}>
+                  <ControlleursCandidaturesScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/controlleurs/candidatures/informations/:id'
+              element={
+                <ProtectedRoute allowedRoles={['controleur']}>
+                  <CandidaturesInformationsScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/controlleurs/candidatures/diplomes/:id'
+              element={
+                <ProtectedRoute allowedRoles={['controleur']}>
+                  <CandidaturesDiplomesScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/controlleurs/candidatures/experiences/:id'
+              element={
+                <ProtectedRoute allowedRoles={['controleur']}>
+                  <CandidaturesExperiencesScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/controlleurs/candidatures/validations/:id'
+              element={
+                <ProtectedRoute allowedRoles={['controleur']}>
+                  <CandidatureVlidationScreen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/controlleurs/candidatures/control2'
+              element={
+                <ProtectedRoute allowedRoles={['controleur']}>
+                  <ControlleursCandidatures2Screen />
+                </ProtectedRoute>
+              }
+            />
 
-          <Route
-            path='/controlleurs/candidatures/control1'
-            element={<ControlleursCandidaturesScreen />}
-          />
-          <Route
-            path='/controlleurs/candidatures/informations/:id'
-            element={<CandidaturesInformationsScreen />}
-          />
-          <Route
-            path='/controlleurs/candidatures/diplomes/:id'
-            element={<CandidaturesDiplomesScreen />}
-          />
-
-          <Route
-            path='/controlleurs/candidatures/experiences/:id'
-            element={<CandidaturesExperiencesScreen />}
-          />
-
-          <Route
-            path='/controlleurs/candidatures/validations/:id'
-            element={<CandidatureVlidationScreen />}
-          />
-
-          <Route
-            path='/controlleurs/candidatures/control2'
-            element={<ControlleursCandidatures2Screen />}
-          />
-
-          <Route
-            path='/maitre-ouvrage/candidatures'
-            element={<MaitreCandidatures />}
-          />
-        </Routes>
+            {/* ESPACE MAÎTRE D'OUVRAGE / RESPONSABLE RH ENTREPRISE (STRICTEMENT RÉSERVÉ AUX RH) */}
+            <Route
+              path='/maitre-ouvrage/candidatures'
+              element={
+                <ProtectedRoute allowedRoles={['maitreOuvrage']}>
+                  <MaitreCandidatures />
+                </ProtectedRoute>
+              }
+            />
+          </Routes>
         </ErrorBoundary>
       </ToastProvider>
     </Router>
