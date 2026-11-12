@@ -289,6 +289,29 @@ const HomeScreen = () => {
             const entLogo = entObj.logo || item.entrepriseLogo || '';
             const entCouleur = entObj.couleurPrimaire || item.entrepriseCouleur || '#003366';
 
+            let isClosed = false;
+            let isUrgent = false;
+            let clotureLabel = 'En cours';
+
+            if (item.dateLimite) {
+              const targetDate = new Date(item.dateLimite);
+              const now = new Date();
+              const diffTime = targetDate.getTime() - now.getTime();
+              const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+              clotureLabel = `Clôture: ${targetDate.toLocaleDateString('fr-FR')}`;
+              if (diffDays < 0) {
+                isClosed = true;
+                clotureLabel = `Clôturé le ${targetDate.toLocaleDateString('fr-FR')}`;
+              } else if (diffDays <= 7) {
+                isUrgent = true;
+                clotureLabel = diffDays === 0 ? 'Clôture aujourd’hui' : `Dans ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+              }
+            } else if (item.cloture) {
+              clotureLabel = item.cloture;
+              isUrgent = Boolean(item.urgent);
+            }
+
             return {
               _id: item._id || `off-${idx}`,
               titre: item.titre || item.intitule || 'Poste à pourvoir',
@@ -300,10 +323,9 @@ const HomeScreen = () => {
               ville: item.ville || item.lieu || 'Réseau National',
               niveau: item.niveau || 'Bac +2 à Bac +5',
               postes: Number(item.postes) || Number(item.nombrePostes) || 1,
-              cloture: item.dateLimite
-                ? `Clôture: ${new Date(item.dateLimite).toLocaleDateString('fr-FR')}`
-                : item.cloture || 'En cours',
-              urgent: idx === 0 || Boolean(item.urgent),
+              cloture: clotureLabel,
+              urgent: isUrgent,
+              isClosed: isClosed,
               pdfUrl: item.pdfUrl || '',
             };
           });
@@ -1423,13 +1445,38 @@ const HomeScreen = () => {
                     <span className='xr-institution-badge'>{offre.entreprise}</span>
                     <span className='xr-session-tag'>SESSION 2026</span>
                   </div>
-                  {offre.urgent ? (
+                  {offre.isClosed ? (
+                    <span
+                      className='xr-urgent-badge'
+                      style={{
+                        background: 'rgba(100, 116, 139, 0.2)',
+                        borderColor: 'rgba(148, 163, 184, 0.3)',
+                        color: '#94A3B8',
+                      }}
+                    >
+                      <span className='xr-pulse-dot' style={{ background: '#94A3B8' }}></span>
+                      CONCOURS CLÔTURÉ
+                    </span>
+                  ) : offre.urgent ? (
                     <span className='xr-urgent-badge'>
                       <span className='xr-pulse-dot' style={{ background: '#ef4444' }}></span>
                       CLÔTURE IMMINENTE
                     </span>
                   ) : (
-                    <span className='xr-regular-badge'>CONCOURS ACTIF</span>
+                    <span className='xr-regular-badge'>
+                      <span
+                        className='xr-pulse-dot'
+                        style={{
+                          background: '#00F5A0',
+                          display: 'inline-block',
+                          width: '6px',
+                          height: '6px',
+                          borderRadius: '50%',
+                          marginRight: '6px',
+                        }}
+                      ></span>
+                      CONCOURS ACTIF
+                    </span>
                   )}
                 </div>
 

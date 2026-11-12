@@ -102,7 +102,29 @@ const MaitreCandidatures = () => {
   const [description, setDescription] = useState(
     'Recrutement officiel pour le compte de notre institution. Les dossiers seront instruits et classés selon le barème officiel de sélection de la commission.'
   );
+  const [pdfUrl, setPdfUrl] = useState('');
+  const [uploadingPdf, setUploadingPdf] = useState(false);
   const [formError, setFormError] = useState('');
+
+  const handlePdfUpload = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    setUploadingPdf(true);
+    try {
+      const config = {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      };
+      const { data } = await axios.post('/api/upload', formData, config);
+      setPdfUrl(data);
+      setUploadingPdf(false);
+      addToast('Avis de concours PDF téléversé avec succès !', { appearance: 'success' });
+    } catch (err) {
+      setUploadingPdf(false);
+      addToast('Erreur lors du téléversement du PDF', { appearance: 'error' });
+    }
+  };
   const [scoring, setScoring] = useState(DEFAULT_SCORING_RULES);
 
   const getOrgLogo = () => {
@@ -200,6 +222,7 @@ const MaitreCandidatures = () => {
           postes: Number(postes) || 1,
           dateLimite,
           description,
+          pdfUrl,
           scoringRules: scoring,
           reglesScoring: scoring,
         },
@@ -970,6 +993,32 @@ const MaitreCandidatures = () => {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   />
+                </Form.Group>
+
+                <Form.Group className='mb-3'>
+                  <Form.Label className='fw-bold small text-muted d-flex align-items-center gap-1'>
+                    <i className='fas fa-file-pdf text-danger'></i>
+                    <span>Avis Officiel de Recrutement / Cahier des Charges (PDF)</span>
+                  </Form.Label>
+                  <Form.Control
+                    type='file'
+                    accept='application/pdf'
+                    onChange={handlePdfUpload}
+                  />
+                  {uploadingPdf && (
+                    <div className='small text-muted mt-1'>
+                      <i className='fas fa-spinner fa-spin me-1'></i> Téléversement du PDF en cours...
+                    </div>
+                  )}
+                  {pdfUrl && (
+                    <div className='mt-2 small text-success d-flex align-items-center gap-1'>
+                      <i className='fas fa-check-circle'></i>
+                      <span>PDF associé avec succès : <strong>{pdfUrl.split('/').pop()}</strong></span>
+                    </div>
+                  )}
+                  <Form.Text className='text-muted small'>
+                    Optionnel. Si aucun PDF n'est fourni, le cahier des charges modèle de la plateforme sera mis à disposition.
+                  </Form.Text>
                 </Form.Group>
               </div>
             </div>
