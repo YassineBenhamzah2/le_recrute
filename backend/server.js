@@ -41,9 +41,30 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 const __dirname = path.resolve();
-app.use('/uploads', express.static(path.join(__dirname, '/uploads')));
-app.use('/uploads', express.static(path.join(__dirname, 'backend', 'uploads')));
-app.use('/uploads', express.static(path.join(__dirname, 'frontend', 'public', 'uploads')));
+
+// Configuration avancée pour servir les fichiers téléversés (PDF & Images) avec affichage inline
+const staticUploadOptions = {
+  setHeaders: (res, filePath) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
+    const lower = filePath.toLowerCase();
+    if (lower.endsWith('.pdf')) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="' + path.basename(filePath) + '"');
+    } else if (lower.endsWith('.png')) {
+      res.setHeader('Content-Type', 'image/png');
+      res.setHeader('Content-Disposition', 'inline');
+    } else if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+      res.setHeader('Content-Type', 'image/jpeg');
+      res.setHeader('Content-Disposition', 'inline');
+    }
+  },
+};
+
+app.use('/uploads', express.static(path.join(__dirname, '/uploads'), staticUploadOptions));
+app.use('/uploads', express.static(path.join(__dirname, 'backend', 'uploads'), staticUploadOptions));
+app.use('/uploads', express.static(path.join(__dirname, 'frontend', 'public', 'uploads'), staticUploadOptions));
 app.use('/images', express.static(path.join(__dirname, '../frontend/public/images')));
 app.use('/images', express.static(path.join(__dirname, 'frontend', 'public', 'images')));
 app.use('/assets', express.static(path.join(__dirname, '../frontend/public/assets')));

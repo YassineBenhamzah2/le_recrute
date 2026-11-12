@@ -15,6 +15,7 @@ import { pdfjs } from 'react-pdf';
 import ControleurSideBar from '../../components/ControleurSideBar';
 import HeaderAdministrateur from '../../components/HeaderAdministrateur';
 import { getFileUrl } from '../../utils/fileUrl';
+import DocumentViewer from '../../components/DocumentViewer';
 
 const CandidaturesDiplomesScreen = () => {
   pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
@@ -746,31 +747,27 @@ const CandidaturesDiplomesScreen = () => {
                   </div>
                   {candidature && (
                     <div className='border rounded shadow-sm p-2 bg-light'>
-                      <div className='btn-group w-100 mb-2' role='group'>
+                      <div className='btn-group w-100 mb-3' role='group'>
                         <button
                           type='button'
-                          className={`btn btn-sm ${(!selectedDoc || selectedDoc === 'diplomes') ? 'btn-primary text-white' : 'btn-outline-secondary'}`}
+                          className={`btn btn-sm ${(!selectedDoc || selectedDoc === 'diplomes') ? 'btn-primary text-white fw-bold' : 'btn-outline-secondary'}`}
                           onClick={() => setSelectedDoc('diplomes')}
                         >
-                          🎓 Diplôme
+                          🎓 Copie du Diplôme
                         </button>
                         <button
                           type='button'
-                          className={`btn btn-sm ${selectedDoc === 'releves' ? 'btn-primary text-white' : 'btn-outline-secondary'}`}
+                          className={`btn btn-sm ${selectedDoc === 'releves' ? 'btn-primary text-white fw-bold' : 'btn-outline-secondary'}`}
                           onClick={() => setSelectedDoc('releves')}
                         >
                           📊 Relevés de Notes
                         </button>
                       </div>
-                      <div style={{ height: '700px', backgroundColor: '#fff', borderRadius: '4px', overflow: 'hidden' }}>
-                        <iframe
-                          src={getFileUrl(selectedDoc === 'releves' ? candidature.releves : candidature.copieDiplomes)}
-                          title="Diplomes et Releves"
-                          width='100%'
-                          height='100%'
-                          style={{ border: 'none' }}
-                        />
-                      </div>
+                      <DocumentViewer
+                        url={selectedDoc === 'releves' ? candidature.releves : candidature.copieDiplomes}
+                        title={selectedDoc === 'releves' ? "Relevés de Notes Universitaires" : "Copie du Diplôme"}
+                        height='650px'
+                      />
                     </div>
                   )}
                 </Col>

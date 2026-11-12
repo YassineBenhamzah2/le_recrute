@@ -15,6 +15,7 @@ import { pdfjs } from 'react-pdf';
 import ControleurSideBar from '../../components/ControleurSideBar';
 import HeaderAdministrateur from '../../components/HeaderAdministrateur';
 import { getFileUrl } from '../../utils/fileUrl';
+import DocumentViewer from '../../components/DocumentViewer';
 
 const CandidaturesInformationsScreen = () => {
   pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
@@ -302,27 +303,11 @@ const CandidaturesInformationsScreen = () => {
                     </Form>
                   </Col>
                   <Col md={6}>
-                    <div className='d-flex justify-content-between align-items-center my-3'>
-                      <h5 className='m-0 fw-bold'>
-                        <i className='fas fa-id-card text-primary me-2'></i>
-                        Pièce d'identité du candidat
-                      </h5>
-                      <a
-                        href={getFileUrl(copieCNI)}
-                        target='_blank'
-                        rel='noopener noreferrer'
-                        className='btn btn-sm btn-outline-primary'
-                      >
-                        <i className='fas fa-external-link-alt me-1'></i> Plein écran
-                      </a>
-                    </div>
-                    <div style={{ height: '700px', backgroundColor: '#fff', border: '1px solid #ced4da', borderRadius: '4px', overflow: 'hidden' }}>
-                      <iframe
-                        src={getFileUrl(copieCNI)}
-                        title="CNI Candidat"
-                        width='100%'
-                        height='100%'
-                        style={{ border: 'none' }}
+                    <div className='my-3'>
+                      <DocumentViewer
+                        url={copieCNI}
+                        title="Carte Nationale d'Identité (CNIE)"
+                        height='650px'
                       />
                     </div>
                   </Col>

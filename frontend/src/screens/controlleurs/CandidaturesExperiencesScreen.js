@@ -24,6 +24,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import ControleurSideBar from '../../components/ControleurSideBar';
 import HeaderAdministrateur from '../../components/HeaderAdministrateur';
 import { getFileUrl } from '../../utils/fileUrl';
+import DocumentViewer from '../../components/DocumentViewer';
 
 const CandidaturesExperiencesScreen = () => {
   pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.js`;
@@ -272,23 +273,33 @@ const CandidaturesExperiencesScreen = () => {
                         </button>
                       </div>
 
-                      <div style={{ height: '700px', backgroundColor: '#fff', borderRadius: '4px', overflow: 'hidden' }}>
-                        <iframe
-                          src={getFileUrl(
-                            selectedDoc === 'diplomes'
-                              ? candidature.copieDiplomes
-                              : selectedDoc === 'releves'
-                              ? candidature.releves
-                              : selectedDoc === 'cni'
-                              ? candidature.copieCNI
-                              : (candidature.attestationsTravail || candidature.copieDiplomes || candidature.copieCNI)
-                          )}
-                          title='Document Justificatif'
-                          width='100%'
-                          height='100%'
-                          style={{ border: 'none' }}
-                        />
-                      </div>
+                      {(() => {
+                        const docTarget =
+                          selectedDoc === 'diplomes'
+                            ? candidature.copieDiplomes
+                            : selectedDoc === 'releves'
+                            ? candidature.releves
+                            : selectedDoc === 'cni'
+                            ? candidature.copieCNI
+                            : (candidature.attestationsTravail || candidature.copieDiplomes || candidature.copieCNI);
+
+                        const docTitle =
+                          selectedDoc === 'diplomes'
+                            ? 'Copie du Diplôme'
+                            : selectedDoc === 'releves'
+                            ? 'Relevés de Notes'
+                            : selectedDoc === 'cni'
+                            ? 'Carte Nationale (CNIE)'
+                            : 'Attestations de Travail';
+
+                        return (
+                          <DocumentViewer
+                            url={docTarget}
+                            title={docTitle}
+                            height='650px'
+                          />
+                        );
+                      })()}
                     </div>
                   )}
                 </Col>

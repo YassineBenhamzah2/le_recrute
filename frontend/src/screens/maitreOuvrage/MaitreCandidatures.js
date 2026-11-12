@@ -11,6 +11,7 @@ import OfficialReceiptPDF from '../../components/OfficialReceiptPDF';
 import { listCandidatures } from '../../actions/candidatureActions';
 import { listUsers, logout } from '../../actions/userActions';
 import { getFileUrl } from '../../utils/fileUrl';
+import DocumentViewer from '../../components/DocumentViewer';
 
 const DEFAULT_SCORING_RULES = {
   maxScore: 100,
@@ -1758,116 +1759,80 @@ const MaitreCandidatures = () => {
 
               {/* VISIONNEUSE DE DOCUMENT EN DIRECT */}
               <Col md={8}>
-                <div className='bg-white p-3 rounded-3 border shadow-sm'>
-                  {(() => {
-                    let currentDoc = '';
-                    let docTitle = '';
-                    let declaredInfo = null;
+                {(() => {
+                  let currentDoc = '';
+                  let docTitle = '';
+                  let declaredInfo = null;
 
-                    if (activeInspectDoc === 'cni') {
-                      currentDoc = selectedInspectCandidate.candidatCopieCNI || selectedInspectCandidate.copieCNI || selectedInspectCandidate.user?.copieCNI;
-                      docTitle = "Carte Nationale d'Identité (CNIE)";
-                      declaredInfo = (
-                        <div className='d-flex flex-wrap gap-3 small text-muted bg-light p-2 rounded mb-2 border'>
-                          <span><strong>Nom Déclaré :</strong> {selectedInspectCandidate.candidatNom} {selectedInspectCandidate.candidatPrenom}</span>
-                          <span><strong>CNI :</strong> {selectedInspectCandidate.candidatCni}</span>
-                          <span><strong>Date Naiss :</strong> {selectedInspectCandidate.dateNaissance || selectedInspectCandidate.user?.dateNaissance || '-'}</span>
-                          <span><strong>Ville :</strong> {selectedInspectCandidate.ville || selectedInspectCandidate.user?.ville || '-'}</span>
-                        </div>
-                      );
-                    } else if (activeInspectDoc === 'diplome') {
-                      currentDoc = selectedInspectCandidate.copieDiplomes;
-                      docTitle = "Diplôme Certifié Conforme";
-                      declaredInfo = (
-                        <div className='d-flex flex-wrap gap-3 small text-muted bg-light p-2 rounded mb-2 border'>
-                          <span><strong>Niveau :</strong> {selectedInspectCandidate.niveauEtude || '-'}</span>
-                          <span><strong>Intitulé :</strong> {selectedInspectCandidate.diplome || '-'}</span>
-                          <span><strong>Spécialité :</strong> {selectedInspectCandidate.specialite || '-'}</span>
-                          <span><strong>Établissement :</strong> {selectedInspectCandidate.etablissement || '-'}</span>
-                          <span><strong>Mention :</strong> {selectedInspectCandidate.mention || '-'}</span>
-                        </div>
-                      );
-                    } else if (activeInspectDoc === 'releves') {
-                      currentDoc = selectedInspectCandidate.releves;
-                      docTitle = "Relevés de Notes Universitaires";
-                      declaredInfo = (
-                        <div className='d-flex flex-wrap gap-3 small text-muted bg-light p-2 rounded mb-2 border'>
-                          <span><strong>Méthode Notation :</strong> {selectedInspectCandidate.methodeNotation || 'Années'}</span>
-                          {selectedInspectCandidate.methodeNotation === 'Annees' ? (
-                            <>
-                              <span><strong>Année 1 :</strong> {selectedInspectCandidate.annee1 || '-'}</span>
-                              <span><strong>Année 2 :</strong> {selectedInspectCandidate.annee2 || '-'}</span>
-                              <span><strong>Année 3 :</strong> {selectedInspectCandidate.annee3 || '-'}</span>
-                            </>
-                          ) : (
-                            <>
-                              <span><strong>S1 :</strong> {selectedInspectCandidate.semestre1 || '-'}</span>
-                              <span><strong>S2 :</strong> {selectedInspectCandidate.semestre2 || '-'}</span>
-                              <span><strong>S3 :</strong> {selectedInspectCandidate.semestre3 || '-'}</span>
-                              <span><strong>S4 :</strong> {selectedInspectCandidate.semestre4 || '-'}</span>
-                            </>
-                          )}
-                        </div>
-                      );
-                    } else {
-                      currentDoc = selectedInspectCandidate.attestationsTravail;
-                      docTitle = "Attestations de Travail & Expériences";
-                      declaredInfo = (
-                        <div className='small text-muted bg-light p-2 rounded mb-2 border'>
-                          <strong>Missions déclarées :</strong> {selectedInspectCandidate.experiences?.length || 0} mission(s)
-                          {selectedInspectCandidate.experiences && selectedInspectCandidate.experiences.map((exp, idx) => (
-                            <div key={idx} className='mt-1 ps-2 border-start border-primary'>
-                              • <strong>{exp.fonctionOccupee || exp.poste}</strong> chez {exp.entreprise} ({exp.dateDebut} au {exp.enPoste || String(exp.dateFin).toLowerCase().includes('aujourd') ? "À ce jour (En poste)" : exp.dateFin}) — Domaine: {exp.domaine}
-                            </div>
-                          ))}
-                        </div>
-                      );
-                    }
-
-                    const targetUrl = getFileUrl(currentDoc);
-
-                    return (
-                      <div>
-                        <div className='d-flex justify-content-between align-items-center mb-2'>
-                          <h6 className='fw-bold text-dark m-0'>
-                            <i className='fas fa-file-contract text-primary me-2'></i>
-                            Visualisation : {docTitle}
-                          </h6>
-                          {currentDoc && (
-                            <a
-                              href={targetUrl}
-                              target='_blank'
-                              rel='noopener noreferrer'
-                              className='btn btn-sm btn-outline-primary'
-                            >
-                              <i className='fas fa-external-link-alt me-1'></i> Plein écran
-                            </a>
-                          )}
-                        </div>
-
-                        {declaredInfo}
-
-                        {currentDoc ? (
-                          <div style={{ height: '560px', backgroundColor: '#f1f5f9', border: '1px solid #cbd5e1', borderRadius: '6px', overflow: 'hidden' }}>
-                            <iframe
-                              src={targetUrl}
-                              title={docTitle}
-                              width='100%'
-                              height='100%'
-                              style={{ border: 'none' }}
-                            />
-                          </div>
+                  if (activeInspectDoc === 'cni') {
+                    currentDoc = selectedInspectCandidate.candidatCopieCNI || selectedInspectCandidate.copieCNI || selectedInspectCandidate.user?.copieCNI;
+                    docTitle = "Carte Nationale d'Identité (CNIE)";
+                    declaredInfo = (
+                      <div className='d-flex flex-wrap gap-3 small text-muted bg-light p-2 rounded mb-3 border'>
+                        <span><strong>Nom Déclaré :</strong> {selectedInspectCandidate.candidatNom} {selectedInspectCandidate.candidatPrenom}</span>
+                        <span><strong>CNI :</strong> {selectedInspectCandidate.candidatCni}</span>
+                        <span><strong>Date Naiss :</strong> {selectedInspectCandidate.dateNaissance || selectedInspectCandidate.user?.dateNaissance || '-'}</span>
+                        <span><strong>Ville :</strong> {selectedInspectCandidate.ville || selectedInspectCandidate.user?.ville || '-'}</span>
+                      </div>
+                    );
+                  } else if (activeInspectDoc === 'diplome') {
+                    currentDoc = selectedInspectCandidate.copieDiplomes;
+                    docTitle = "Diplôme Certifié Conforme";
+                    declaredInfo = (
+                      <div className='d-flex flex-wrap gap-3 small text-muted bg-light p-2 rounded mb-3 border'>
+                        <span><strong>Niveau :</strong> {selectedInspectCandidate.niveauEtude || '-'}</span>
+                        <span><strong>Intitulé :</strong> {selectedInspectCandidate.diplome || '-'}</span>
+                        <span><strong>Spécialité :</strong> {selectedInspectCandidate.specialite || '-'}</span>
+                        <span><strong>Établissement :</strong> {selectedInspectCandidate.etablissement || '-'}</span>
+                        <span><strong>Mention :</strong> {selectedInspectCandidate.mention || '-'}</span>
+                      </div>
+                    );
+                  } else if (activeInspectDoc === 'releves') {
+                    currentDoc = selectedInspectCandidate.releves;
+                    docTitle = "Relevés de Notes Universitaires";
+                    declaredInfo = (
+                      <div className='d-flex flex-wrap gap-3 small text-muted bg-light p-2 rounded mb-3 border'>
+                        <span><strong>Méthode Notation :</strong> {selectedInspectCandidate.methodeNotation || 'Années'}</span>
+                        {selectedInspectCandidate.methodeNotation === 'Annees' ? (
+                          <>
+                            <span><strong>Année 1 :</strong> {selectedInspectCandidate.annee1 || '-'}</span>
+                            <span><strong>Année 2 :</strong> {selectedInspectCandidate.annee2 || '-'}</span>
+                            <span><strong>Année 3 :</strong> {selectedInspectCandidate.annee3 || '-'}</span>
+                          </>
                         ) : (
-                          <div className='text-center py-5 text-muted border rounded bg-light'>
-                            <i className='fas fa-file-excel fa-3x text-secondary mb-3 d-block'></i>
-                            <h6>Aucun document téléversé pour cette pièce</h6>
-                            <p className='small'>Le candidat n'a pas joint ce justificatif lors de son inscription.</p>
-                          </div>
+                          <>
+                            <span><strong>S1 :</strong> {selectedInspectCandidate.semestre1 || '-'}</span>
+                            <span><strong>S2 :</strong> {selectedInspectCandidate.semestre2 || '-'}</span>
+                            <span><strong>S3 :</strong> {selectedInspectCandidate.semestre3 || '-'}</span>
+                            <span><strong>S4 :</strong> {selectedInspectCandidate.semestre4 || '-'}</span>
+                          </>
                         )}
                       </div>
                     );
-                  })()}
-                </div>
+                  } else {
+                    currentDoc = selectedInspectCandidate.attestationsTravail;
+                    docTitle = "Attestations de Travail & Expériences";
+                    declaredInfo = (
+                      <div className='small text-muted bg-light p-2 rounded mb-3 border'>
+                        <strong>Missions déclarées :</strong> {selectedInspectCandidate.experiences?.length || 0} mission(s)
+                        {selectedInspectCandidate.experiences && selectedInspectCandidate.experiences.map((exp, idx) => (
+                          <div key={idx} className='mt-1 ps-2 border-start border-primary'>
+                            • <strong>{exp.fonctionOccupee || exp.poste}</strong> chez {exp.entreprise} ({exp.dateDebut} au {exp.enPoste || String(exp.dateFin).toLowerCase().includes('aujourd') ? "À ce jour (En poste)" : exp.dateFin}) — Domaine: {exp.domaine}
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <DocumentViewer
+                      url={currentDoc}
+                      title={docTitle}
+                      declaredInfo={declaredInfo}
+                      height='580px'
+                    />
+                  );
+                })()}
               </Col>
             </Row>
           </Modal.Body>
