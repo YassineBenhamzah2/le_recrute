@@ -246,21 +246,41 @@ const HomeScreen = () => {
       try {
         const { data } = await axios.get('/api/offres');
         if (data && Array.isArray(data) && data.length > 0) {
-          const mapped = data.map((item, idx) => ({
-            _id: item._id || `off-${idx}`,
-            titre: item.intitule || item.titre || 'Poste à pourvoir',
-            entreprise: item.entreprise || 'Institution Partenaire',
-            sigle: (item.entreprise || 'ABB').split(' ')[0],
-            secteur: item.secteur || 'Secteur Public / Bancaire',
-            ville: item.lieu || 'Réseau National',
-            niveau: item.niveau || 'Bac +2 à Bac +5',
-            postes: item.nombrePostes || 10,
-            cloture: 'En cours',
-            urgent: idx % 2 === 0,
-          }));
+          const mapped = data.map((item, idx) => {
+            const entObj = item.entreprise && typeof item.entreprise === 'object' ? item.entreprise : {};
+            const entNom =
+              entObj.nom ||
+              item.entrepriseNom ||
+              (typeof item.entreprise === 'string' && item.entreprise.trim() ? item.entreprise : 'Institution Partenaire');
+            const entSigle =
+              entObj.sigle ||
+              item.entrepriseSigle ||
+              (typeof item.entreprise === 'string' && item.entreprise.trim() ? item.entreprise.split(' ')[0] : 'ORG');
+            const entLogo = entObj.logo || item.entrepriseLogo || '';
+            const entCouleur = entObj.couleurPrimaire || item.entrepriseCouleur || '#003366';
+
+            return {
+              _id: item._id || `off-${idx}`,
+              titre: item.titre || item.intitule || 'Poste à pourvoir',
+              entreprise: entNom,
+              sigle: entSigle,
+              logo: entLogo,
+              couleur: entCouleur,
+              secteur: item.secteur || entObj.secteur || 'Secteur Public / Bancaire',
+              ville: item.ville || item.lieu || 'Réseau National',
+              niveau: item.niveau || 'Bac +2 à Bac +5',
+              postes: Number(item.postes) || Number(item.nombrePostes) || 1,
+              cloture: item.dateLimite
+                ? `Clôture: ${new Date(item.dateLimite).toLocaleDateString('fr-FR')}`
+                : item.cloture || 'En cours',
+              urgent: idx === 0 || Boolean(item.urgent),
+              pdfUrl: item.pdfUrl || '',
+            };
+          });
           setOffres(mapped);
         }
       } catch (e) {
+        console.error('Error fetching offres for landing page:', e);
         setOffres(DEFAULT_FEATURED_OFFRES);
       }
     };
@@ -716,14 +736,35 @@ const HomeScreen = () => {
   const filteredOffres = useMemo(() => {
     return offres.filter((item) => {
       const matchSearch =
-        item.titre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.entreprise.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.ville.toLowerCase().includes(searchTerm.toLowerCase());
+        (item.titre || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.entreprise || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (item.ville || '').toLowerCase().includes(searchTerm.toLowerCase());
       const matchSigle = selectedSigle === 'ALL' || item.sigle === selectedSigle;
-      const matchVille = selectedVille === 'ALL' || item.ville.toLowerCase().includes(selectedVille.toLowerCase());
+      const matchVille = selectedVille === 'ALL' || (item.ville || '').toLowerCase().includes(selectedVille.toLowerCase());
       return matchSearch && matchSigle && matchVille;
     });
   }, [offres, searchTerm, selectedSigle, selectedVille]);
+
+  // Dynamic Institution Tabs derived from current offres
+  const institutionTabs = useMemo(() => {
+    const tabs = [{ id: 'ALL', label: 'Toutes les institutions', count: offres.length }];
+    const uniqueMap = new Map();
+
+    offres.forEach((o) => {
+      const sigle = o.sigle || 'AUTRE';
+      const label = o.entreprise || sigle;
+      if (!uniqueMap.has(sigle)) {
+        uniqueMap.set(sigle, { id: sigle, label, count: 0 });
+      }
+      uniqueMap.get(sigle).count += 1;
+    });
+
+    uniqueMap.forEach((val) => {
+      tabs.push(val);
+    });
+
+    return tabs;
+  }, [offres]);
 
   // Simulator Score Breakdown Calculations
   const simScoreDiplome = useMemo(() => {
@@ -914,13 +955,11 @@ const HomeScreen = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
             <select value={selectedSigle} onChange={(e) => setSelectedSigle(e.target.value)}>
-              <option value='ALL'>Toutes les institutions</option>
-              <option value='ABB'>Al Barid Bank</option>
-              <option value='CIH'>CIH Bank</option>
-              <option value='OCP'>Groupe OCP</option>
-              <option value='MEF'>Ministère des Finances</option>
-              <option value='BOA'>Bank of Africa</option>
-              <option value='CDG'>Caisse de Dépôt (CDG)</option>
+              {institutionTabs.map((inst) => (
+                <option key={inst.id} value={inst.id}>
+                  {inst.id === 'ALL' ? inst.label : `${inst.label} (${inst.id})`}
+                </option>
+              ))}
             </select>
             <select value={selectedVille} onChange={(e) => setSelectedVille(e.target.value)}>
               <option value='ALL'>Toutes les régions</option>
@@ -1302,7 +1341,9 @@ const HomeScreen = () => {
               </div>
               <div className='xr-stat-sep'></div>
               <div className='xr-stat-pill'>
-                <div className='xr-stat-num'>6</div>
+                <div className='xr-stat-num'>
+                  {institutionTabs.filter((t) => t.id !== 'ALL').length}
+                </div>
                 <div className='xr-stat-lbl'>Grandes Institutions Partenaires</div>
               </div>
               <div className='xr-stat-sep'></div>
@@ -1314,15 +1355,7 @@ const HomeScreen = () => {
           </div>
 
           <div className='xr-filters-row' data-scroll-reveal='fade-up'>
-            {[
-              { id: 'ALL', label: 'Toutes les institutions', count: offres.length },
-              { id: 'ABB', label: 'Al Barid Bank', count: offres.filter((o) => o.sigle === 'ABB').length },
-              { id: 'CIH', label: 'CIH Bank', count: offres.filter((o) => o.sigle === 'CIH').length },
-              { id: 'OCP', label: 'Groupe OCP', count: offres.filter((o) => o.sigle === 'OCP').length },
-              { id: 'MEF', label: 'Ministère des Finances', count: offres.filter((o) => o.sigle === 'MEF').length },
-              { id: 'BOA', label: 'Bank of Africa', count: offres.filter((o) => o.sigle === 'BOA').length },
-              { id: 'CDG', label: 'CDG Maroc', count: offres.filter((o) => o.sigle === 'CDG').length },
-            ].map((inst) => (
+            {institutionTabs.map((inst) => (
               <button
                 key={inst.id}
                 className={`xr-filter-btn ${selectedSigle === inst.id ? 'is-active' : ''}`}
@@ -1342,6 +1375,21 @@ const HomeScreen = () => {
 
                 <div className='xr-offre-top-bar'>
                   <div className='d-flex align-items-center gap-2'>
+                    {offre.logo ? (
+                      <img
+                        src={offre.logo}
+                        alt={offre.entreprise}
+                        style={{
+                          width: '26px',
+                          height: '26px',
+                          borderRadius: '6px',
+                          objectFit: 'contain',
+                          background: '#fff',
+                          padding: '2px',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+                        }}
+                      />
+                    ) : null}
                     <span className='xr-institution-badge'>{offre.entreprise}</span>
                     <span className='xr-session-tag'>SESSION 2026</span>
                   </div>
@@ -1400,7 +1448,11 @@ const HomeScreen = () => {
 
                 <div className='xr-offre-foot'>
                   <Link
-                    to={userInfo ? '/profil' : '/register'}
+                    to={
+                      userInfo
+                        ? `/poste/${encodeURIComponent(offre.titre)}`
+                        : `/register?redirect=/poste/${encodeURIComponent(offre.titre)}`
+                    }
                     className='xr-btn'
                     style={{ minHeight: '38px', padding: '0 20px', fontSize: '10.5px' }}
                   >
@@ -1408,7 +1460,7 @@ const HomeScreen = () => {
                   </Link>
 
                   <a
-                    href='/uploads/Dossier_Candidat_Complet_6_Pages.pdf'
+                    href={offre.pdfUrl || '/uploads/Dossier_Candidat_Complet_6_Pages.pdf'}
                     target='_blank'
                     rel='noreferrer'
                     className='xr-pdf-link'
