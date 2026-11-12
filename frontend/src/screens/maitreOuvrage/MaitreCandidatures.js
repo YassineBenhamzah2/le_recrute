@@ -1746,13 +1746,10 @@ const MaitreCandidatures = () => {
                   </div>
 
                   <div className='mt-4 pt-3 border-top'>
-                    <div className='small text-muted mb-2'>Audit étape par étape :</div>
-                    <button
-                      className='btn btn-outline-primary btn-sm w-100 fw-bold'
-                      onClick={() => navigate(`/controlleurs/candidatures/informations/${selectedInspectCandidate._id}`)}
-                    >
-                      <i className='fas fa-external-link-alt me-1'></i> Ouvrir Module Contrôleur
-                    </button>
+                    <div className='alert alert-light border small text-muted mb-0 p-2'>
+                      <i className='fas fa-shield-alt text-success me-1'></i>
+                      <strong>Audit RH Entreprise :</strong> Sélectionnez chaque pièce ci-dessus pour la contrôler directement en haute définition.
+                    </div>
                   </div>
                 </div>
               </Col>

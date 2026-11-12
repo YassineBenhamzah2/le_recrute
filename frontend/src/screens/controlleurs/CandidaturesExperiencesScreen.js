@@ -80,6 +80,21 @@ const CandidaturesExperiencesScreen = () => {
         <div className='app'>
           <ControleurSideBar prenom={userInfo.prenom} nom={userInfo.nom} />
           <main>
+            {userInfo?.isMaitreOuvrage && (
+              <div className='bg-primary text-white px-4 py-2 d-flex justify-content-between align-items-center shadow-sm'>
+                <div className='d-flex align-items-center gap-2'>
+                  <i className='fas fa-building text-warning fs-5'></i>
+                  <span className='fw-bold'>Espace Recruteur RH — {userInfo.entrepriseNom || 'Entreprise'}</span>
+                </div>
+                <button
+                  type='button'
+                  className='btn btn-warning btn-sm fw-bold text-dark'
+                  onClick={() => navigate('/maitre-ouvrage/candidatures')}
+                >
+                  <i className='fas fa-arrow-left me-1'></i> Retour au Tableau de bord RH
+                </button>
+              </div>
+            )}
             {candidature && candidature.user && (
               <HeaderAdministrateur
                 headerTitle={`Experiences de ${candidature.user.prenom} ${candidature.user.nom}`}
