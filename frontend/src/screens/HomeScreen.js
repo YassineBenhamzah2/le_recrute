@@ -403,30 +403,35 @@ const HomeScreen = () => {
     let width = (canvas.width = canvas.parentElement.offsetWidth);
     let height = (canvas.height = canvas.parentElement.offsetHeight);
 
+    const isLight = theme === 'light';
+    const initParticles = (w, h) => {
+      const particleCount = Math.min(Math.floor((w * h) / 9500), 120);
+      const arr = [];
+      for (let i = 0; i < particleCount; i++) {
+        arr.push({
+          x: Math.random() * w,
+          y: Math.random() * h,
+          vx: (Math.random() - 0.5) * 0.4,
+          vy: (Math.random() - 0.5) * 0.4,
+          radius: Math.random() * 2.2 + 0.6,
+          alpha: Math.random() * 0.6 + 0.25,
+          color: isLight
+            ? (i % 3 === 0 ? '#00875a' : i % 3 === 1 ? '#0284c7' : '#d97706')
+            : (i % 3 === 0 ? '#00f2a9' : i % 3 === 1 ? '#00d9f5' : '#ffd166'),
+        });
+      }
+      return arr;
+    };
+
+    let particles = initParticles(width, height);
+
     const handleResize = () => {
       if (!canvas || !canvas.parentElement) return;
       width = canvas.width = canvas.parentElement.offsetWidth;
       height = canvas.height = canvas.parentElement.offsetHeight;
+      particles = initParticles(width, height);
     };
     window.addEventListener('resize', handleResize);
-
-    // 120 Deep Starfield Quantum Particles
-    const isLight = theme === 'light';
-    const particleCount = Math.min(Math.floor((width * height) / 9500), 120);
-    const particles = [];
-    for (let i = 0; i < particleCount; i++) {
-      particles.push({
-        x: Math.random() * width,
-        y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.4,
-        vy: (Math.random() - 0.5) * 0.4,
-        radius: Math.random() * 2.2 + 0.6,
-        alpha: Math.random() * 0.6 + 0.25,
-        color: isLight
-          ? (i % 3 === 0 ? '#00875a' : i % 3 === 1 ? '#0284c7' : '#d97706')
-          : (i % 3 === 0 ? '#00f2a9' : i % 3 === 1 ? '#00d9f5' : '#ffd166'),
-      });
-    }
 
     // Dynamic Data Photon Packets traveling between Moroccan cities
     const photonPackets = [];
@@ -454,13 +459,14 @@ const HomeScreen = () => {
     };
     window.addEventListener('mousemove', handleCanvasMouse);
 
-    const globeRadius = Math.min(width, height) * 0.32;
-    const globeCenterX = width * 0.5;
-    const globeCenterY = height * 0.52;
-
     const render = () => {
       ctx.clearRect(0, 0, width, height);
       const time = Date.now() * 0.0018;
+
+      // Dynamically calculate globe center & radius on every animation frame
+      const globeRadius = Math.min(width, height) * 0.32;
+      const globeCenterX = width * 0.5;
+      const globeCenterY = height * 0.52;
 
       // Smooth inertia rotation easing
       currentRotX += (targetRotX - currentRotX) * 0.06;
@@ -888,8 +894,8 @@ const HomeScreen = () => {
           </div>
 
           <h1 className='xr-hero-title'>
-            L’ÉQUITÉ DU CONCOURS. <em>LA RIGUEUR DE L’AUDIT.</em><br />
-            DU DÉPÔT NUMÉRIQUE <em>À L’AFFECTATION NATIONALE.</em>
+            L'Équité du Concours. <em>La Rigueur de l'Audit.</em><br />
+            Du Dépôt Numérique <em>à l'Affectation Nationale.</em>
           </h1>
 
           <p className='xr-hero-sub'>
