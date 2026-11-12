@@ -971,18 +971,6 @@ const MaitreCandidatures = () => {
                     onChange={(e) => setDescription(e.target.value)}
                   />
                 </Form.Group>
-
-                <div className='text-end mt-3'>
-                  <Button
-                    variant='primary'
-                    type='button'
-                    className='fw-bold'
-                    style={{ background: '#1D4ED8', border: 'none' }}
-                    onClick={() => setModalTab('scoring')}
-                  >
-                    Suivant : Configurer le Barème (100 Pts) <i className='fas fa-arrow-right ms-1'></i>
-                  </Button>
-                </div>
               </div>
             </div>
 
