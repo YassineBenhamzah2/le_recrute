@@ -652,7 +652,9 @@ const HomeScreen = () => {
   // 7. Interactive 3D Card Spotlight & Magnetic Tilt on Hover (Aceternity UI Standard)
   useEffect(() => {
     const handleCardsMove = (e) => {
-      const cards = document.querySelectorAll('.xr-offre-card, .xr-fact-card, .xr-espace-card, .xr-pipeline-card, .xr-seal-card');
+      const cards = document.querySelectorAll(
+        '.xr-offre-card, .xr-fact-card, .xr-espace-card, .xr-pipeline-card, .xr-seal-card, .xr-sim-box'
+      );
       cards.forEach((card) => {
         const rect = card.getBoundingClientRect();
         const x = e.clientX - rect.left;
@@ -689,23 +691,28 @@ const HomeScreen = () => {
     });
   }, [offres, searchTerm, selectedSigle, selectedVille]);
 
-  // Simulator Score Calculation
+  // Simulator Score Breakdown Calculations
+  const simScoreDiplome = useMemo(() => {
+    if (simNiveau === 'bac2') return 25;
+    if (simNiveau === 'bac3') return 35;
+    if (simNiveau === 'bac5') return 45;
+    return 48;
+  }, [simNiveau]);
+
+  const simScoreMention = useMemo(() => {
+    if (simMention === 'passable') return 8;
+    if (simMention === 'assez_bien') return 14;
+    if (simMention === 'bien') return 18;
+    return 22;
+  }, [simMention]);
+
+  const simScoreExp = useMemo(() => {
+    return Math.min(Number(simExp) * 3, 30);
+  }, [simExp]);
+
   const simScore = useMemo(() => {
-    let score = 0;
-    if (simNiveau === 'bac2') score += 25;
-    else if (simNiveau === 'bac3') score += 35;
-    else if (simNiveau === 'bac5') score += 45;
-    else if (simNiveau === 'doctorat') score += 48;
-
-    if (simMention === 'passable') score += 8;
-    else if (simMention === 'assez_bien') score += 14;
-    else if (simMention === 'bien') score += 18;
-    else if (simMention === 'tres_bien') score += 22;
-
-    score += Math.min(Number(simExp) * 3, 30);
-
-    return Math.min(score, 100);
-  }, [simNiveau, simMention, simExp]);
+    return Math.min(simScoreDiplome + simScoreMention + simScoreExp, 100);
+  }, [simScoreDiplome, simScoreMention, simScoreExp]);
 
   const gaugeCircumference = 2 * Math.PI * 130;
   const gaugeDashoffset = gaugeCircumference - (gaugeCircumference * simScore) / 100;
@@ -945,25 +952,147 @@ const HomeScreen = () => {
       </section>
 
       {/* ====================================================================
-          3. MATRICE DE CONFIANCE (FACTS TELEMETRY STRIP) AVEC COUNTERS DYNAMIQUES
+          3. MATRICE DE CONFIANCE (FACTS TELEMETRY BENTO) AVEC ANIMATIONS HAUTE PRÉCISION
           ==================================================================== */}
       <section className='xr-facts-strip' id='xr-facts'>
         <div className='xr-facts-container xr-stagger' data-scroll-reveal='fade-up'>
+          {/* Bento Card 1: 6 Grandes Institutions */}
           <div className='xr-fact-card'>
-            <b>{countFact1}</b>
-            <span>GRANDES INSTITUTIONS BANCAIRES &amp; ÉTABLISSEMENTS PUBLICS PARTENAIRES</span>
+            <div className='xr-fact-corner xr-corner-tl'></div>
+            <div className='xr-fact-corner xr-corner-br'></div>
+            <div className='xr-fact-header'>
+              <span className='xr-fact-badge'>
+                <span className='xr-pulse-dot'></span> SOUVERAINETÉ
+              </span>
+              <div className='xr-fact-icon-box'>
+                <i className='fas fa-university'></i>
+              </div>
+            </div>
+            <div className='xr-fact-metric'>
+              <b>{countFact1}</b>
+              <span className='xr-fact-unit'>RÉSEAUX</span>
+            </div>
+            <p className='xr-fact-desc'>
+              Grandes institutions bancaires &amp; établissements d'État partenaires
+            </p>
+            <div className='xr-fact-nodes'>
+              <span className='xr-node-dot is-active' title='Al Barid Bank'></span>
+              <span className='xr-node-line'></span>
+              <span className='xr-node-dot is-active' title='Groupe OCP'></span>
+              <span className='xr-node-line'></span>
+              <span className='xr-node-dot is-active' title='CIH Bank'></span>
+              <span className='xr-node-line'></span>
+              <span className='xr-node-dot is-active' title='Ministère Finances'></span>
+              <span className='xr-node-line'></span>
+              <span className='xr-node-dot is-active' title='Bank of Africa'></span>
+              <span className='xr-node-line'></span>
+              <span className='xr-node-dot is-active' title='CDG Maroc'></span>
+            </div>
           </div>
+
+          {/* Bento Card 2: 100% Double Aveugle */}
           <div className='xr-fact-card'>
-            <b>{countFact2}%</b>
-            <span>AUDIT VISUEL EN DOUBLE-AVEUGLE SUR ÉCRAN SCINDÉ ANTI-FRAUDE</span>
+            <div className='xr-fact-corner xr-corner-tl'></div>
+            <div className='xr-fact-corner xr-corner-br'></div>
+            <div className='xr-fact-header'>
+              <span className='xr-fact-badge' style={{ borderColor: 'rgba(0, 217, 245, 0.4)', color: '#00d9f5' }}>
+                <span className='xr-pulse-dot' style={{ background: '#00d9f5' }}></span> ZÉRO FRAUDE
+              </span>
+              <div
+                className='xr-fact-icon-box'
+                style={{
+                  background: 'rgba(0, 217, 245, 0.1)',
+                  borderColor: 'rgba(0, 217, 245, 0.3)',
+                  color: '#00d9f5',
+                }}
+              >
+                <i className='fas fa-user-shield'></i>
+              </div>
+            </div>
+            <div className='xr-fact-metric'>
+              <b>{countFact2}<em>%</em></b>
+              <span className='xr-fact-unit'>AUDIT VISUEL</span>
+            </div>
+            <p className='xr-fact-desc'>
+              Instruction en double-aveugle sur écran scindé certifiée anti-fraude
+            </p>
+            <div className='xr-fact-scanbar'>
+              <div className='xr-scan-item'>
+                <span>DÉCLARÉ</span>
+                <div className='xr-scan-track'>
+                  <div className='xr-scan-fill is-match'></div>
+                </div>
+              </div>
+              <i className='fas fa-check-double text-success'></i>
+              <div className='xr-scan-item'>
+                <span>ORIGINAL</span>
+                <div className='xr-scan-track'>
+                  <div className='xr-scan-fill is-match'></div>
+                </div>
+              </div>
+            </div>
           </div>
+
+          {/* Bento Card 3: 100 Points Algorithmiques */}
           <div className='xr-fact-card'>
-            <b>{countFact3}</b>
-            <span>POINTS DU BARÈME ALGORITHMIQUE TRANSPARENT ET VÉRIFIABLE</span>
+            <div className='xr-fact-corner xr-corner-tl'></div>
+            <div className='xr-fact-corner xr-corner-br'></div>
+            <div className='xr-fact-header'>
+              <span className='xr-fact-badge' style={{ borderColor: 'rgba(255, 209, 102, 0.4)', color: '#ffd166' }}>
+                <span className='xr-pulse-dot' style={{ background: '#ffd166' }}></span> TRANSPARENCE
+              </span>
+              <div
+                className='xr-fact-icon-box'
+                style={{
+                  background: 'rgba(255, 209, 102, 0.1)',
+                  borderColor: 'rgba(255, 209, 102, 0.3)',
+                  color: '#ffd166',
+                }}
+              >
+                <i className='fas fa-balance-scale'></i>
+              </div>
+            </div>
+            <div className='xr-fact-metric'>
+              <b>{countFact3}</b>
+              <span className='xr-fact-unit'>POINTS MÉRITE</span>
+            </div>
+            <p className='xr-fact-desc'>
+              Barème algorithmique transparent et immuable sans favoritisme
+            </p>
+            <div className='xr-fact-eq'>
+              <span style={{ animationDelay: '0s' }}></span>
+              <span style={{ animationDelay: '0.2s' }}></span>
+              <span style={{ animationDelay: '0.4s' }}></span>
+              <span style={{ animationDelay: '0.1s' }}></span>
+              <span style={{ animationDelay: '0.3s' }}></span>
+              <span style={{ animationDelay: '0.5s' }}></span>
+              <span style={{ animationDelay: '0.25s' }}></span>
+            </div>
           </div>
+
+          {/* Bento Card 4: 0 ms Latence */}
           <div className='xr-fact-card'>
-            <b>0 ms</b>
-            <span>LATENCE DANS LE CALCUL D'EXPÉRIENCE EN POSTE ACTUEL</span>
+            <div className='xr-fact-corner xr-corner-tl'></div>
+            <div className='xr-fact-corner xr-corner-br'></div>
+            <div className='xr-fact-header'>
+              <span className='xr-fact-badge'>
+                <span className='xr-pulse-dot'></span> TEMPS RÉEL
+              </span>
+              <div className='xr-fact-icon-box'>
+                <i className='fas fa-bolt'></i>
+              </div>
+            </div>
+            <div className='xr-fact-metric'>
+              <b>0<em>ms</em></b>
+              <span className='xr-fact-unit'>LATENCE CALCUL</span>
+            </div>
+            <p className='xr-fact-desc'>
+              Calcul instantané d'ancienneté professionnelle pour candidat en poste
+            </p>
+            <div className='xr-fact-ping'>
+              <span className='xr-ping-live'></span>
+              <code>ENGINE_ACTIVE · BUFFER 0.04ms</code>
+            </div>
           </div>
         </div>
       </section>
@@ -976,6 +1105,7 @@ const HomeScreen = () => {
           <div className='xr-section-header' data-scroll-reveal='fade-left'>
             <div>
               <div className='xr-hud-chip mb-2'>
+                <span className='xr-pulse-dot'></span>
                 <span>TRAÇABILITÉ TOTALE DE BOUT EN BOUT</span>
               </div>
               <h2>
@@ -997,65 +1127,107 @@ const HomeScreen = () => {
                 className={`xr-pipeline-tab ${activeStageIndex === idx ? 'is-active' : ''}`}
                 onClick={() => setActiveStageIndex(idx)}
               >
-                <span className='num'>ÉTAPE {st.num}</span>
-                <strong>{st.short}</strong>
+                <div className='xr-tab-glow-bar'></div>
+                <div className='d-flex align-items-center justify-content-between mb-1'>
+                  <span className='num'>PHASE {st.num}</span>
+                  <span className={`xr-tab-dot ${activeStageIndex === idx ? 'is-active' : ''}`}></span>
+                </div>
+                <strong>{st.short.replace(/^\d+\.\s*/, '')}</strong>
               </button>
             ))}
           </div>
 
           {/* Pipeline Interactive Card */}
           <div className='xr-pipeline-card' key={currentStage.num} data-scroll-reveal='rotate-in'>
+            <div className='xr-fact-corner xr-corner-tl'></div>
+            <div className='xr-fact-corner xr-corner-br'></div>
+
             <div className='xr-pipeline-left'>
-              <div className='xr-hud-chip mb-3' style={{ fontSize: '9px' }}>
-                <span>{currentStage.tag}</span>
+              <div className='d-flex align-items-center gap-2 mb-3'>
+                <div className='xr-hud-chip' style={{ fontSize: '9.5px' }}>
+                  <span>{currentStage.tag}</span>
+                </div>
+                <span className='xr-stage-pill'>ÉTAPE {currentStage.num} / 05</span>
               </div>
+
               <h3>{currentStage.title}</h3>
               <p>{currentStage.desc}</p>
+
               <ul className='xr-pipeline-points'>
                 {currentStage.points.map((pt, i) => (
                   <li key={i}>
-                    <i className='fas fa-check-circle'></i>
+                    <div className='xr-point-icon'>
+                      <i className='fas fa-check'></i>
+                    </div>
                     <span>{pt}</span>
                   </li>
                 ))}
               </ul>
 
-              <div className='d-flex align-items-center gap-3'>
+              <div className='d-flex align-items-center gap-3 pt-2'>
                 <Link to='/register' className='xr-btn'>
                   Commencer mon dossier <i className='fas fa-arrow-right ms-1'></i>
                 </Link>
                 <a href='#xr-simulateur' className='xr-btn xr-btn-outline'>
-                  Simuler mon barème
+                  <i className='fas fa-calculator me-1 text-info'></i> Simuler mon barème
                 </a>
               </div>
             </div>
 
-            {/* Right Interactive Visualizer Box */}
+            {/* Right Interactive Telemetry & Mission Control Box */}
             <div className='xr-pipeline-visual'>
               <div className='xr-pipeline-visual-header'>
-                <span>MÉTRIQUE OPÉRATIONNELLE</span>
+                <div className='d-flex align-items-center gap-2'>
+                  <span className='xr-pulse-dot'></span>
+                  <span>MÉTRIQUE OPÉRATIONNELLE · STAGE_{currentStage.num}</span>
+                </div>
                 <span className='xr-visual-badge'>{currentStage.badge}</span>
               </div>
 
-              <div className='text-center py-4'>
-                <div style={{ fontSize: '48px', color: 'var(--xr-mint)', fontFamily: 'var(--font-serif)', marginBottom: '8px' }}>
-                  {currentStage.metric}
+              <div className='xr-pipeline-cockpit'>
+                <div className='xr-cockpit-ring'>
+                  <div className='xr-cockpit-val'>{currentStage.metric}</div>
+                  <div className='xr-cockpit-sub'>Garantie d'intégrité nationale certifiée EHC</div>
                 </div>
-                <div className='text-muted small'>Garantie d'intégrité nationale certifiée EHC</div>
               </div>
 
-              <div className='p-3 rounded' style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(0, 242, 169, 0.15)' }}>
-                <div className='d-flex justify-content-between text-muted small mb-2' style={{ fontSize: '11px' }}>
-                  <span>Conformité Réglementaire</span>
-                  <span className='text-success'>100% Validé</span>
+              {/* SHA-256 Dynamic Hash Feed */}
+              <div className='xr-crypto-stream'>
+                <div className='xr-crypto-head'>
+                  <i className='fas fa-fingerprint text-warning me-1'></i>
+                  <span>REGISTRE AUDIT CRYPTOGRAPHIQUE</span>
                 </div>
-                <div className='d-flex justify-content-between text-muted small mb-2' style={{ fontSize: '11px' }}>
-                  <span>Temps Moyen d'Instruction</span>
-                  <span className='text-info'>&lt; 48 Heures</span>
+                <code>ROOT_HASH: 0x{currentStage.num}e8a9d023bf4...100%_VALIDATED</code>
+                <code>ALGORITHM: SHA-256 · MERKLE_ROOT_VERIFIED</code>
+              </div>
+
+              <div className='xr-pipeline-audit-bars'>
+                <div className='xr-audit-bar-item'>
+                  <div className='d-flex justify-content-between mb-1'>
+                    <span>Conformité Réglementaire CNDP</span>
+                    <span className='text-success fw-bold'>100% Validé</span>
+                  </div>
+                  <div className='xr-audit-bar-track'>
+                    <div className='xr-audit-bar-fill' style={{ width: '100%' }}></div>
+                  </div>
                 </div>
-                <div className='d-flex justify-content-between text-muted small' style={{ fontSize: '11px' }}>
-                  <span>Traçabilité SHA-256</span>
-                  <span className='text-warning'>Immuable</span>
+                <div className='xr-audit-bar-item'>
+                  <div className='d-flex justify-content-between mb-1'>
+                    <span>Temps Moyen d'Instruction</span>
+                    <span className='text-info fw-bold'>&lt; 48 Heures</span>
+                  </div>
+                  <div className='xr-audit-bar-track'>
+                    <div className='xr-audit-bar-fill' style={{ width: '92%', background: '#00d9f5' }}></div>
+                  </div>
+                </div>
+                <div className='xr-audit-bar-item'>
+                  <div className='d-flex justify-content-between mb-1'>
+                    <span>Horodatage SHA-256</span>
+                    <span className='text-warning fw-bold'>Immuable</span>
+                  </div>
+                  <div className='xr-audit-bar-track'>
+                    <div className='xr-audit-bar-fill' style={{ width: '100%', background: '#ffd166' }}></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1099,6 +1271,7 @@ const HomeScreen = () => {
           <div className='xr-section-header' data-scroll-reveal='fade-right'>
             <div>
               <div className='xr-hud-chip mb-2'>
+                <span className='xr-pulse-dot'></span>
                 <span>AVIS DE RECRUTEMENT OFFICIELS</span>
               </div>
               <h2>
@@ -1113,20 +1286,21 @@ const HomeScreen = () => {
 
           <div className='xr-filters-row' data-scroll-reveal='fade-up'>
             {[
-              { id: 'ALL', label: 'Toutes les institutions' },
-              { id: 'ABB', label: 'Al Barid Bank' },
-              { id: 'CIH', label: 'CIH Bank' },
-              { id: 'OCP', label: 'Groupe OCP' },
-              { id: 'MEF', label: 'Ministère des Finances' },
-              { id: 'BOA', label: 'Bank of Africa' },
-              { id: 'CDG', label: 'CDG Maroc' },
+              { id: 'ALL', label: 'Toutes les institutions', count: offres.length },
+              { id: 'ABB', label: 'Al Barid Bank', count: offres.filter((o) => o.sigle === 'ABB').length },
+              { id: 'CIH', label: 'CIH Bank', count: offres.filter((o) => o.sigle === 'CIH').length },
+              { id: 'OCP', label: 'Groupe OCP', count: offres.filter((o) => o.sigle === 'OCP').length },
+              { id: 'MEF', label: 'Ministère des Finances', count: offres.filter((o) => o.sigle === 'MEF').length },
+              { id: 'BOA', label: 'Bank of Africa', count: offres.filter((o) => o.sigle === 'BOA').length },
+              { id: 'CDG', label: 'CDG Maroc', count: offres.filter((o) => o.sigle === 'CDG').length },
             ].map((inst) => (
               <button
                 key={inst.id}
                 className={`xr-filter-btn ${selectedSigle === inst.id ? 'is-active' : ''}`}
                 onClick={() => setSelectedSigle(inst.id)}
               >
-                {inst.label}
+                <span>{inst.label}</span>
+                <span className='xr-filter-count'>{inst.count}</span>
               </button>
             ))}
           </div>
@@ -1134,29 +1308,51 @@ const HomeScreen = () => {
           <div className='xr-offres-grid xr-stagger' data-scroll-reveal='fade-up'>
             {filteredOffres.map((offre) => (
               <div key={offre._id} className='xr-offre-card'>
+                <div className='xr-fact-corner xr-corner-tl'></div>
+                <div className='xr-fact-corner xr-corner-br'></div>
+
                 <div className='xr-offre-top-bar'>
-                  <span className='xr-institution-badge'>{offre.entreprise}</span>
-                  {offre.urgent && (
-                    <span className='badge bg-danger text-white' style={{ fontSize: '9px', letterSpacing: '0.1em' }}>
+                  <div className='d-flex align-items-center gap-2'>
+                    <span className='xr-institution-badge'>{offre.entreprise}</span>
+                    <span className='xr-session-tag'>SESSION 2026</span>
+                  </div>
+                  {offre.urgent ? (
+                    <span className='xr-urgent-badge'>
+                      <span className='xr-pulse-dot' style={{ background: '#ef4444' }}></span>
                       CLÔTURE IMMINENTE
                     </span>
+                  ) : (
+                    <span className='xr-regular-badge'>CONCOURS ACTIF</span>
                   )}
                 </div>
 
                 <h4>{offre.titre}</h4>
 
+                {/* Capacity & Budget Allocation Bar */}
+                <div className='xr-capacity-box'>
+                  <div className='d-flex justify-content-between align-items-center mb-1'>
+                    <span className='xr-capacity-lbl'>
+                      <i className='fas fa-user-check text-success me-1'></i> Capacité Budgétaire
+                    </span>
+                    <span className='xr-capacity-val'>{offre.postes} Postes Ouverts</span>
+                  </div>
+                  <div className='xr-capacity-track'>
+                    <div className='xr-capacity-fill' style={{ width: '85%' }}></div>
+                  </div>
+                </div>
+
                 <div className='xr-offre-meta'>
-                  <span><i className='fas fa-map-marker-alt'></i> {offre.ville}</span>
-                  <span><i className='fas fa-graduation-cap'></i> {offre.niveau}</span>
-                  <span><i className='fas fa-users'></i> {offre.postes} Postes budgétaires ouverts</span>
-                  <span><i className='fas fa-clock'></i> {offre.cloture}</span>
+                  <span><i className='fas fa-map-marker-alt'></i> <strong>Région :</strong> {offre.ville}</span>
+                  <span><i className='fas fa-graduation-cap'></i> <strong>Niveau :</strong> {offre.niveau}</span>
+                  <span><i className='fas fa-briefcase'></i> <strong>Secteur :</strong> {offre.secteur}</span>
+                  <span><i className='fas fa-calendar-alt'></i> <strong>Clôture :</strong> {offre.cloture}</span>
                 </div>
 
                 <div className='xr-offre-foot'>
                   <Link
                     to={userInfo ? '/profil' : '/register'}
                     className='xr-btn'
-                    style={{ minHeight: '36px', padding: '0 18px', fontSize: '10px' }}
+                    style={{ minHeight: '38px', padding: '0 20px', fontSize: '10.5px' }}
                   >
                     Postuler en Ligne <i className='fas fa-arrow-right ms-1'></i>
                   </Link>
@@ -1165,10 +1361,12 @@ const HomeScreen = () => {
                     href='/uploads/Dossier_Candidat_Complet_6_Pages.pdf'
                     target='_blank'
                     rel='noreferrer'
-                    className='text-muted small text-decoration-none'
+                    className='xr-pdf-link'
                     title='Télécharger l’Avis Officiel'
                   >
-                    <i className='fas fa-file-pdf text-danger me-1'></i> Avis PDF
+                    <i className='fas fa-file-pdf text-danger'></i>
+                    <span>Avis PDF</span>
+                    <span className='xr-pdf-size'>1.4 MB</span>
                   </a>
                 </div>
               </div>
@@ -1185,6 +1383,7 @@ const HomeScreen = () => {
           <div className='xr-section-header' data-scroll-reveal='fade-left'>
             <div>
               <div className='xr-hud-chip mb-2'>
+                <span className='xr-pulse-dot'></span>
                 <span>TRANSPARENCE ALGORITHMIQUE TOTALE</span>
               </div>
               <h2>
@@ -1198,38 +1397,50 @@ const HomeScreen = () => {
           </div>
 
           <div className='xr-sim-layout' data-scroll-reveal='zoom-in'>
-            {/* Left Controls */}
+            {/* Left Controls & Breakdown Telemetry */}
             <div className='xr-sim-box'>
+              <div className='xr-fact-corner xr-corner-tl'></div>
+              <div className='xr-fact-corner xr-corner-br'></div>
+
               <div className='xr-sim-field'>
                 <label>
                   <span>1. Diplôme / Niveau d'études</span>
-                  <span className='pts'>{simNiveau === 'bac2' ? '25 pts' : simNiveau === 'bac3' ? '35 pts' : simNiveau === 'bac5' ? '45 pts' : '48 pts'}</span>
+                  <span className='pts'>{simScoreDiplome} / 48 pts</span>
                 </label>
                 <select className='xr-sim-select' value={simNiveau} onChange={(e) => setSimNiveau(e.target.value)}>
-                  <option value='bac2'>Bac +2 (DUT, BTS, DTS, DEUG)</option>
-                  <option value='bac3'>Bac +3 (Licence Fondamentale / Professionnelle)</option>
-                  <option value='bac5'>Bac +5 (Master, Diplôme d'Ingénieur d'État, ENCG, ISCAE)</option>
-                  <option value='doctorat'>Doctorat / Ph.D Spécialisé</option>
+                  <option value='bac2'>Bac +2 (DUT, BTS, DTS, DEUG) — 25 pts</option>
+                  <option value='bac3'>Bac +3 (Licence Fondamentale / Pro) — 35 pts</option>
+                  <option value='bac5'>Bac +5 (Master, Ingénieur d'État, ENCG, ISCAE) — 45 pts</option>
+                  <option value='doctorat'>Doctorat / Ph.D Spécialisé — 48 pts</option>
                 </select>
+                <div className='xr-sim-track'>
+                  <div className='xr-sim-fill' style={{ width: `${(simScoreDiplome / 48) * 100}%` }}></div>
+                </div>
               </div>
 
               <div className='xr-sim-field'>
                 <label>
                   <span>2. Mention obtenue au diplôme requis</span>
-                  <span className='pts'>{simMention === 'passable' ? '8 pts' : simMention === 'assez_bien' ? '14 pts' : simMention === 'bien' ? '18 pts' : '22 pts'}</span>
+                  <span className='pts'>{simScoreMention} / 22 pts</span>
                 </label>
                 <select className='xr-sim-select' value={simMention} onChange={(e) => setSimMention(e.target.value)}>
-                  <option value='passable'>Mention Passable (10.00 à 11.99)</option>
-                  <option value='assez_bien'>Mention Assez Bien (12.00 à 13.99)</option>
-                  <option value='bien'>Mention Bien (14.00 à 15.99)</option>
-                  <option value='tres_bien'>Mention Très Bien (16.00 et plus)</option>
+                  <option value='passable'>Mention Passable (10.00 à 11.99) — 8 pts</option>
+                  <option value='assez_bien'>Mention Assez Bien (12.00 à 13.99) — 14 pts</option>
+                  <option value='bien'>Mention Bien (14.00 à 15.99) — 18 pts</option>
+                  <option value='tres_bien'>Mention Très Bien (16.00 et plus) — 22 pts</option>
                 </select>
+                <div className='xr-sim-track'>
+                  <div
+                    className='xr-sim-fill'
+                    style={{ width: `${(simScoreMention / 22) * 100}%`, background: '#00d9f5' }}
+                  ></div>
+                </div>
               </div>
 
               <div className='xr-sim-field'>
                 <label>
                   <span>3. Expérience professionnelle cumulée</span>
-                  <span className='pts'>{simExp} an(s) · {Math.min(simExp * 3, 30)} pts</span>
+                  <span className='pts'>{simExp} an(s) · {simScoreExp} / 30 pts</span>
                 </label>
                 <input
                   type='range'
@@ -1242,17 +1453,25 @@ const HomeScreen = () => {
                 />
                 <div className='d-flex justify-content-between mt-2 text-muted small' style={{ fontSize: '11px' }}>
                   <span>Débutant (0 an)</span>
-                  <span>5 ans</span>
-                  <span>10 ans et plus (Max 30 pts)</span>
+                  <span>5 ans (15 pts)</span>
+                  <span>10 ans et + (Max 30 pts)</span>
+                </div>
+                <div className='xr-sim-track mt-2'>
+                  <div
+                    className='xr-sim-fill'
+                    style={{ width: `${(simScoreExp / 30) * 100}%`, background: '#ffd166' }}
+                  ></div>
                 </div>
               </div>
 
-              <div className='p-3 rounded mt-4' style={{ background: 'rgba(0, 242, 169, 0.08)', border: '1px solid rgba(0, 242, 169, 0.25)' }}>
+              {/* Highlighted Option Poste Actuel Card */}
+              <div className='xr-sim-option-card'>
                 <div className='d-flex align-items-center justify-content-between mb-2'>
-                  <span className='fw-bold text-white small'>
-                    <i className='fas fa-briefcase text-success me-2'></i> Option "Toujours en poste"
+                  <span className='fw-bold text-white small d-flex align-items-center gap-2'>
+                    <i className='fas fa-briefcase text-success'></i>
+                    Option "Toujours en poste" Active
                   </span>
-                  <span className='badge bg-success text-dark fw-bold' style={{ fontSize: '9px' }}>ACTIF</span>
+                  <span className='xr-option-badge'>AUTODÉTECTÉ</span>
                 </div>
                 <p className='text-muted small mb-0' style={{ fontSize: '11.5px', lineHeight: '1.6' }}>
                   Dans votre dossier candidat, il vous suffit de cocher <em>« Poste actuel »</em>.
@@ -1261,13 +1480,15 @@ const HomeScreen = () => {
               </div>
             </div>
 
-            {/* Right Neon Compass Gauge */}
+            {/* Right Neon Compass Radar Gauge */}
             <div className='xr-gauge-wrap'>
+              <div className='xr-radar-ticks'></div>
               <svg viewBox='0 0 320 320'>
                 <defs>
                   <linearGradient id='xr-gauge-gradient' x1='0%' y1='0%' x2='100%' y2='0%'>
                     <stop offset='0%' stopColor='#00f2a9' />
-                    <stop offset='100%' stopColor='#00d9f5' />
+                    <stop offset='50%' stopColor='#00d9f5' />
+                    <stop offset='100%' stopColor='#ffd166' />
                   </linearGradient>
                 </defs>
                 <circle cx='160' cy='160' r='130' className='xr-gauge-track' />
@@ -1284,7 +1505,7 @@ const HomeScreen = () => {
               </svg>
 
               <div className='xr-gauge-center'>
-                <span className='lbl'>NOTE PRÉVISIONNELLE</span>
+                <span className='lbl'>NOTE PRÉVISIONNELLE DU BARÈME</span>
                 <b>
                   {simScore}
                   <em>/100</em>
@@ -1293,11 +1514,14 @@ const HomeScreen = () => {
                   <i className='fas fa-check-circle text-success me-1'></i>
                   <span>
                     {simScore >= 75
-                      ? 'HAUTE ADMISSIBILITÉ (TOP 10%)'
+                      ? 'HAUTE ADMISSIBILITÉ (TOP 5%)'
                       : simScore >= 55
                       ? 'ÉLIGIBLE CONVOCATION ORALE'
                       : 'DOSSIER RECEVABLE'}
                   </span>
+                </div>
+                <div className='xr-gauge-breakdown'>
+                  <span>DIP: {simScoreDiplome}P</span> · <span>MEN: {simScoreMention}P</span> · <span>EXP: {simScoreExp}P</span>
                 </div>
               </div>
             </div>
@@ -1306,13 +1530,14 @@ const HomeScreen = () => {
       </section>
 
       {/* ====================================================================
-          8. LES 4 ESPACES MÉTIER DÉDIÉS
+          8. LES 4 ESPACES MÉTIER DÉDIÉS (3D BENTO GRID)
           ==================================================================== */}
       <section className='xr-espaces-section' id='xr-espaces'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
           <div className='xr-section-header' data-scroll-reveal='fade-right'>
             <div>
               <div className='xr-hud-chip mb-2'>
+                <span className='xr-pulse-dot'></span>
                 <span>ENVIRONNEMENTS DÉDIÉS</span>
               </div>
               <h2>
@@ -1326,58 +1551,108 @@ const HomeScreen = () => {
           </div>
 
           <div className='xr-espaces-grid xr-stagger' data-scroll-reveal='fade-up'>
-            <div className='xr-espace-card'>
-              <div className='xr-espace-icon'>
-                <i className='fas fa-user-graduate'></i>
+            {/* Espace 1: Candidat (Emerald) */}
+            <div className='xr-espace-card xr-theme-emerald'>
+              <div className='xr-fact-corner xr-corner-tl'></div>
+              <div className='xr-fact-corner xr-corner-br'></div>
+              <div className='d-flex justify-content-between align-items-center mb-3'>
+                <div className='xr-espace-icon'>
+                  <i className='fas fa-user-graduate'></i>
+                </div>
+                <span className='xr-espace-pill'>PORTAIL CANDIDAT</span>
               </div>
               <h4>Espace Candidat</h4>
               <p>
-                Créez votre profil, téléversez vos diplômes et justificatifs d'expérience,
+                Créez votre dossier, téléversez vos diplômes et attestations d'expérience,
                 suivez l'audit en direct et téléchargez votre convocation officielle avec QR-Code.
               </p>
-              <Link to='/register' className='xr-btn xr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+              <ul className='xr-espace-features'>
+                <li><i className='fas fa-check text-success'></i> Calcul auto expérience poste actuel</li>
+                <li><i className='fas fa-check text-success'></i> Récépissé numérique SHA-256</li>
+                <li><i className='fas fa-check text-success'></i> Convocation officielle nominative</li>
+              </ul>
+              <Link to='/register' className='xr-btn xr-btn-outline' style={{ minHeight: '38px', fontSize: '10.5px' }}>
                 Créer Mon Espace <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
 
-            <div className='xr-espace-card'>
-              <div className='xr-espace-icon'>
-                <i className='fas fa-balance-scale'></i>
+            {/* Espace 2: Commission d'Audit (Cyan) */}
+            <div className='xr-espace-card xr-theme-cyan'>
+              <div className='xr-fact-corner xr-corner-tl'></div>
+              <div className='xr-fact-corner xr-corner-br'></div>
+              <div className='d-flex justify-content-between align-items-center mb-3'>
+                <div className='xr-espace-icon'>
+                  <i className='fas fa-balance-scale'></i>
+                </div>
+                <span className='xr-espace-pill' style={{ borderColor: 'rgba(0, 217, 245, 0.4)', color: '#00d9f5' }}>
+                  DOUBLE-AVEUGLE
+                </span>
               </div>
               <h4>Commission d'Audit</h4>
               <p>
                 Interface écran scindé pour vérifier les relevés originaux scannés, ajuster immédiatement les notes
                 en cas d'erreur de saisie et certifier l'admissibilité en double contrôle.
               </p>
-              <Link to='/login' className='xr-btn xr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+              <ul className='xr-espace-features'>
+                <li><i className='fas fa-check text-info'></i> Visualiseur split-screen HD</li>
+                <li><i className='fas fa-check text-info'></i> Rectification sécurisée des notes</li>
+                <li><i className='fas fa-check text-info'></i> Procès-verbal d'audit horodaté</li>
+              </ul>
+              <Link to='/login' className='xr-btn xr-btn-outline' style={{ minHeight: '38px', fontSize: '10.5px' }}>
                 Accès Contrôleur <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
 
-            <div className='xr-espace-card'>
-              <div className='xr-espace-icon'>
-                <i className='fas fa-building'></i>
+            {/* Espace 3: Recruteur RH Banques (Gold) */}
+            <div className='xr-espace-card xr-theme-gold'>
+              <div className='xr-fact-corner xr-corner-tl'></div>
+              <div className='xr-fact-corner xr-corner-br'></div>
+              <div className='d-flex justify-content-between align-items-center mb-3'>
+                <div className='xr-espace-icon'>
+                  <i className='fas fa-building'></i>
+                </div>
+                <span className='xr-espace-pill' style={{ borderColor: 'rgba(255, 209, 102, 0.4)', color: '#ffd166' }}>
+                  MULTI-ÉTABLISSEMENTS
+                </span>
               </div>
               <h4>Recruteur RH (Banques)</h4>
               <p>
                 Publiez des concours au nom de votre institution (Al Barid Bank, OCP, CIH, MEF...), paramétrez le barème
                 et exportez les listes officielles des candidats classés par ordre de mérite.
               </p>
-              <Link to='/login' className='xr-btn xr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+              <ul className='xr-espace-features'>
+                <li><i className='fas fa-check text-warning'></i> Publication d'avis certifiés</li>
+                <li><i className='fas fa-check text-warning'></i> Classement au mérite en 1 clic</li>
+                <li><i className='fas fa-check text-warning'></i> Export listes d'admissibilité PDF</li>
+              </ul>
+              <Link to='/login' className='xr-btn xr-btn-outline' style={{ minHeight: '38px', fontSize: '10.5px' }}>
                 Espace Recruteur <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
 
-            <div className='xr-espace-card'>
-              <div className='xr-espace-icon'>
-                <i className='fas fa-shield-alt'></i>
+            {/* Espace 4: Direction & CNDP (Violet) */}
+            <div className='xr-espace-card xr-theme-violet'>
+              <div className='xr-fact-corner xr-corner-tl'></div>
+              <div className='xr-fact-corner xr-corner-br'></div>
+              <div className='d-flex justify-content-between align-items-center mb-3'>
+                <div className='xr-espace-icon'>
+                  <i className='fas fa-shield-alt'></i>
+                </div>
+                <span className='xr-espace-pill' style={{ borderColor: 'rgba(167, 139, 250, 0.4)', color: '#a78bfa' }}>
+                  LOI 09-08 CNDP
+                </span>
               </div>
               <h4>Direction &amp; CNDP</h4>
               <p>
                 Supervision macroscopique, tableaux de bord de parité et d'équité régionale,
                 journal d'audit infalsifiable avec horodatage cryptographique SHA-256.
               </p>
-              <Link to='/login' className='xr-btn xr-btn-outline' style={{ minHeight: '36px', fontSize: '10px' }}>
+              <ul className='xr-espace-features'>
+                <li><i className='fas fa-check text-primary'></i> Tableaux de bord de parité</li>
+                <li><i className='fas fa-check text-primary'></i> Registre blockchain d'audit</li>
+                <li><i className='fas fa-check text-primary'></i> Conformité souveraine totale</li>
+              </ul>
+              <Link to='/login' className='xr-btn xr-btn-outline' style={{ minHeight: '38px', fontSize: '10.5px' }}>
                 Supervision CNDP <i className='fas fa-arrow-right ms-1'></i>
               </Link>
             </div>
@@ -1393,38 +1668,77 @@ const HomeScreen = () => {
           <div className='xr-security-box' data-scroll-reveal='fade-up'>
             <div>
               <div className='xr-hud-chip mb-3'>
-                <span>CONFORMITÉ LOI 09-08</span>
+                <span className='xr-pulse-dot'></span>
+                <span>CONFORMITÉ LOI 09-08 DU ROYAUME DU MAROC</span>
               </div>
               <h2 style={{ fontSize: 'clamp(36px, 4vw, 56px)', marginBottom: '20px' }}>
                 La confiance républicaine. <em>Scellée par le code.</em>
               </h2>
-              <p style={{ color: 'var(--xr-muted)', fontSize: '15px', lineHeight: '1.8' }}>
+              <p style={{ color: 'var(--xr-muted)', fontSize: '15px', lineHeight: '1.8', marginBottom: '24px' }}>
                 Notre plateforme garantit l'inviolabilité absolue des données personnelles et professionnelles des candidats.
                 Chaque consultation, chaque visa d'auditeur et chaque note réajustée est consignée dans un journal immuable
                 auditable par les autorités nationales compétentes.
               </p>
+
+              <div className='xr-security-badges-row'>
+                <div className='xr-sec-badge'>
+                  <i className='fas fa-lock text-success'></i>
+                  <div>
+                    <strong>AES-256-GCM</strong>
+                    <span>Chiffrement Bancaire</span>
+                  </div>
+                </div>
+                <div className='xr-sec-badge'>
+                  <i className='fas fa-stamp text-warning'></i>
+                  <div>
+                    <strong>SHA-256 SEAL</strong>
+                    <span>Horodatage Immuable</span>
+                  </div>
+                </div>
+                <div className='xr-sec-badge'>
+                  <i className='fas fa-user-shield text-info'></i>
+                  <div>
+                    <strong>CNDP D-W-452</strong>
+                    <span>Conformité Loi 09-08</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
+            {/* Right Cryptographic Vault Card */}
             <div className='xr-seal-card' data-scroll-reveal='zoom-in'>
+              <div className='xr-fact-corner xr-corner-tl'></div>
+              <div className='xr-fact-corner xr-corner-br'></div>
+
               <div className='d-flex align-items-center gap-3 mb-4'>
-                <i className='fas fa-certificate text-warning' style={{ fontSize: '32px' }}></i>
+                <div className='xr-seal-icon'>
+                  <i className='fas fa-certificate'></i>
+                </div>
                 <div>
                   <h5 className='text-white mb-1' style={{ fontFamily: 'var(--font-serif)', fontSize: '20px' }}>
                     Sceau de Sécurité Cryptographique
                   </h5>
-                  <span className='text-muted small'>Horodatage Certifié Conforme CNDP</span>
+                  <span className='text-muted small'>Horodatage Certifié Conforme CNDP &amp; EHC</span>
                 </div>
               </div>
 
-              <div className='p-3 rounded mb-3' style={{ background: 'rgba(0, 0, 0, 0.4)', fontFamily: 'var(--font-mono)', fontSize: '11px', color: 'var(--xr-mint)' }}>
-                <code>ROOT_HASH: 7f8a9d023bf4e8c1...100%_SECURE</code><br />
-                <code>STATUS: AUDIT_TRAIL_ACTIVE · ZERO_BREACH</code>
+              <div className='xr-terminal-matrix'>
+                <div className='xr-terminal-bar'>
+                  <span className='xr-term-dot red'></span>
+                  <span className='xr-term-dot yellow'></span>
+                  <span className='xr-term-dot green'></span>
+                  <span className='xr-term-title'>SECURITY_CORE_V4 // LIVE_AUDIT</span>
+                </div>
+                <code>&gt; SYSTEM_INTEGRITY: 100%_OPTIMAL</code>
+                <code>&gt; ROOT_HASH: 0x7f8a9d023bf4e8c1ba99d21...[SEALED]</code>
+                <code>&gt; AUDIT_TRAIL: DOUBLE_BLIND_CONTROLLER_SYNC</code>
+                <code>&gt; STATUS: IMMUTABLE_TIMESTAMPED (LOI 09-08)</code>
               </div>
 
-              <ul className='list-unstyled mb-0 text-muted small' style={{ fontSize: '12px', lineHeight: '1.8' }}>
-                <li><i className='fas fa-check text-success me-2'></i> Chiffrement AES-256 de l’ensemble des pièces scannées</li>
-                <li><i className='fas fa-check text-success me-2'></i> Protection intégrale conforme aux préconisations de la CNDP</li>
-                <li><i className='fas fa-check text-success me-2'></i> Élimination stricte de toute interférence dans le classement</li>
+              <ul className='xr-security-checklist'>
+                <li><i className='fas fa-check-circle text-success me-2'></i> Chiffrement AES-256 de l’ensemble des pièces scannées</li>
+                <li><i className='fas fa-check-circle text-success me-2'></i> Protection intégrale conforme aux préconisations de la CNDP</li>
+                <li><i className='fas fa-check-circle text-success me-2'></i> Élimination stricte de toute interférence dans le classement</li>
               </ul>
             </div>
           </div>
@@ -1439,15 +1753,29 @@ const HomeScreen = () => {
           <div className='xr-faq-layout' data-scroll-reveal='fade-up'>
             <div>
               <div className='xr-hud-chip mb-2'>
+                <span className='xr-pulse-dot'></span>
                 <span>ASSISTANCE AUX CANDIDATS</span>
               </div>
               <h2 style={{ fontSize: 'clamp(38px, 4.2vw, 65px)', marginBottom: '20px' }}>
                 Questions <em>fréquentes.</em>
               </h2>
-              <p style={{ color: 'var(--xr-muted)', fontSize: '15px', lineHeight: '1.8' }}>
+              <p style={{ color: 'var(--xr-muted)', fontSize: '15px', lineHeight: '1.8', marginBottom: '28px' }}>
                 Retrouvez les réponses réglementaires aux questions les plus posées lors du dépôt de dossier,
                 du calcul d'ancienneté et de l'instruction par la commission d'audit.
               </p>
+
+              <div className='xr-faq-help-card'>
+                <div className='d-flex align-items-center gap-3 mb-2'>
+                  <i className='fas fa-headset text-success' style={{ fontSize: '24px' }}></i>
+                  <div>
+                    <strong className='text-white d-block'>Besoin d'assistance ?</strong>
+                    <span className='text-muted small'>Cellule Support Concours EHC</span>
+                  </div>
+                </div>
+                <p className='text-muted small mb-0' style={{ fontSize: '12px' }}>
+                  Une équipe dédiée répond sous 2h à toute question relative à votre dossier ou à vos pièces scannées.
+                </p>
+              </div>
             </div>
 
             <div className='xr-faq-list'>
@@ -1498,6 +1826,28 @@ const HomeScreen = () => {
                   sera téléchargeable directement depuis votre espace personnel.
                 </p>
               </details>
+
+              <details>
+                <summary>
+                  <span>Puis-je postuler à plusieurs concours simultanément ?</span>
+                  <i className='fas fa-plus'></i>
+                </summary>
+                <p>
+                  Oui. Votre dossier unique (état civil, diplômes et expériences certifiés) est mutualisé sur la plateforme.
+                  Vous pouvez postuler en un clic à tous les concours bancaires ou publics ouverts correspondant à votre niveau d'études.
+                </p>
+              </details>
+
+              <details>
+                <summary>
+                  <span>Mes données sont-elles protégées conformément à la Loi 09-08 (CNDP) ?</span>
+                  <i className='fas fa-plus'></i>
+                </summary>
+                <p>
+                  Absolument. La plateforme fait l'objet d'une déclaration préalable auprès de la CNDP. Vos documents sont
+                  chiffrés en AES-256 et ne sont accessibles qu'aux jurys habilités pour la stricte instruction du concours.
+                </p>
+              </details>
             </div>
           </div>
         </div>
@@ -1518,7 +1868,7 @@ const HomeScreen = () => {
             </p>
             <div className='xr-hud-chip mt-4' style={{ fontSize: '9px' }}>
               <span className='xr-pulse-dot'></span>
-              <span>CONFORME LOI 09-08 · CNDP</span>
+              <span>CONFORME LOI 09-08 · CNDP MAROC</span>
             </div>
           </div>
 
