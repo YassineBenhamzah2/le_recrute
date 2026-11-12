@@ -81,6 +81,16 @@ const DEFAULT_FEATURED_OFFRES = [
   },
 ];
 
+const PARTNERS_LIST = [
+  { name: 'Al Barid Bank', tag: 'Réseau Bancaire & Postal', icon: 'fas fa-university text-warning', status: 'SESSION 2026' },
+  { name: 'Groupe OCP', tag: 'Leader Minier & Chimique', icon: 'fas fa-industry text-success', status: 'CONCOURS ACTIF' },
+  { name: 'CIH Bank', tag: 'Banque Digitale & Particuliers', icon: 'fas fa-landmark text-info', status: 'SESSION 2026' },
+  { name: 'Ministère des Finances', tag: 'Administration Centrale', icon: 'fas fa-balance-scale text-warning', status: 'RECRUTEMENT ÉTAT' },
+  { name: 'Bank of Africa (BMCE)', tag: 'Groupe Panafricain', icon: 'fas fa-globe-africa text-info', status: 'CONCOURS ACTIF' },
+  { name: 'Caisse de Dépôt (CDG)', tag: 'Organisme Financier Public', icon: 'fas fa-shield-alt text-success', status: 'SESSION 2026' },
+  { name: 'Commission CNDP', tag: 'Protection Données (Loi 09-08)', icon: 'fas fa-certificate text-danger', status: 'ACCRÉDITÉ' },
+];
+
 const PIPELINE_STAGES = [
   {
     num: '01',
@@ -758,38 +768,6 @@ const HomeScreen = () => {
         ))}
       </div>
 
-      {/* 0. Floating Parallax Cyber Badges (Awwwards Sci-Fi Margins) */}
-      <div className='xr-floating-badges'>
-        <div
-          className='xr-float-badge xr-float-left-1'
-          style={{ transform: `translate3d(0, ${scrollY * 0.14}px, 0)` }}
-        >
-          <span className='xr-pulse-dot'></span>
-          <span>CNDP LOI 09-08 SÉCURISÉ</span>
-        </div>
-        <div
-          className='xr-float-badge xr-float-right-1'
-          style={{ transform: `translate3d(0, ${-scrollY * 0.1}px, 0)` }}
-        >
-          <i className='fas fa-shield-alt text-warning'></i>
-          <span>AUDIT DOUBLE-AVEUGLE</span>
-        </div>
-        <div
-          className='xr-float-badge xr-float-left-2'
-          style={{ transform: `translate3d(0, ${scrollY * 0.08}px, 0)` }}
-        >
-          <i className='fas fa-balance-scale text-success'></i>
-          <span>BARÈME 100 POINTS</span>
-        </div>
-        <div
-          className='xr-float-badge xr-float-right-2'
-          style={{ transform: `translate3d(0, ${-scrollY * 0.16}px, 0)` }}
-        >
-          <span className='xr-pulse-dot' style={{ background: '#00d9f5' }}></span>
-          <span>SHA-256 HORODATÉ</span>
-        </div>
-      </div>
-
       {/* ====================================================================
           1. NAVBAR SUPRÊME FLOTTANTE ACRYLIQUE
           ==================================================================== */}
@@ -1236,29 +1214,27 @@ const HomeScreen = () => {
       </section>
 
       {/* ====================================================================
-          5. RUNNING MARQUEE CINÉTIQUE DU MÉRITE RÉPUBLICAIN
+          5. CARROUSEL DES PARTENAIRES SOUVERAINS (REMPLACE L'ANCIENNE BANDE)
           ==================================================================== */}
-      <div className='xr-marquee'>
-        <div className='xr-marquee-track'>
-          <div className='xr-marquee-group'>
-            <span>AL BARID BANK<i>✦</i></span>
-            <span className='outline'>GROUPE OCP<i>✦</i></span>
-            <span>CIH BANK<i>✦</i></span>
-            <span className='outline'>MINISTÈRE DES FINANCES<i>✦</i></span>
-            <span>BANK OF AFRICA<i>✦</i></span>
-            <span className='outline'>CDG MAROC<i>✦</i></span>
-            <span>MÉRITE RÉPUBLICAIN<i>✦</i></span>
-            <span className='outline'>CONFORMITÉ CNDP<i>✦</i></span>
-          </div>
-          <div className='xr-marquee-group'>
-            <span>AL BARID BANK<i>✦</i></span>
-            <span className='outline'>GROUPE OCP<i>✦</i></span>
-            <span>CIH BANK<i>✦</i></span>
-            <span className='outline'>MINISTÈRE DES FINANCES<i>✦</i></span>
-            <span>BANK OF AFRICA<i>✦</i></span>
-            <span className='outline'>CDG MAROC<i>✦</i></span>
-            <span>MÉRITE RÉPUBLICAIN<i>✦</i></span>
-            <span className='outline'>CONFORMITÉ CNDP<i>✦</i></span>
+      <div className='xr-partner-ribbon'>
+        <div className='xr-ribbon-badge'>
+          <span className='xr-pulse-dot'></span>
+          <span>RÉSEAUX INSTITUTIONNELS ACCRÉDITÉS · SESSION NATIONALE 2026</span>
+        </div>
+        <div className='xr-ribbon-track-wrap'>
+          <div className='xr-ribbon-track'>
+            {[...PARTNERS_LIST, ...PARTNERS_LIST].map((item, idx) => (
+              <div key={idx} className='xr-partner-pill'>
+                <div className='xr-partner-icon-circle'>
+                  <i className={item.icon}></i>
+                </div>
+                <div className='xr-partner-info'>
+                  <strong className='xr-partner-name'>{item.name}</strong>
+                  <span className='xr-partner-tag'>{item.tag}</span>
+                </div>
+                <span className='xr-partner-status'>{item.status}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -1268,20 +1244,39 @@ const HomeScreen = () => {
           ==================================================================== */}
       <section className='xr-offres-section' id='xr-offres'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='xr-section-header' data-scroll-reveal='fade-right'>
-            <div>
-              <div className='xr-hud-chip mb-2'>
-                <span className='xr-pulse-dot'></span>
-                <span>AVIS DE RECRUTEMENT OFFICIELS</span>
-              </div>
-              <h2>
-                Concours ouverts. <em>Postulez en ligne.</em>
-              </h2>
+          {/* Centered Command Center Header (Clear & Cohesive Layout) */}
+          <div className='xr-offres-header' data-scroll-reveal='fade-up'>
+            <div className='xr-hud-chip mb-3'>
+              <span className='xr-pulse-dot'></span>
+              <span>SESSION NATIONALE 2026 · AVIS OFFICIELS DE RECRUTEMENT</span>
             </div>
-            <p>
-              Consultez les offres publiées par les institutions habilitées.
-              Chaque concours fait l'objet d'un avis officiel téléchargeable avec cahier des charges et barème détaillé.
+            <h2 className='xr-offres-title'>
+              Concours Nationaux Ouverts. <em>Postulez en Ligne.</em>
+            </h2>
+            <p className='xr-offres-desc'>
+              Consultez l'ensemble des concours ouverts par les institutions bancaires et organismes publics habilités.
+              Téléchargez les cahiers des charges officiels, consultez le barème détaillé et déposez votre dossier dématérialisé.
             </p>
+
+            {/* Quick Live Telemetry Strip directly inside Header */}
+            <div className='xr-offres-stats-strip'>
+              <div className='xr-stat-pill'>
+                <div className='xr-stat-num'>
+                  {offres.reduce((acc, o) => acc + (Number(o.postes) || 0), 0)}
+                </div>
+                <div className='xr-stat-lbl'>Postes Budgétaires Ouverts</div>
+              </div>
+              <div className='xr-stat-sep'></div>
+              <div className='xr-stat-pill'>
+                <div className='xr-stat-num'>6</div>
+                <div className='xr-stat-lbl'>Grandes Institutions Partenaires</div>
+              </div>
+              <div className='xr-stat-sep'></div>
+              <div className='xr-stat-pill'>
+                <div className='xr-stat-num'>100%</div>
+                <div className='xr-stat-lbl'>Dossiers Audités Loi 09-08 (CNDP)</div>
+              </div>
+            </div>
           </div>
 
           <div className='xr-filters-row' data-scroll-reveal='fade-up'>
@@ -1326,7 +1321,7 @@ const HomeScreen = () => {
                   )}
                 </div>
 
-                <h4>{offre.titre}</h4>
+                <h4 className='xr-offre-title'>{offre.titre}</h4>
 
                 {/* Capacity & Budget Allocation Bar */}
                 <div className='xr-capacity-box'>
@@ -1341,11 +1336,32 @@ const HomeScreen = () => {
                   </div>
                 </div>
 
-                <div className='xr-offre-meta'>
-                  <span><i className='fas fa-map-marker-alt'></i> <strong>Région :</strong> {offre.ville}</span>
-                  <span><i className='fas fa-graduation-cap'></i> <strong>Niveau :</strong> {offre.niveau}</span>
-                  <span><i className='fas fa-briefcase'></i> <strong>Secteur :</strong> {offre.secteur}</span>
-                  <span><i className='fas fa-calendar-alt'></i> <strong>Clôture :</strong> {offre.cloture}</span>
+                {/* 2x2 Bento Specifications Grid (Structured, Clean, No Wrapping Bugs) */}
+                <div className='xr-spec-grid'>
+                  <div className='xr-spec-item'>
+                    <span className='xr-spec-lbl'>
+                      <i className='fas fa-map-marker-alt text-success'></i> RÉGION
+                    </span>
+                    <span className='xr-spec-val'>{offre.ville}</span>
+                  </div>
+                  <div className='xr-spec-item'>
+                    <span className='xr-spec-lbl'>
+                      <i className='fas fa-graduation-cap text-info'></i> DIPLÔME REQUIS
+                    </span>
+                    <span className='xr-spec-val'>{offre.niveau}</span>
+                  </div>
+                  <div className='xr-spec-item'>
+                    <span className='xr-spec-lbl'>
+                      <i className='fas fa-briefcase text-warning'></i> SECTEUR
+                    </span>
+                    <span className='xr-spec-val'>{offre.secteur}</span>
+                  </div>
+                  <div className='xr-spec-item'>
+                    <span className='xr-spec-lbl'>
+                      <i className='fas fa-clock text-danger'></i> DATE DE CLÔTURE
+                    </span>
+                    <span className='xr-spec-val'>{offre.cloture}</span>
+                  </div>
                 </div>
 
                 <div className='xr-offre-foot'>
