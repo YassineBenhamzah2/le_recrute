@@ -369,7 +369,7 @@ const HomeScreen = () => {
     };
   }, [cursorVisible]);
 
-  // 6. Interactive 3D Moroccan Digital Globe Canvas Engine
+  // 6. Ultra 3D Moroccan FinTech Gyroscope & Holographic Core Canvas Engine
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -379,36 +379,50 @@ const HomeScreen = () => {
     let height = (canvas.height = canvas.parentElement.offsetHeight);
 
     const handleResize = () => {
-      if (!canvas) return;
+      if (!canvas || !canvas.parentElement) return;
       width = canvas.width = canvas.parentElement.offsetWidth;
       height = canvas.height = canvas.parentElement.offsetHeight;
     };
     window.addEventListener('resize', handleResize);
 
-    // Floating Particles
-    const particleCount = Math.min(Math.floor((width * height) / 11000), 85);
+    // 120 Deep Starfield Quantum Particles
+    const particleCount = Math.min(Math.floor((width * height) / 9500), 120);
     const particles = [];
     for (let i = 0; i < particleCount; i++) {
       particles.push({
         x: Math.random() * width,
         y: Math.random() * height,
-        vx: (Math.random() - 0.5) * 0.45,
-        vy: (Math.random() - 0.5) * 0.45,
-        radius: Math.random() * 2 + 0.8,
-        alpha: Math.random() * 0.6 + 0.2,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.4,
+        radius: Math.random() * 2.2 + 0.6,
+        alpha: Math.random() * 0.6 + 0.25,
+        color: i % 3 === 0 ? '#00f2a9' : i % 3 === 1 ? '#00d9f5' : '#ffd166',
       });
     }
 
-    let rotX = 0.2;
-    let rotY = 0;
+    // Dynamic Data Photon Packets traveling between Moroccan cities
+    const photonPackets = [];
+    for (let i = 0; i < 14; i++) {
+      photonPackets.push({
+        fromIdx: Math.floor(Math.random() * MOROCCAN_CITIES.length),
+        toIdx: Math.floor(Math.random() * MOROCCAN_CITIES.length),
+        progress: Math.random(),
+        speed: 0.007 + Math.random() * 0.008,
+      });
+    }
+
+    let targetRotX = 0.15;
+    let targetRotY = 0;
+    let currentRotX = 0.15;
+    let currentRotY = 0;
     let mouse = { x: width / 2, y: height / 2 };
 
     const handleCanvasMouse = (e) => {
       const rect = canvas.getBoundingClientRect();
       mouse.x = e.clientX - rect.left;
       mouse.y = e.clientY - rect.top;
-      rotY = (mouse.x / width - 0.5) * 1.2;
-      rotX = (mouse.y / height - 0.5) * 0.8;
+      targetRotY = (mouse.x / width - 0.5) * 1.5;
+      targetRotX = (mouse.y / height - 0.5) * 1.0;
     };
     window.addEventListener('mousemove', handleCanvasMouse);
 
@@ -418,13 +432,19 @@ const HomeScreen = () => {
 
     const render = () => {
       ctx.clearRect(0, 0, width, height);
+      const time = Date.now() * 0.0018;
+
+      // Smooth inertia rotation easing
+      currentRotX += (targetRotX - currentRotX) * 0.06;
+      currentRotY += (targetRotY - currentRotY) * 0.06;
+      const rotY = currentRotY + time * 0.18;
+      const rotX = currentRotX;
 
       // 1. Draw Starfield Particles
       for (let i = 0; i < particles.length; i++) {
         const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
-
         if (p.x < 0) p.x = width;
         if (p.x > width) p.x = 0;
         if (p.y < 0) p.y = height;
@@ -433,63 +453,114 @@ const HomeScreen = () => {
         const dxMouse = mouse.x - p.x;
         const dyMouse = mouse.y - p.y;
         const distMouse = Math.sqrt(dxMouse * dxMouse + dyMouse * dyMouse);
-        if (distMouse < 130) {
-          p.x -= (dxMouse / distMouse) * 0.8;
-          p.y -= (dyMouse / distMouse) * 0.8;
+        if (distMouse < 140) {
+          p.x -= (dxMouse / distMouse) * 1.2;
+          p.y -= (dyMouse / distMouse) * 1.2;
         }
 
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0, 242, 169, ${p.alpha})`;
-        ctx.shadowColor = 'rgba(0, 242, 169, 0.8)';
-        ctx.shadowBlur = 6;
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
         ctx.fill();
+        ctx.globalAlpha = 1;
 
-        for (let j = i + 1; j < particles.length; j++) {
+        for (let j = i + 1; j < particles.length; j += 2) {
           const p2 = particles[j];
           const dx = p.x - p2.x;
           const dy = p.y - p2.y;
           const dist = Math.sqrt(dx * dx + dy * dy);
-
-          if (dist < 115) {
+          if (dist < 110) {
             ctx.beginPath();
             ctx.moveTo(p.x, p.y);
             ctx.lineTo(p2.x, p2.y);
-            ctx.strokeStyle = `rgba(0, 242, 169, ${0.16 * (1 - dist / 115)})`;
-            ctx.lineWidth = 0.8;
+            ctx.strokeStyle = `rgba(0, 242, 169, ${0.14 * (1 - dist / 110)})`;
+            ctx.lineWidth = 0.7;
             ctx.shadowBlur = 0;
             ctx.stroke();
           }
         }
       }
 
-      // 2. Draw 3D Holographic Wireframe Globe in center
-      rotY += 0.003;
-      const time = Date.now() * 0.0015;
+      // 2. CONCENTRIC 3D GYROSCOPE HOLOGRAPHIC RINGS
+      // Ring 1: Inner Emerald Ring
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(globeCenterX, globeCenterY, globeRadius * 1.15, globeRadius * 0.38, rotY * 0.6, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0, 242, 169, 0.45)';
+      ctx.lineWidth = 1.8;
+      ctx.shadowColor = '#00f2a9';
+      ctx.shadowBlur = 15;
+      ctx.stroke();
+      ctx.restore();
 
+      // Ring 2: Middle Electric Azure Ring (Reverse Tilt)
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(globeCenterX, globeCenterY, globeRadius * 1.35, globeRadius * 0.48, -rotY * 0.8 + 0.8, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(0, 217, 245, 0.35)';
+      ctx.setLineDash([8, 12]);
+      ctx.lineWidth = 1.4;
+      ctx.shadowColor = '#00d9f5';
+      ctx.shadowBlur = 12;
+      ctx.stroke();
+      ctx.restore();
+
+      // Ring 3: Outer Imperial Gold Orbit with Satellite Nodes
+      ctx.save();
+      const goldOrbitR_X = globeRadius * 1.58;
+      const goldOrbitR_Y = globeRadius * 0.62;
+      const goldAngle = rotY * 0.4 - 0.5;
+      ctx.beginPath();
+      ctx.ellipse(globeCenterX, globeCenterY, goldOrbitR_X, goldOrbitR_Y, goldAngle, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(255, 209, 102, 0.28)';
+      ctx.setLineDash([4, 16]);
+      ctx.lineWidth = 1.2;
+      ctx.shadowColor = '#ffd166';
+      ctx.shadowBlur = 10;
+      ctx.stroke();
+
+      // 3 Orbiting Gold Satellites
+      for (let s = 0; s < 3; s++) {
+        const satAngle = time * 0.7 + (s * (Math.PI * 2)) / 3;
+        const satX = globeCenterX + Math.cos(satAngle) * goldOrbitR_X * Math.cos(goldAngle) - Math.sin(satAngle) * goldOrbitR_Y * Math.sin(goldAngle);
+        const satY = globeCenterY + Math.cos(satAngle) * goldOrbitR_X * Math.sin(goldAngle) + Math.sin(satAngle) * goldOrbitR_Y * Math.cos(goldAngle);
+        ctx.beginPath();
+        ctx.arc(satX, satY, 3.5, 0, Math.PI * 2);
+        ctx.fillStyle = '#ffd166';
+        ctx.shadowColor = '#ffd166';
+        ctx.shadowBlur = 14;
+        ctx.fill();
+      }
+      ctx.restore();
+
+      // 3. 3D Holographic Wireframe Globe Lat/Lon Grid
       for (let lat = -60; lat <= 60; lat += 20) {
         const radLat = (lat * Math.PI) / 180;
         const rLat = globeRadius * Math.cos(radLat);
         const yLat = globeRadius * Math.sin(radLat);
 
         ctx.beginPath();
-        for (let lon = 0; lon <= 360; lon += 10) {
+        for (let lon = 0; lon <= 360; lon += 12) {
           const radLon = (lon * Math.PI) / 180 + rotY;
           const x = globeCenterX + rLat * Math.sin(radLon);
           const y = globeCenterY - yLat * Math.cos(rotX) + rLat * Math.cos(radLon) * Math.sin(rotX);
           const z = rLat * Math.cos(radLon) * Math.cos(rotX) + yLat * Math.sin(rotX);
 
-          if (z > -globeRadius * 0.6) {
+          if (z > -globeRadius * 0.45) {
             if (lon === 0) ctx.moveTo(x, y);
             else ctx.lineTo(x, y);
           }
         }
-        ctx.strokeStyle = 'rgba(0, 242, 169, 0.06)';
+        ctx.strokeStyle = 'rgba(0, 242, 169, 0.08)';
         ctx.lineWidth = 1;
+        ctx.shadowBlur = 0;
         ctx.stroke();
       }
 
-      // 3. Draw Moroccan City Beacons & Connected Beams
+      // 4. Moroccan Regional Beacons, Radar Sonar Rings & Laser Mesh
       const cityPoints = [];
       for (let i = 0; i < MOROCCAN_CITIES.length; i++) {
         const city = MOROCCAN_CITIES[i];
@@ -500,23 +571,35 @@ const HomeScreen = () => {
         const y = globeCenterY - globeRadius * Math.sin(latRad) * Math.cos(rotX) + globeRadius * Math.cos(lonRad) * Math.cos(latRad) * Math.sin(rotX);
         const z = globeRadius * Math.cos(lonRad) * Math.cos(latRad) * Math.cos(rotX) + globeRadius * Math.sin(latRad) * Math.sin(rotX);
 
-        if (z > -50) {
-          cityPoints.push({ x, y, name: city.name, postes: city.postes });
+        if (z > -60) {
+          cityPoints.push({ x, y, name: city.name, postes: city.postes, z });
 
-          const pulse = (Math.sin(time * 3 + i) + 1) * 0.5;
+          // Expanding Sonar Wave
+          const pulse = (Math.sin(time * 3.5 + i) + 1) * 0.5;
           ctx.beginPath();
-          ctx.arc(x, y, 4 + pulse * 3, 0, Math.PI * 2);
+          ctx.arc(x, y, 6 + pulse * 14, 0, Math.PI * 2);
+          ctx.strokeStyle = `rgba(0, 242, 169, ${0.4 * (1 - pulse)})`;
+          ctx.lineWidth = 1.2;
+          ctx.stroke();
+
+          // Core Glowing Node
+          ctx.beginPath();
+          ctx.arc(x, y, 4.5, 0, Math.PI * 2);
           ctx.fillStyle = '#00f2a9';
           ctx.shadowColor = '#00f2a9';
-          ctx.shadowBlur = 12;
+          ctx.shadowBlur = 16;
           ctx.fill();
 
-          ctx.font = '9px "JetBrains Mono", monospace';
-          ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
-          ctx.fillText(`${city.name} (${city.postes})`, x + 8, y + 3);
+          // City Label with JetBrains Mono Badge
+          ctx.font = 'bold 9.5px "JetBrains Mono", monospace';
+          ctx.fillStyle = '#ffffff';
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+          ctx.shadowBlur = 4;
+          ctx.fillText(`${city.name.toUpperCase()} · ${city.postes}P`, x + 9, y + 3.5);
         }
       }
 
+      // Inter-City Laser Grid
       ctx.beginPath();
       for (let i = 0; i < cityPoints.length; i++) {
         for (let j = i + 1; j < cityPoints.length; j++) {
@@ -524,9 +607,35 @@ const HomeScreen = () => {
           ctx.lineTo(cityPoints[j].x, cityPoints[j].y);
         }
       }
-      ctx.strokeStyle = 'rgba(0, 217, 245, 0.12)';
+      ctx.strokeStyle = 'rgba(0, 217, 245, 0.18)';
       ctx.lineWidth = 1;
+      ctx.shadowBlur = 4;
+      ctx.shadowColor = '#00d9f5';
       ctx.stroke();
+
+      // 5. Traveling Photon Packets (High-Speed Data Light)
+      for (let k = 0; k < photonPackets.length; k++) {
+        const pkt = photonPackets[k];
+        pkt.progress += pkt.speed;
+        if (pkt.progress >= 1) {
+          pkt.progress = 0;
+          pkt.fromIdx = Math.floor(Math.random() * cityPoints.length);
+          pkt.toIdx = Math.floor(Math.random() * cityPoints.length);
+        }
+        if (cityPoints[pkt.fromIdx] && cityPoints[pkt.toIdx]) {
+          const pA = cityPoints[pkt.fromIdx];
+          const pB = cityPoints[pkt.toIdx];
+          const curX = pA.x + (pB.x - pA.x) * pkt.progress;
+          const curY = pA.y + (pB.y - pA.y) * pkt.progress;
+
+          ctx.beginPath();
+          ctx.arc(curX, curY, 2.8, 0, Math.PI * 2);
+          ctx.fillStyle = '#ffd166';
+          ctx.shadowColor = '#ffd166';
+          ctx.shadowBlur = 12;
+          ctx.fill();
+        }
+      }
 
       animationFrameId = requestAnimationFrame(render);
     };
@@ -539,6 +648,33 @@ const HomeScreen = () => {
       cancelAnimationFrame(animationFrameId);
     };
   }, []);
+
+  // 7. Interactive 3D Card Spotlight & Magnetic Tilt on Hover (Aceternity UI Standard)
+  useEffect(() => {
+    const handleCardsMove = (e) => {
+      const cards = document.querySelectorAll('.xr-offre-card, .xr-fact-card, .xr-espace-card, .xr-pipeline-card, .xr-seal-card');
+      cards.forEach((card) => {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        if (x >= -40 && x <= rect.width + 40 && y >= -40 && y <= rect.height + 40) {
+          card.style.setProperty('--mouse-x', `${x}px`);
+          card.style.setProperty('--mouse-y', `${y}px`);
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const rotX = ((y - centerY) / centerY) * -5.5;
+          const rotY = ((x - centerX) / centerX) * 5.5;
+          card.style.setProperty('--card-rot-x', `${rotX.toFixed(2)}deg`);
+          card.style.setProperty('--card-rot-y', `${rotY.toFixed(2)}deg`);
+        } else {
+          card.style.setProperty('--card-rot-x', '0deg');
+          card.style.setProperty('--card-rot-y', '0deg');
+        }
+      });
+    };
+    window.addEventListener('mousemove', handleCardsMove, { passive: true });
+    return () => window.removeEventListener('mousemove', handleCardsMove);
+  }, [offres, activeStageIndex]);
 
   // Filtered Offres
   const filteredOffres = useMemo(() => {
