@@ -207,6 +207,21 @@ const HomeScreen = () => {
   const [simMention, setSimMention] = useState('bien');
   const [simExp, setSimExp] = useState(3);
 
+  // Theme state with localStorage persistence (Light Mode / Dark Mode)
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('xr_theme') || 'dark';
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('xr_theme', nextTheme);
+  };
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
   // Scroll Progress, ScrollY & Active Section Spy
   const [scrollProgress, setScrollProgress] = useState(0);
   const [scrollY, setScrollY] = useState(0);
@@ -396,6 +411,7 @@ const HomeScreen = () => {
     window.addEventListener('resize', handleResize);
 
     // 120 Deep Starfield Quantum Particles
+    const isLight = theme === 'light';
     const particleCount = Math.min(Math.floor((width * height) / 9500), 120);
     const particles = [];
     for (let i = 0; i < particleCount; i++) {
@@ -406,7 +422,9 @@ const HomeScreen = () => {
         vy: (Math.random() - 0.5) * 0.4,
         radius: Math.random() * 2.2 + 0.6,
         alpha: Math.random() * 0.6 + 0.25,
-        color: i % 3 === 0 ? '#00f2a9' : i % 3 === 1 ? '#00d9f5' : '#ffd166',
+        color: isLight
+          ? (i % 3 === 0 ? '#00875a' : i % 3 === 1 ? '#0284c7' : '#d97706')
+          : (i % 3 === 0 ? '#00f2a9' : i % 3 === 1 ? '#00d9f5' : '#ffd166'),
       });
     }
 
@@ -499,9 +517,9 @@ const HomeScreen = () => {
       ctx.save();
       ctx.beginPath();
       ctx.ellipse(globeCenterX, globeCenterY, globeRadius * 1.15, globeRadius * 0.38, rotY * 0.6, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(0, 242, 169, 0.45)';
+      ctx.strokeStyle = isLight ? 'rgba(0, 135, 90, 0.45)' : 'rgba(0, 242, 169, 0.45)';
       ctx.lineWidth = 1.8;
-      ctx.shadowColor = '#00f2a9';
+      ctx.shadowColor = isLight ? '#00875a' : '#00f2a9';
       ctx.shadowBlur = 15;
       ctx.stroke();
       ctx.restore();
@@ -510,10 +528,10 @@ const HomeScreen = () => {
       ctx.save();
       ctx.beginPath();
       ctx.ellipse(globeCenterX, globeCenterY, globeRadius * 1.35, globeRadius * 0.48, -rotY * 0.8 + 0.8, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(0, 217, 245, 0.35)';
+      ctx.strokeStyle = isLight ? 'rgba(2, 132, 199, 0.4)' : 'rgba(0, 217, 245, 0.35)';
       ctx.setLineDash([8, 12]);
       ctx.lineWidth = 1.4;
-      ctx.shadowColor = '#00d9f5';
+      ctx.shadowColor = isLight ? '#0284c7' : '#00d9f5';
       ctx.shadowBlur = 12;
       ctx.stroke();
       ctx.restore();
@@ -525,10 +543,10 @@ const HomeScreen = () => {
       const goldAngle = rotY * 0.4 - 0.5;
       ctx.beginPath();
       ctx.ellipse(globeCenterX, globeCenterY, goldOrbitR_X, goldOrbitR_Y, goldAngle, 0, Math.PI * 2);
-      ctx.strokeStyle = 'rgba(255, 209, 102, 0.28)';
+      ctx.strokeStyle = isLight ? 'rgba(180, 83, 9, 0.35)' : 'rgba(255, 209, 102, 0.28)';
       ctx.setLineDash([4, 16]);
       ctx.lineWidth = 1.2;
-      ctx.shadowColor = '#ffd166';
+      ctx.shadowColor = isLight ? '#b45309' : '#ffd166';
       ctx.shadowBlur = 10;
       ctx.stroke();
 
@@ -539,8 +557,8 @@ const HomeScreen = () => {
         const satY = globeCenterY + Math.cos(satAngle) * goldOrbitR_X * Math.sin(goldAngle) + Math.sin(satAngle) * goldOrbitR_Y * Math.cos(goldAngle);
         ctx.beginPath();
         ctx.arc(satX, satY, 3.5, 0, Math.PI * 2);
-        ctx.fillStyle = '#ffd166';
-        ctx.shadowColor = '#ffd166';
+        ctx.fillStyle = isLight ? '#b45309' : '#ffd166';
+        ctx.shadowColor = isLight ? '#b45309' : '#ffd166';
         ctx.shadowBlur = 14;
         ctx.fill();
       }
@@ -602,8 +620,8 @@ const HomeScreen = () => {
 
           // City Label with JetBrains Mono Badge
           ctx.font = 'bold 9.5px "JetBrains Mono", monospace';
-          ctx.fillStyle = '#ffffff';
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+          ctx.fillStyle = isLight ? '#0f172a' : '#ffffff';
+          ctx.shadowColor = isLight ? 'rgba(255, 255, 255, 0.85)' : 'rgba(0, 0, 0, 0.9)';
           ctx.shadowBlur = 4;
           ctx.fillText(`${city.name.toUpperCase()} · ${city.postes}P`, x + 9, y + 3.5);
         }
@@ -617,10 +635,10 @@ const HomeScreen = () => {
           ctx.lineTo(cityPoints[j].x, cityPoints[j].y);
         }
       }
-      ctx.strokeStyle = 'rgba(0, 217, 245, 0.18)';
+      ctx.strokeStyle = isLight ? 'rgba(2, 132, 199, 0.25)' : 'rgba(0, 217, 245, 0.18)';
       ctx.lineWidth = 1;
       ctx.shadowBlur = 4;
-      ctx.shadowColor = '#00d9f5';
+      ctx.shadowColor = isLight ? '#0284c7' : '#00d9f5';
       ctx.stroke();
 
       // 5. Traveling Photon Packets (High-Speed Data Light)
@@ -640,8 +658,8 @@ const HomeScreen = () => {
 
           ctx.beginPath();
           ctx.arc(curX, curY, 2.8, 0, Math.PI * 2);
-          ctx.fillStyle = '#ffd166';
-          ctx.shadowColor = '#ffd166';
+          ctx.fillStyle = isLight ? '#b45309' : '#ffd166';
+          ctx.shadowColor = isLight ? '#b45309' : '#ffd166';
           ctx.shadowBlur = 12;
           ctx.fill();
         }
@@ -657,7 +675,7 @@ const HomeScreen = () => {
       window.removeEventListener('mousemove', handleCanvasMouse);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [theme]);
 
   // 7. Interactive 3D Card Spotlight & Magnetic Tilt on Hover (Aceternity UI Standard)
   useEffect(() => {
@@ -739,7 +757,7 @@ const HomeScreen = () => {
   const currentStage = PIPELINE_STAGES[activeStageIndex];
 
   return (
-    <div className='xr-universe'>
+    <div className='xr-universe' data-theme={theme}>
       {/* 0. Top Glowing Scroll Progress Bar */}
       <div className='xr-progress' style={{ transform: `scaleX(${scrollProgress})` }} />
 
@@ -787,6 +805,19 @@ const HomeScreen = () => {
         </nav>
 
         <div className='xr-nav-actions'>
+          {/* Light Mode / Dark Mode Theme Switcher */}
+          <button
+            onClick={toggleTheme}
+            className='xr-theme-toggle'
+            title={theme === 'dark' ? 'Activer le Mode Clair (Light)' : 'Activer le Mode Sombre (Dark)'}
+            aria-label='Basculer le thème'
+          >
+            <div className={`xr-theme-track ${theme === 'light' ? 'is-light' : ''}`}>
+              <i className='fas fa-moon xr-theme-icon-moon'></i>
+              <i className='fas fa-sun xr-theme-icon-sun'></i>
+              <div className='xr-theme-thumb'></div>
+            </div>
+          </button>
           {userInfo ? (
             <div className='d-flex align-items-center gap-2'>
               {userInfo.isAdministrateur ? (
@@ -1080,18 +1111,15 @@ const HomeScreen = () => {
           ==================================================================== */}
       <section className='xr-pipeline-section' id='xr-pipeline'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='xr-section-header' data-scroll-reveal='fade-left'>
-            <div>
-              <div className='xr-hud-chip mb-2'>
-                <span className='xr-pulse-dot'></span>
-                <span>TRAÇABILITÉ TOTALE DE BOUT EN BOUT</span>
-              </div>
-              <h2>
-                Le Parcours <em>du Mérite.</em><br />
-                En 5 étapes certifiées.
-              </h2>
+          <div className='xr-pipeline-header' data-scroll-reveal='fade-up'>
+            <div className='xr-hud-chip mb-3'>
+              <span className='xr-pulse-dot'></span>
+              <span>TRAÇABILITÉ TOTALE DE BOUT EN BOUT · 5 ÉTAPES CERTIFIÉES</span>
             </div>
-            <p>
+            <h2 className='xr-pipeline-title'>
+              Le Parcours du Mérite. <em>Transparence absolue en 5 étapes.</em>
+            </h2>
+            <p className='xr-pipeline-desc'>
               Chaque concours national suit une procédure rigoureusement auditée, garantissant aux candidats
               comme aux recruteurs un traitement impartial, transparent et conforme aux plus hauts standards réglementaires.
             </p>
@@ -1396,17 +1424,16 @@ const HomeScreen = () => {
           ==================================================================== */}
       <section className='xr-sim-section' id='xr-simulateur'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='xr-section-header' data-scroll-reveal='fade-left'>
-            <div>
-              <div className='xr-hud-chip mb-2'>
-                <span className='xr-pulse-dot'></span>
-                <span>TRANSPARENCE ALGORITHMIQUE TOTALE</span>
-              </div>
-              <h2>
-                Simulateur de Barème. <em>Calculez votre score.</em>
-              </h2>
+          {/* Centered Simulator Command Deck Header (Fixes Image 4 split bug) */}
+          <div className='xr-sim-header' data-scroll-reveal='fade-up'>
+            <div className='xr-hud-chip mb-3'>
+              <span className='xr-pulse-dot'></span>
+              <span>TRANSPARENCE ALGORITHMIQUE TOTALE · BARÈME OFFICIEL D'ÉTAT (100 PTS)</span>
             </div>
-            <p>
+            <h2 className='xr-sim-title'>
+              Simulateur de Barème. <em>Calculez votre score en direct.</em>
+            </h2>
+            <p className='xr-sim-desc'>
               Évaluez votre positionnement prévisionnel avant même de soumettre votre dossier.
               Ajustez vos critères académiques et professionnels selon le barème officiel sur 100 points.
             </p>
@@ -1499,12 +1526,29 @@ const HomeScreen = () => {
             {/* Right Neon Compass Radar Gauge */}
             <div className='xr-gauge-wrap'>
               <div className='xr-radar-ticks'></div>
+              {/* Outer HUD Compass Markings */}
+              <div className='xr-radar-marks'>
+                <span className='xr-radar-mark rm-0'>0P</span>
+                <span className='xr-radar-mark rm-25'>25P</span>
+                <span className='xr-radar-mark rm-50'>50P</span>
+                <span className='xr-radar-mark rm-75'>75P</span>
+                <span className='xr-radar-mark rm-100'>100P</span>
+              </div>
               <svg viewBox='0 0 320 320'>
                 <defs>
                   <linearGradient id='xr-gauge-gradient' x1='0%' y1='0%' x2='100%' y2='0%'>
-                    <stop offset='0%' stopColor='#00f2a9' />
-                    <stop offset='50%' stopColor='#00d9f5' />
-                    <stop offset='100%' stopColor='#ffd166' />
+                    <stop
+                      offset='0%'
+                      stopColor={simScore >= 75 ? '#00f2a9' : simScore >= 55 ? '#00d9f5' : '#f59e0b'}
+                    />
+                    <stop
+                      offset='50%'
+                      stopColor={simScore >= 75 ? '#00d9f5' : simScore >= 55 ? '#00f2a9' : '#ffd166'}
+                    />
+                    <stop
+                      offset='100%'
+                      stopColor={simScore >= 75 ? '#ffd166' : simScore >= 55 ? '#00d9f5' : '#ef4444'}
+                    />
                   </linearGradient>
                 </defs>
                 <circle cx='160' cy='160' r='130' className='xr-gauge-track' />
@@ -1526,8 +1570,24 @@ const HomeScreen = () => {
                   {simScore}
                   <em>/100</em>
                 </b>
-                <div className='xr-gauge-verdict'>
-                  <i className='fas fa-check-circle text-success me-1'></i>
+                <div
+                  className={`xr-gauge-verdict ${
+                    simScore >= 75
+                      ? 'is-gold'
+                      : simScore >= 55
+                      ? 'is-emerald'
+                      : 'is-amber'
+                  }`}
+                >
+                  <i
+                    className={`fas ${
+                      simScore >= 75
+                        ? 'fa-crown text-warning'
+                        : simScore >= 55
+                        ? 'fa-check-circle text-success'
+                        : 'fa-info-circle text-info'
+                    } me-1`}
+                  ></i>
                   <span>
                     {simScore >= 75
                       ? 'HAUTE ADMISSIBILITÉ (TOP 5%)'
@@ -1539,6 +1599,20 @@ const HomeScreen = () => {
                 <div className='xr-gauge-breakdown'>
                   <span>DIP: {simScoreDiplome}P</span> · <span>MEN: {simScoreMention}P</span> · <span>EXP: {simScoreExp}P</span>
                 </div>
+                <Link
+                  to={userInfo ? '/profil' : '/register'}
+                  className='xr-btn mt-3'
+                  style={{
+                    minHeight: '38px',
+                    padding: '0 20px',
+                    fontSize: '11px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.08em',
+                    fontWeight: 700,
+                  }}
+                >
+                  Appliquer ce Barème <i className='fas fa-arrow-right ms-2'></i>
+                </Link>
               </div>
             </div>
           </div>
@@ -1550,17 +1624,16 @@ const HomeScreen = () => {
           ==================================================================== */}
       <section className='xr-espaces-section' id='xr-espaces'>
         <div className='container' style={{ maxWidth: '1240px', margin: '0 auto' }}>
-          <div className='xr-section-header' data-scroll-reveal='fade-right'>
-            <div>
-              <div className='xr-hud-chip mb-2'>
-                <span className='xr-pulse-dot'></span>
-                <span>ENVIRONNEMENTS DÉDIÉS</span>
-              </div>
-              <h2>
-                Quatre espaces. <em>Une seule exigence.</em>
-              </h2>
+          {/* Centered Espaces Command Header */}
+          <div className='xr-espaces-header' data-scroll-reveal='fade-up'>
+            <div className='xr-hud-chip mb-3'>
+              <span className='xr-pulse-dot'></span>
+              <span>ENVIRONNEMENTS DÉDIÉS · ARCHITECTURE MULTI-RÔLES SOUVERAINE</span>
             </div>
-            <p>
+            <h2 className='xr-espaces-title'>
+              Quatre Espaces Spécialisés. <em>Une seule exigence d'intégrité.</em>
+            </h2>
+            <p className='xr-espaces-desc'>
               La plateforme interconnecte l'ensemble des parties prenantes du concours à travers des interfaces sur-mesure,
               conçues pour éliminer les retards et fluidifier chaque prise de décision.
             </p>
