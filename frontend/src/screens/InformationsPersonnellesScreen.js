@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Form, InputGroup, Button, Row, Col } from 'react-bootstrap';
+import { Form, InputGroup, Button, Row, Col, Container, Card } from 'react-bootstrap';
 import Calendar from '../components/Calendar';
 import FormContainer from '../components/FormContainer';
 import Heading from '../components/Heading';
@@ -8,7 +8,7 @@ import Spinner from '../components/Spinner';
 import PostulationSteps from '../components/PostulationSteps';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
-import { getUserDetails, updateUserProfile } from '../actions/userActions';
+import { getUserDetails, updateUserProfile, logout } from '../actions/userActions';
 import moment from 'moment';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
@@ -45,6 +45,18 @@ const InformationsPersonnellesScreen = () => {
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
 
+  const isStaffUser = Boolean(
+    userInfo && (
+      userInfo.isMaitreOuvrage ||
+      userInfo.isAdmin ||
+      userInfo.isAdministrateur ||
+      userInfo.isController ||
+      userInfo.isControlleur ||
+      userInfo.isControleur1 ||
+      userInfo.isControleur2
+    )
+  );
+
   const userDetails = useSelector((state) => state.userDetails);
   const { user, loading: loadingDetails, error: errorDetails } = userDetails;
 
@@ -58,6 +70,9 @@ const InformationsPersonnellesScreen = () => {
   useEffect(() => {
     if (!userInfo) {
       navigate('/login');
+    } else if (isStaffUser) {
+      // Les comptes institutionnels ne doivent pas charger de formulaire candidat
+      return;
     } else {
       if (!user || !user.email) {
         dispatch(getUserDetails('profile'));
@@ -236,6 +251,107 @@ const InformationsPersonnellesScreen = () => {
       })
     );
   };
+
+  if (isStaffUser) {
+    return (
+      <>
+        <Header />
+        <Container className='py-5' style={{ maxWidth: '800px' }}>
+          <Card
+            className='border-0 shadow-lg text-center p-4 p-md-5'
+            style={{ borderRadius: '20px', background: '#FFFFFF', marginTop: '30px' }}
+          >
+            <div className='mb-3'>
+              <span
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '84px',
+                  height: '84px',
+                  borderRadius: '50%',
+                  background: 'rgba(239, 68, 68, 0.1)',
+                  color: '#EF4444',
+                  fontSize: '38px',
+                }}
+              >
+                <i className='fas fa-user-shield'></i>
+              </span>
+            </div>
+
+            <h3 className='fw-bold mb-2' style={{ color: '#0F172A', fontSize: '24px' }}>
+              Accès Réservé aux Candidats
+            </h3>
+
+            <p className='text-muted fs-6 mb-4' style={{ lineHeight: '1.6', maxWidth: '640px', margin: '0 auto' }}>
+              Vous êtes actuellement connecté en tant que{' '}
+              <strong className='text-primary'>
+                {userInfo.isMaitreOuvrage
+                  ? 'Responsable Recrutement RH'
+                  : userInfo.isAdmin || userInfo.isAdministrateur
+                  ? 'Super-Administrateur'
+                  : 'Membre Commission Contrôle'}
+              </strong>{' '}
+              (<span className='fw-semibold text-dark'>{userInfo.prenom} {userInfo.nom}</span> — {userInfo.email}).
+              <br />
+              Conformément à la déontologie et aux règles de conformité CNDP (Loi 09-08),{' '}
+              <strong style={{ color: '#DC2626' }}>
+                les comptes recruteurs et administrateurs ne peuvent pas soumettre de candidatures
+              </strong>.
+            </p>
+
+            <div
+              className='p-4 mb-4 rounded-3 text-start'
+              style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: '12px' }}
+            >
+              <div className='d-flex align-items-center gap-2 mb-2 text-dark fw-bold'>
+                <i className='fas fa-info-circle text-primary'></i>
+                <span>Que souhaitez-vous faire ?</span>
+              </div>
+              <ul className='mb-0 ps-3 text-secondary small' style={{ lineHeight: '1.8' }}>
+                <li>
+                  <strong>Pour tester le parcours candidat ou postuler :</strong> Déconnectez-vous de votre compte RH et créez un compte <strong>Candidat</strong> dédié.
+                </li>
+                <li>
+                  <strong>Pour administrer ce concours et gérer les dossiers :</strong> Retournez à votre <strong>Tableau de Bord Recruteur RH</strong>.
+                </li>
+              </ul>
+            </div>
+
+            <div className='d-flex flex-column flex-sm-row justify-content-center gap-3 mt-2'>
+              <Button
+                variant='primary'
+                className='px-4 py-3 fw-bold d-flex align-items-center justify-content-center gap-2'
+                style={{ borderRadius: '10px', fontSize: '14px', background: '#2563EB', border: 'none' }}
+                onClick={() => {
+                  dispatch(logout());
+                  navigate(`/register?redirect=/poste/${encodeURIComponent(params.poste)}`);
+                }}
+              >
+                <i className='fas fa-user-plus'></i>
+                Se déconnecter & Créer un compte Candidat
+              </Button>
+
+              <Button
+                variant='outline-secondary'
+                className='px-4 py-3 fw-bold d-flex align-items-center justify-content-center gap-2'
+                style={{ borderRadius: '10px', fontSize: '14px' }}
+                onClick={() => {
+                  if (userInfo.isMaitreOuvrage) navigate('/maitre-ouvrage/candidatures');
+                  else if (userInfo.isAdmin) navigate('/admin/dashboard');
+                  else navigate('/');
+                }}
+              >
+                <i className='fas fa-briefcase'></i>
+                Retour à mon Espace Recruteur
+              </Button>
+            </div>
+          </Card>
+        </Container>
+        <Footer />
+      </>
+    );
+  }
 
   return (
     <>

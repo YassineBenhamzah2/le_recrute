@@ -14,6 +14,25 @@ import {
 //@route POST /api/candidatures
 //@access Private
 const addCandidature = asyncHandler(async (req, res) => {
+  // RÈGLE DE SÉCURITÉ : Interdire aux profils institutionnels (RH, Admins, Contrôleurs) de postuler
+  if (
+    req.user &&
+    (req.user.isMaitreOuvrage ||
+      req.user.isAdmin ||
+      req.user.isAdministrateur ||
+      req.user.isController ||
+      req.user.isControlleur ||
+      req.user.isControleur1 ||
+      req.user.isControleur2 ||
+      req.user.role === 'rh' ||
+      req.user.role === 'admin')
+  ) {
+    res.status(403);
+    throw new Error(
+      'Action non autorisée : Les comptes institutionnels (Recruteurs RH, Administrateurs, Membres de la Commission) ne peuvent pas déposer de candidatures aux concours.'
+    );
+  }
+
   const {
     offre: offreId,
     niveauEtude,

@@ -193,6 +193,36 @@ const HomeScreen = () => {
   const userLogin = useSelector((state) => state.userLogin) || {};
   const { userInfo } = userLogin;
 
+  const isStaffUser = Boolean(
+    userInfo && (
+      userInfo.isMaitreOuvrage ||
+      userInfo.isAdmin ||
+      userInfo.isAdministrateur ||
+      userInfo.isController ||
+      userInfo.isControlleur ||
+      userInfo.isControleur1 ||
+      userInfo.isControleur2 ||
+      userInfo.role === 'rh' ||
+      userInfo.role === 'admin'
+    )
+  );
+
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [selectedOffreTitre, setSelectedOffreTitre] = useState('');
+
+  const handlePostuler = (titre) => {
+    if (isStaffUser) {
+      setSelectedOffreTitre(titre);
+      setShowStaffModal(true);
+      return;
+    }
+    if (userInfo) {
+      navigate(`/poste/${encodeURIComponent(titre)}`);
+    } else {
+      navigate(`/register?redirect=/poste/${encodeURIComponent(titre)}`);
+    }
+  };
+
   // Search & Filter state
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedSigle, setSelectedSigle] = useState('ALL');
@@ -1447,17 +1477,14 @@ const HomeScreen = () => {
                 </div>
 
                 <div className='xr-offre-foot'>
-                  <Link
-                    to={
-                      userInfo
-                        ? `/poste/${encodeURIComponent(offre.titre)}`
-                        : `/register?redirect=/poste/${encodeURIComponent(offre.titre)}`
-                    }
+                  <button
+                    type='button'
+                    onClick={() => handlePostuler(offre.titre)}
                     className='xr-btn'
-                    style={{ minHeight: '38px', padding: '0 20px', fontSize: '10.5px' }}
+                    style={{ minHeight: '38px', padding: '0 20px', fontSize: '10.5px', border: 'none', cursor: 'pointer' }}
                   >
                     Postuler en Ligne <i className='fas fa-arrow-right ms-1'></i>
-                  </Link>
+                  </button>
 
                   <a
                     href={offre.pdfUrl || '/uploads/Dossier_Candidat_Complet_6_Pages.pdf'}
@@ -2055,6 +2082,148 @@ const HomeScreen = () => {
           <span>SÉLECTION AU MÉRITE RÉPUBLICAIN · CONFORME CNDP MAROC</span>
         </div>
       </footer>
+
+      {/* Staff Application Restriction Modal */}
+      {showStaffModal && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 99999,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '20px',
+          }}
+          onClick={() => setShowStaffModal(false)}
+        >
+          <div
+            style={{
+              background: '#0F172A',
+              border: '1px solid rgba(255, 255, 255, 0.15)',
+              borderRadius: '20px',
+              padding: '36px',
+              maxWidth: '540px',
+              width: '100%',
+              boxShadow: '0 25px 60px rgba(0,0,0,0.5)',
+              color: '#F8FAFC',
+              textAlign: 'center',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div
+              style={{
+                width: '68px',
+                height: '68px',
+                borderRadius: '50%',
+                background: 'rgba(239, 68, 68, 0.15)',
+                color: '#EF4444',
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '30px',
+                marginBottom: '18px',
+              }}
+            >
+              <i className='fas fa-user-shield'></i>
+            </div>
+
+            <h3 style={{ fontSize: '20px', fontWeight: '700', marginBottom: '10px' }}>
+              Accès Réservé aux Candidats
+            </h3>
+
+            <p style={{ color: '#94A3B8', fontSize: '13.5px', lineHeight: '1.6', marginBottom: '20px' }}>
+              Vous êtes actuellement connecté avec le compte institutionnel :<br />
+              <strong style={{ color: '#38BDF8' }}>
+                {userInfo?.prenom} {userInfo?.nom} (
+                {userInfo?.isMaitreOuvrage ? 'Responsable Recrutement RH' : 'Administrateur'}
+                )
+              </strong>.<br />
+              Conformément à la réglementation (CNDP / Loi 09-08), les recruteurs et administrateurs ne peuvent pas postuler ni déposer de dossier candidat.
+            </p>
+
+            <div
+              style={{
+                background: 'rgba(255, 255, 255, 0.04)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                textAlign: 'left',
+                marginBottom: '24px',
+                fontSize: '12.5px',
+                color: '#CBD5E1',
+                lineHeight: '1.6',
+              }}
+            >
+              <i className='fas fa-info-circle text-info me-2'></i>
+              Pour tester le parcours candidat sur ce poste (<strong>{selectedOffreTitre}</strong>),
+              veuillez vous déconnecter et créer un compte Candidat dédié.
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              <button
+                type='button'
+                onClick={() => {
+                  dispatch(logout());
+                  navigate(`/register?redirect=/poste/${encodeURIComponent(selectedOffreTitre)}`);
+                }}
+                className='xr-btn'
+                style={{
+                  width: '100%',
+                  padding: '12px 18px',
+                  background: '#00F5A0',
+                  color: '#05131E',
+                  fontWeight: '700',
+                  borderRadius: '10px',
+                  border: 'none',
+                  cursor: 'pointer',
+                  justifyContent: 'center',
+                }}
+              >
+                <i className='fas fa-user-plus me-2'></i> Se déconnecter & Créer un compte Candidat
+              </button>
+
+              <button
+                type='button'
+                onClick={() => {
+                  setShowStaffModal(false);
+                  if (userInfo?.isMaitreOuvrage) navigate('/maitre-ouvrage/candidatures');
+                  else navigate('/admin/dashboard');
+                }}
+                style={{
+                  width: '100%',
+                  padding: '11px 18px',
+                  background: 'transparent',
+                  color: '#94A3B8',
+                  borderRadius: '10px',
+                  border: '1px solid rgba(255, 255, 255, 0.15)',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                }}
+              >
+                <i className='fas fa-briefcase me-2'></i> Accéder à mon Espace Recruteur
+              </button>
+
+              <button
+                type='button'
+                onClick={() => setShowStaffModal(false)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  color: '#64748B',
+                  fontSize: '12px',
+                  cursor: 'pointer',
+                  marginTop: '4px',
+                }}
+              >
+                Fermer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

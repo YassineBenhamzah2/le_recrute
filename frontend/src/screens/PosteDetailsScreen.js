@@ -1,14 +1,34 @@
-import Button from '@restart/ui/esm/Button';
 import React, { Fragment } from 'react';
-import { Card, Col, Container, ListGroup, Row } from 'react-bootstrap';
+import { Card, Col, Container, ListGroup, Row, Button } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
+import { useSelector, useDispatch } from 'react-redux';
+import { useParams, useNavigate } from 'react-router';
+import { logout } from '../actions/userActions';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import Heading from '../components/Heading';
-import { useParams } from 'react-router';
 
 const PosteDetailsScreen = () => {
   const params = useParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+
+  const userLogin = useSelector((state) => state.userLogin) || {};
+  const { userInfo } = userLogin;
+
+  const isStaffUser = Boolean(
+    userInfo && (
+      userInfo.isMaitreOuvrage ||
+      userInfo.isAdmin ||
+      userInfo.isAdministrateur ||
+      userInfo.isController ||
+      userInfo.isControlleur ||
+      userInfo.isControleur1 ||
+      userInfo.isControleur2 ||
+      userInfo.role === 'rh' ||
+      userInfo.role === 'admin'
+    )
+  );
 
   return (
     <Fragment>
@@ -166,18 +186,47 @@ const PosteDetailsScreen = () => {
                     </ListGroup.Item>
 
                     <ListGroup.Item>
-                      <div className='d-grid gap-2'>
-                        <LinkContainer
-                          to={`/poste/${params.poste}/informations-personnelles`}
+                      {isStaffUser ? (
+                        <div
+                          className='p-3 text-center rounded'
+                          style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}
                         >
+                          <i className='fas fa-user-shield text-danger fs-4 mb-2'></i>
+                          <div className='text-danger fw-bold small mb-1'>
+                            Accès Candidature Réservé
+                          </div>
+                          <p className='text-muted' style={{ fontSize: '11.5px', marginBottom: '10px', lineHeight: '1.4' }}>
+                            Vous êtes connecté en tant que{' '}
+                            <strong>{userInfo.isMaitreOuvrage ? 'Recruteur RH' : 'Administrateur'}</strong>.
+                            Les profils institutionnels ne peuvent pas postuler.
+                          </p>
                           <Button
-                            type='button'
-                            className='btn btn-outline-warning'
+                            variant='outline-danger'
+                            size='sm'
+                            className='w-100 fw-bold'
+                            style={{ fontSize: '11px', borderRadius: '6px' }}
+                            onClick={() => {
+                              dispatch(logout());
+                              navigate(`/register?redirect=/poste/${encodeURIComponent(params.poste)}`);
+                            }}
                           >
-                            Postuler
+                            <i className='fas fa-user-plus me-1'></i> Créer un compte Candidat
                           </Button>
-                        </LinkContainer>
-                      </div>
+                        </div>
+                      ) : (
+                        <div className='d-grid gap-2'>
+                          <LinkContainer
+                            to={`/poste/${params.poste}/informations-personnelles`}
+                          >
+                            <Button
+                              type='button'
+                              className='btn btn-outline-warning'
+                            >
+                              Postuler
+                            </Button>
+                          </LinkContainer>
+                        </div>
+                      )}
                     </ListGroup.Item>
                   </ListGroup>
                 </Card>
@@ -359,18 +408,47 @@ const PosteDetailsScreen = () => {
                     </ListGroup.Item>
 
                     <ListGroup.Item>
-                      <div className='d-grid gap-2'>
-                        <LinkContainer
-                          to={`/poste/${params.poste}/informations-personnelles`}
+                      {isStaffUser ? (
+                        <div
+                          className='p-3 text-center rounded'
+                          style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}
                         >
+                          <i className='fas fa-user-shield text-danger fs-4 mb-2'></i>
+                          <div className='text-danger fw-bold small mb-1'>
+                            Accès Candidature Réservé
+                          </div>
+                          <p className='text-muted' style={{ fontSize: '11.5px', marginBottom: '10px', lineHeight: '1.4' }}>
+                            Vous êtes connecté en tant que{' '}
+                            <strong>{userInfo.isMaitreOuvrage ? 'Recruteur RH' : 'Administrateur'}</strong>.
+                            Les profils institutionnels ne peuvent pas postuler.
+                          </p>
                           <Button
-                            type='button'
-                            className='btn btn-outline-warning'
+                            variant='outline-danger'
+                            size='sm'
+                            className='w-100 fw-bold'
+                            style={{ fontSize: '11px', borderRadius: '6px' }}
+                            onClick={() => {
+                              dispatch(logout());
+                              navigate(`/register?redirect=/poste/${encodeURIComponent(params.poste)}`);
+                            }}
                           >
-                            Postuler
+                            <i className='fas fa-user-plus me-1'></i> Créer un compte Candidat
                           </Button>
-                        </LinkContainer>
-                      </div>
+                        </div>
+                      ) : (
+                        <div className='d-grid gap-2'>
+                          <LinkContainer
+                            to={`/poste/${params.poste}/informations-personnelles`}
+                          >
+                            <Button
+                              type='button'
+                              className='btn btn-outline-warning'
+                            >
+                              Postuler
+                            </Button>
+                          </LinkContainer>
+                        </div>
+                      )}
                     </ListGroup.Item>
                   </ListGroup>
                 </Card>

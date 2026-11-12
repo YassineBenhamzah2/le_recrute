@@ -52,9 +52,23 @@ const DiplomesScreen = () => {
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
 
+  const isStaffUser = Boolean(
+    userInfo && (
+      userInfo.isMaitreOuvrage ||
+      userInfo.isAdmin ||
+      userInfo.isAdministrateur ||
+      userInfo.isController ||
+      userInfo.isControlleur ||
+      userInfo.isControleur1 ||
+      userInfo.isControleur2
+    )
+  );
+
   useEffect(() => {
     if (!userInfo) {
       navigate('/login');
+    } else if (isStaffUser) {
+      navigate(`/poste/${encodeURIComponent(params.poste)}/informations-personnelles`);
     } else {
       dispatch({ type: USER_UPDATE_PROFILE_RESET });
       if (formations) {
