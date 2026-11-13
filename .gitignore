@@ -33,9 +33,10 @@ Thumbs.db
 *.sln
 *.sw?
 
-# Uploaded test candidates files (keep only seed samples)
-uploads/recu-candidature_*
-uploads/rental-contract-*
-uploads/CV-*
-uploads/contrat_*
-uploads/ilovepdf_*
+# Uploaded candidate files (Keep directory structure but ignore user uploads)
+uploads/*
+!uploads/.gitkeep
+!uploads/Dossier_Candidat_Complet_6_Pages.pdf
+!uploads/Releves_Notes_BENHAMZAH_6_Pages.pdf
+!uploads/Rapport_Audit_Securite_Recrutement_ABB.pdf
+!uploads/pdf.worker.min.js
