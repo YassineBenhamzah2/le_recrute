@@ -14,6 +14,7 @@ import candidatureRoutes from './routes/candidatureRoutes.js';
 import offreRoutes from './routes/offreRoutes.js';
 import entrepriseRoutes from './routes/entrepriseRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
+import { documentVault } from './middleware/documentVaultMiddleware.js';
 
 //Load the env variables
 dotenv.config();
@@ -62,9 +63,9 @@ const staticUploadOptions = {
   },
 };
 
-app.use('/uploads', express.static(path.join(__dirname, '/uploads'), staticUploadOptions));
-app.use('/uploads', express.static(path.join(__dirname, 'backend', 'uploads'), staticUploadOptions));
-app.use('/uploads', express.static(path.join(__dirname, 'frontend', 'public', 'uploads'), staticUploadOptions));
+// COFFRE-FORT SÉCURISÉ CNDP : Accès contrôlé et authentifié aux documents (/uploads)
+app.get('/uploads/:filename', documentVault);
+app.use('/uploads', documentVault);
 app.use('/images', express.static(path.join(__dirname, '../frontend/public/images')));
 app.use('/images', express.static(path.join(__dirname, 'frontend', 'public', 'images')));
 app.use('/assets', express.static(path.join(__dirname, '../frontend/public/assets')));

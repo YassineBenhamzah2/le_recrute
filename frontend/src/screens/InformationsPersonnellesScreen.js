@@ -139,6 +139,7 @@ const InformationsPersonnellesScreen = () => {
       const config = {
         headers: {
           'Content-Type': 'multipart/form-data',
+          ...(userInfo?.token ? { Authorization: `Bearer ${userInfo.token}` } : {}),
         },
       };
       const { data } = await axios.post('/api/upload', formData, config);
@@ -167,6 +168,7 @@ const InformationsPersonnellesScreen = () => {
       const config = {
         headers: {
           'Content-Type': 'multipart/form-data',
+          ...(userInfo?.token ? { Authorization: `Bearer ${userInfo.token}` } : {}),
         },
       };
       const { data } = await axios.post('/api/upload', formData, config);

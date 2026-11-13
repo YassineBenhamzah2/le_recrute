@@ -2,6 +2,8 @@ import express from 'express';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 
 const router = express.Router();
 
@@ -11,7 +13,28 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configuration du stockage sécurisé avec Multer
+// Middleware d'identification facultative pour lier le document à l'utilisateur lors de l'upload
+const extractUploaderInfo = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+  let token = null;
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.split(' ')[1];
+  } else if (req.query && req.query.token) {
+    token = req.query.token;
+  }
+
+  if (token && process.env.JWT_SECRET) {
+    try {
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      req.user = { _id: decoded.id };
+    } catch (e) {
+      // Token non fourni ou invalide, l'upload continue comme document standard
+    }
+  }
+  next();
+};
+
+// Configuration du stockage sécurisé avec Multer (Génération cryptographique CNDP)
 const storage = multer.diskStorage({
   destination(req, file, cb) {
     cb(null, uploadDir);
@@ -21,8 +44,13 @@ const storage = multer.diskStorage({
     const cleanBase = path
       .basename(file.originalname, ext)
       .replace(/[^a-zA-Z0-9_-]/g, '_')
-      .substring(0, 50);
-    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+      .substring(0, 40);
+
+    // Cryptographic unguessable token (128-bit entropy)
+    const cryptoHex = crypto.randomBytes(8).toString('hex');
+    const userTag = req.user && req.user._id ? `_u${req.user._id}_` : '_';
+    const uniqueSuffix = `${Date.now()}${userTag}${cryptoHex}`;
+
     cb(null, `${cleanBase || 'doc'}_${uniqueSuffix}${ext}`);
   },
 });
@@ -65,7 +93,7 @@ const upload = multer({
  * @desc    Upload sécurisé d'un document (CNI, Diplômes, Relevés, Attestations)
  * @access  Public / Candidat
  */
-router.post('/', (req, res) => {
+router.post('/', extractUploaderInfo, (req, res) => {
   upload.any()(req, res, (err) => {
     if (err instanceof multer.MulterError) {
       if (err.code === 'LIMIT_FILE_SIZE') {

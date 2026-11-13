@@ -115,7 +115,10 @@ const MaitreCandidatures = () => {
     setUploadingPdf(true);
     try {
       const config = {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(userInfo?.token ? { Authorization: `Bearer ${userInfo.token}` } : {}),
+        },
       };
       const { data } = await axios.post('/api/upload', formData, config);
       const uploadedPath = (data && (data.url || data.filePath || data.fileName)) || (typeof data === 'string' ? data : '');
@@ -136,7 +139,10 @@ const MaitreCandidatures = () => {
     try {
       addToast('Téléversement du PDF en cours...', { appearance: 'info' });
       const uploadConfig = {
-        headers: { 'Content-Type': 'multipart/form-data' },
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(userInfo?.token ? { Authorization: `Bearer ${userInfo.token}` } : {}),
+        },
       };
       const { data: uploadRes } = await axios.post('/api/upload', formData, uploadConfig);
       const uploadedPdfPath = (uploadRes && (uploadRes.url || uploadRes.filePath || uploadRes.fileName)) || (typeof uploadRes === 'string' ? uploadRes : '');

@@ -59,6 +59,7 @@ const AdminEntreprisesScreen = () => {
       const config = {
         headers: {
           'Content-Type': 'multipart/form-data',
+          ...(userInfo?.token ? { Authorization: `Bearer ${userInfo.token}` } : {}),
         },
       };
       const { data } = await axios.post('/api/upload', formData, config);
