@@ -48,61 +48,56 @@ const ControlleurDashboard = () => {
 
   const candidaturesPremierControl =
     candidatures1 &&
-    candidatures1.filter(
-      (candidature) =>
-        candidature.isControl1 === true ||
-        Boolean(candidature.statutAI) ||
-        (candidature.controle1 && candidature.controle1.length > 0)
-    );
+    candidatures1.filter((candidature) => candidature.isControl1 === false);
 
   const candidaturesDeuxiemeControl =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.isControl2 === true ||
-        (candidature.controle2 && candidature.controle2.length > 0)
+        candidature.isControl1 === true && candidature.isControl2 === false
     );
 
   const candidaturesTroisiemeControl =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
+        candidature.isControl2 === true ||
         candidature.isControl3 === true ||
-        candidature.statutCommission === 'VALIDE_COMMISSION' ||
-        (candidature.controle3 && candidature.controle3.length > 0)
+        candidature.statutCommission === 'VALIDE_COMMISSION'
     );
 
   const candidaturesConformes =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.conforme === 'CONFORME' ||
-        candidature.statutAI === 'VALIDE_IA'
+        candidature.statutAI === 'VALIDE_IA' ||
+        candidature.conforme === 'CONFORME'
     );
 
   const candidaturesNonConformes =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.conforme === 'NON CONFORME' ||
         candidature.statutAI === 'REJETE_IA' ||
-        candidature.statutAI === 'ANOMALIE_IA'
+        candidature.statutAI === 'ANOMALIE_IA' ||
+        candidature.conforme === 'NON CONFORME'
     );
 
   const candidaturesElligibles =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.eligibilite === 'ELIGIBLE' ||
-        candidature.statutAI === 'VALIDE_IA'
+        candidature.statutAI === 'VALIDE_IA' ||
+        candidature.eligibilite === 'ELIGIBLE'
     );
 
   const candidaturesNonElligibles =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.eligibilite === 'NON ELIGIBLE' ||
-        candidature.statutAI === 'REJETE_IA'
+        candidature.statutAI === 'REJETE_IA' ||
+        candidature.statutAI === 'ANOMALIE_IA' ||
+        candidature.eligibilite === 'NON ELIGIBLE'
     );
 
   return (
