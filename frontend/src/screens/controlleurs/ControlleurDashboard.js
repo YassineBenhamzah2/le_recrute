@@ -36,19 +36,21 @@ const ControlleurDashboard = () => {
 
   const candidaturesEntrantes =
     candidatures1 &&
-    candidatures1.filter((candidature) => candidature.isControl1 === false);
+    candidatures1.filter((candidature) => candidature.isControl1 !== true);
 
   const candidatures1NonTraites =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.isControl1 === false &&
-        (!candidature.statutAI || candidature.statutAI === 'ATTENTE_IA')
+        candidature.isControl1 !== true &&
+        (!candidature.statutAI ||
+          candidature.statutAI === 'ATTENTE_IA' ||
+          candidature.statutAI === 'EN_ATTENTE_IA')
     );
 
   const candidaturesPremierControl =
     candidatures1 &&
-    candidatures1.filter((candidature) => candidature.isControl1 === false);
+    candidatures1.filter((candidature) => candidature.isControl1 !== true);
 
   const candidaturesDeuxiemeControl =
     candidatures1 &&

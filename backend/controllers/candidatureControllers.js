@@ -478,12 +478,10 @@ const updateCandidature = asyncHandler(async (req, res) => {
 const getControllerCandidatures = asyncHandler(async (req, res) => {
   const controllerName = `${req.user.prenom} ${req.user.nom}`;
   const query = {
-    isControl1: false,
     $or: [
-      { controle1: { $regex: controllerName, $options: 'i' } },
-      { controle1: null },
-      { controle1: '' },
-      { controle1: { $exists: false } },
+      { isControl1: false },
+      { isControl1: null },
+      { isControl1: { $exists: false } },
     ],
   };
 
