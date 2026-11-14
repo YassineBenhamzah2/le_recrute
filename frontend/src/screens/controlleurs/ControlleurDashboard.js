@@ -63,6 +63,15 @@ const ControlleurDashboard = () => {
         (candidature.controle2 && candidature.controle2.length > 0)
     );
 
+  const candidaturesTroisiemeControl =
+    candidatures1 &&
+    candidatures1.filter(
+      (candidature) =>
+        candidature.isControl3 === true ||
+        candidature.statutCommission === 'VALIDE_COMMISSION' ||
+        (candidature.controle3 && candidature.controle3.length > 0)
+    );
+
   const candidaturesConformes =
     candidatures1 &&
     candidatures1.filter(
@@ -124,7 +133,7 @@ const ControlleurDashboard = () => {
                     {' '}
                     <Row className='justify-content-center'>
                       <Col md={6} lg={3} sm={12}>
-                        <Link to='/controlleurs/dashboard'>
+                        <Link to='/controlleurs/candidatures/control1'>
                           <CardItem
                             icon='fas fa-clipboard fa-4x'
                             title='Nouvelles Candidatures'
@@ -152,7 +161,7 @@ const ControlleurDashboard = () => {
                         </Link>
                       </Col>
                       <Col md={6} lg={3} sm={12}>
-                        <Link to='/controlleurs/dashboard'>
+                        <Link to='/controlleurs/candidatures/control1'>
                           <CardItem
                             icon='fas fa-calendar-times fa-4x'
                             title='Candidatures non traitees'
@@ -181,18 +190,18 @@ const ControlleurDashboard = () => {
                       </Col>
                     </Row>
                     <Row className='justify-content-center'>
-                      <Col md={6} lg={3} sm={12}>
-                        <Link to='/controlleurs/candidatures'>
+                      <Col md={4} lg={4} sm={12}>
+                        <Link to='/controlleurs/candidatures/control1'>
                           <CardItem
-                            icon='fas fa-robot fa-4x'
-                            title='Premier contrôle (Audit IA)'
+                            icon='fas fa-robot fa-3x'
+                            title='Contrôle 1 (Audit IA)'
                             number={
                               <CountUp
                                 end={
                                   candidaturesPremierControl &&
                                   candidaturesPremierControl.length
                                 }
-                                duration={5}
+                                duration={3}
                               />
                             }
                             color={{
@@ -200,27 +209,23 @@ const ControlleurDashboard = () => {
                               boxShadow:
                                 '0 2px 5px 0 rgb(0 0 0 / 16%), 0 2px 10px 0 rgb(0 0 0 / 12%)',
                               borderRadius: '5px',
-                              background: `linear-gradient(
-                          45deg,
-                          #4099ff,
-                          #73b4ff
-                        )`,
+                              background: `linear-gradient(45deg, #0284c7, #38bdf8)`,
                             }}
                           />
                         </Link>
                       </Col>
-                      <Col md={6} lg={3} sm={12}>
-                        <Link to='/controlleurs/candidatures2'>
+                      <Col md={4} lg={4} sm={12}>
+                        <Link to='/controlleurs/candidatures/control2'>
                           <CardItem
-                            icon='fas fa-check-double fa-4x'
-                            title='Deuxième contrôle (Humain)'
+                            icon='fas fa-user-check fa-3x'
+                            title='Contrôle 2 (Auditeur EHC)'
                             number={
                               <CountUp
                                 end={
                                   candidaturesDeuxiemeControl &&
                                   candidaturesDeuxiemeControl.length
                                 }
-                                duration={5}
+                                duration={3}
                               />
                             }
                             color={{
@@ -228,11 +233,31 @@ const ControlleurDashboard = () => {
                               boxShadow:
                                 '0 2px 5px 0 rgb(0 0 0 / 16%), 0 2px 10px 0 rgb(0 0 0 / 12%)',
                               borderRadius: '5px',
-                              background: `linear-gradient(
-                          45deg,
-                          #4099ff,
-                          #73b4ff
-                        )`,
+                              background: `linear-gradient(45deg, #f59e0b, #fbbf24)`,
+                            }}
+                          />
+                        </Link>
+                      </Col>
+                      <Col md={4} lg={4} sm={12}>
+                        <Link to='/controlleurs/candidatures/control3'>
+                          <CardItem
+                            icon='fas fa-award fa-3x'
+                            title='Contrôle 3 (Commission EHC)'
+                            number={
+                              <CountUp
+                                end={
+                                  candidaturesTroisiemeControl &&
+                                  candidaturesTroisiemeControl.length
+                                }
+                                duration={3}
+                              />
+                            }
+                            color={{
+                              transition: 'box-shadow 0.25s',
+                              boxShadow:
+                                '0 2px 5px 0 rgb(0 0 0 / 16%), 0 2px 10px 0 rgb(0 0 0 / 12%)',
+                              borderRadius: '5px',
+                              background: `linear-gradient(45deg, #10b981, #34d399)`,
                             }}
                           />
                         </Link>
@@ -240,7 +265,7 @@ const ControlleurDashboard = () => {
                     </Row>
                     <Row className='justify-content-center'>
                       <Col md={6} lg={3} sm={12}>
-                        <Link to='/controlleurs/dashboard'>
+                        <Link to='/controlleurs/candidatures/control1'>
                           <CardItem
                             icon='fas fa-check fa-4x'
                             title='Candidatures Conformes'
@@ -268,7 +293,7 @@ const ControlleurDashboard = () => {
                         </Link>
                       </Col>
                       <Col md={6} lg={3} sm={12}>
-                        <Link to='/controlleurs/dashboard'>
+                        <Link to='/controlleurs/candidatures/control1'>
                           <CardItem
                             icon='fas fa-times fa-4x'
                             title='Candidatures non conformes'
@@ -298,7 +323,7 @@ const ControlleurDashboard = () => {
                     </Row>
                     <Row className='justify-content-center'>
                       <Col md={6} lg={3} sm={12}>
-                        <Link to='/controlleurs/dashboard'>
+                        <Link to='/controlleurs/candidatures/control3'>
                           <CardItem
                             icon='fas fa-check fa-4x'
                             title='Candidatures Eligibles'
@@ -326,7 +351,7 @@ const ControlleurDashboard = () => {
                         </Link>
                       </Col>
                       <Col md={6} lg={3} sm={12}>
-                        <Link to='/controlleurs/dashboard'>
+                        <Link to='/controlleurs/candidatures/control1'>
                           <CardItem
                             icon='fas fa-times fa-4x'
                             title='Candidatures Non Eligibles'
