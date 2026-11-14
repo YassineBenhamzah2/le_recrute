@@ -1,11 +1,12 @@
 import moment from 'moment';
 import path from 'path';
 import fs from 'fs';
+import { extractTextFromPDF } from '../utils/pdfTextExtractor.js';
 
 /**
  * Service d'Audit Intelligent (IA Contrôle Niveau 1)
  * Analyse automatique des pièces, détection des incohérences (âge, adresse, CNI, diplôme, notes).
- * Fonctionne avec un moteur d'inférence documentaire hybride haut débit pour traiter jusqu'à 100k dossiers.
+ * Analyse approfondie du contenu textuel des fichiers PDF téléversés.
  */
 export const executeAIAudit = async (candidature, user, offre) => {
   const anomalies = [];
@@ -18,6 +19,9 @@ export const executeAIAudit = async (candidature, user, offre) => {
 
   // 1. CONTRÔLE INTELLIGENT DE L'ÂGE & DATE DE NAISSANCE
   const rawBirth = candUser.dateNaissance;
+  let birthYear = '';
+  let birthFormats = [];
+
   if (!rawBirth) {
     anomalies.push("Date de naissance manquante dans le dossier.");
     scoreConfiance -= 25;
@@ -31,9 +35,17 @@ export const executeAIAudit = async (candidature, user, offre) => {
       scoreConfiance -= 20;
       verifications.age = { status: 'WARNING', message: 'Format de date suspect' };
     } else {
+      birthYear = validBirth.format('YYYY');
+      birthFormats = [
+        validBirth.format('DD/MM/YYYY'),
+        validBirth.format('DD-MM-YYYY'),
+        validBirth.format('DD.MM.YYYY'),
+        validBirth.format('YYYY-MM-DD'),
+        birthYear,
+      ];
+
       const age = moment().diff(validBirth, 'years', true);
       const minAge = 18;
-      // Récupération de la limite d'âge de l'offre (défaut 45 ans pour la fonction publique, 28/30 ans pour le secteur bancaire)
       const maxAge =
         candOffre.scoringRules?.age?.tranches?.length > 0
           ? Math.max(...candOffre.scoringRules.age.tranches.map((t) => t.max))
@@ -160,11 +172,11 @@ export const executeAIAudit = async (candidature, user, offre) => {
     verifications.notes = { status: 'VALID', message: 'Notes et moyennes cohérentes' };
   }
 
-  // 6. CONTRÔLE DE L'EXISTENCE PHYSIQUE DES PIÈCES NUMÉRISÉES
+  // 6. CONTRÔLE APPROFONDI DU CONTENU DES PIÈCES NUMÉRISÉES (ANTI-FRAUDE & VÉRIFICATION CROISÉE)
   const uploadDir = path.join(path.resolve(), 'uploads');
   const pieceChecks = [
-    { name: 'CNI', file: candUser.copieCNI },
-    { name: 'Diplôme', file: candidature.copieDiplomes },
+    { name: 'CNI', file: candUser.copieCNI, isCNI: true },
+    { name: 'Diplôme', file: candidature.copieDiplomes, isDiplome: true },
     { name: 'Relevés de notes', file: candidature.releves },
   ];
 
@@ -179,6 +191,61 @@ export const executeAIAudit = async (candidature, user, offre) => {
       if (!fs.existsSync(filePath)) {
         anomalies.push(`Fichier numérisé introuvable sur le serveur pour ${piece.name} (${cleanFileName}).`);
         scoreConfiance -= 15;
+      } else if (cleanFileName.toLowerCase().endsWith('.pdf')) {
+        // Extraction textuelle du PDF pour vérification croisée approfondie
+        const pdfText = extractTextFromPDF(filePath).toLowerCase();
+
+        // A. DÉTECTION DE DOCUMENTS SUSPECTS / INAPPROPRIÉS (ex: contrat de location, renta car, facture...)
+        const suspiciousKeywords = [
+          'rental contract',
+          'rent a car',
+          'rentacar',
+          'contrat de location',
+          'loueur',
+          'véhicule de location',
+          'quittance de loyer',
+        ];
+
+        const foundSuspicious = suspiciousKeywords.find((kw) => pdfText.includes(kw));
+        if (foundSuspicious) {
+          anomalies.push(
+            `🚨 Document suspect pour ${piece.name} : Le fichier PDF semble être un document commercial ("${foundSuspicious}") et non une pièce officielle requise.`
+          );
+          isEliminatoire = true;
+          scoreConfiance -= 45;
+        }
+
+        // B. VÉRIFICATION CROISÉE DE LA DATE DE NAISSANCE DANS LA CNI
+        if (piece.isCNI && pdfText.length > 30) {
+          const hasBirthInDoc = birthFormats.some((fmt) => pdfText.includes(fmt.toLowerCase()));
+          const hasBirthKeywords =
+            pdfText.includes('naissance') ||
+            pdfText.includes('né le') ||
+            pdfText.includes('née le') ||
+            pdfText.includes('date');
+
+          if (!hasBirthInDoc && !hasBirthKeywords) {
+            anomalies.push(
+              `⚠️ Date de naissance déclarée introuvable dans la pièce CNI téléversée (document incomplet ou sans mention de date de naissance).`
+            );
+            scoreConfiance -= 25;
+            verifications.age = {
+              status: 'WARNING',
+              message: 'Date de naissance non identifiable dans le PDF',
+            };
+          }
+        }
+
+        // C. VÉRIFICATION DU NUMÉRO CNI DANS LA COPIE CNI
+        if (piece.isCNI && pdfText.length > 30 && cniNum) {
+          const cleanCniLower = cniNum.toLowerCase();
+          if (!pdfText.includes(cleanCniLower)) {
+            anomalies.push(
+              `⚠️ Numéro CNI déclaré ("${cniNum}") introuvable dans le document numérisé fourni.`
+            );
+            scoreConfiance -= 20;
+          }
+        }
       }
     }
   }
