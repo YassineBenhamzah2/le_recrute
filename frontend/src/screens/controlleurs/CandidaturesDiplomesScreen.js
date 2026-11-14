@@ -114,6 +114,43 @@ const CandidaturesDiplomesScreen = () => {
                 headerTitle={`Diplomes de ${candidature.user.prenom} ${candidature.user.nom}`}
               />
             )}
+
+            {/* BANDEAU AUDIT IA - DIPLÔMES & NOTES */}
+            {candidature?.auditAI && (
+              <div
+                className={`mx-4 mt-3 p-3 rounded-3 shadow-sm border ${
+                  candidature.statutAI === 'VALIDE_IA'
+                    ? 'bg-light border-success'
+                    : candidature.statutAI === 'ANOMALIE_IA'
+                    ? 'bg-light border-warning'
+                    : 'bg-light border-danger'
+                }`}
+                style={{ borderLeftWidth: '6px' }}
+              >
+                <div className='d-flex flex-wrap justify-content-between align-items-center mb-2'>
+                  <div className='d-flex align-items-center gap-2'>
+                    <i className='fas fa-robot text-primary fs-4'></i>
+                    <div>
+                      <h6 className='fw-bold mb-0'>
+                        Vérification IA : Niveau académique & Notes
+                      </h6>
+                      <span className='small text-muted'>
+                        {candidature.auditAI.verifications?.diplome?.message || 'Niveau vérifié'}
+                      </span>
+                    </div>
+                  </div>
+                  <span className='badge bg-dark text-white px-3 py-2'>
+                    Confiance IA : {candidature.auditAI.scoreConfiance}%
+                  </span>
+                </div>
+                {candidature.auditAI.verifications?.notes?.status === 'WARNING' && (
+                  <div className='alert alert-warning py-1 px-2 mb-0 small fw-bold'>
+                    ⚠️ {candidature.auditAI.verifications.notes.message} (Notes hors barème standard)
+                  </div>
+                )}
+              </div>
+            )}
+
             <FormContainer>
               <Row>
                 <Col md={6}>

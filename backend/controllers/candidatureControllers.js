@@ -3,6 +3,7 @@ import Candidature from '../models/candidatureModel.js';
 import User from '../models/userModel.js';
 import Offre from '../models/offreModel.js';
 import calculateDynamicScore from '../utils/dynamicScoringEngine.js';
+import executeAIAudit from '../services/aiAuditService.js';
 import {
   controleAge,
   controleExperience,
@@ -197,6 +198,26 @@ const addCandidature = asyncHandler(async (req, res) => {
     );
   }
 
+  // EXÉCUTION AUTOMATIQUE DU CONTRÔLE NIVEAU 1 (IA AUDITOR)
+  try {
+    const aiAuditResult = await executeAIAudit(candidature, user, offreDoc);
+    candidature.statutAI = aiAuditResult.statutAI;
+    candidature.auditAI = aiAuditResult.auditAI;
+    candidature.isControl1 = false;
+    candidature.controle1 = `Audit IA (${aiAuditResult.statutAI}) — Score confiance: ${aiAuditResult.auditAI.scoreConfiance}%`;
+
+    if (aiAuditResult.statutAI === 'VALIDE_IA') {
+      candidature.conforme = 'CONFORME';
+      candidature.eligibilite = 'ELIGIBLE';
+    } else if (aiAuditResult.statutAI === 'REJETE_IA') {
+      candidature.conforme = 'NON CONFORME';
+      candidature.eligibilite = 'NON ELIGIBLE';
+      candidature.motif = 'NENA';
+    }
+  } catch (err) {
+    console.warn('Erreur exécution audit IA:', err);
+  }
+
   const createdCandidature = await candidature.save();
   await createdCandidature.populate('user');
   await createdCandidature.populate('offre');
@@ -233,6 +254,16 @@ const getCandidatureById = asyncHandler(async (req, res) => {
     .populate('entreprise');
 
   if (candidature) {
+    // SÉCURITÉ MULTI-TENANT : Isolation étanche des entreprises
+    if (req.user && req.user.isMaitreOuvrage && !req.user.isAdmin) {
+      const userEntId = String(req.user.entreprise?._id || req.user.entreprise);
+      const candEntId = String(candidature.entreprise?._id || candidature.entreprise || candidature.offre?.entreprise);
+      if (userEntId !== candEntId) {
+        res.status(403);
+        throw new Error("Accès refusé : vous n'êtes pas autorisé à consulter un dossier d'une autre institution.");
+      }
+    }
+
     const isStaff =
       req.user &&
       (req.user.isAdmin ||
@@ -284,10 +315,11 @@ const getMyCandidatures = asyncHandler(async (req, res) => {
 //@access Private Admin
 const getCandidatures = asyncHandler(async (req, res) => {
   const query = {};
-  if (req.query.entreprise) {
+  // SÉCURITÉ MULTI-TENANT STRICTE : L'entreprise RH ne voit QUE ses propres candidatures
+  if (req.user && req.user.isMaitreOuvrage && !req.user.isAdmin) {
+    query.entreprise = req.user.entreprise?._id || req.user.entreprise;
+  } else if (req.query.entreprise) {
     query.entreprise = req.query.entreprise;
-  } else if (req.user && req.user.entreprise && !req.user.isAdmin) {
-    query.entreprise = req.user.entreprise;
   }
   if (req.query.offre) {
     query.offre = req.query.offre;
@@ -306,6 +338,14 @@ const getCandidatures = asyncHandler(async (req, res) => {
 const updateCandidature = asyncHandler(async (req, res) => {
   const candidature = await Candidature.findById(req.params.id);
   if (candidature) {
+    if (req.user && req.user.isMaitreOuvrage && !req.user.isAdmin) {
+      const userEntId = String(req.user.entreprise?._id || req.user.entreprise);
+      const candEntId = String(candidature.entreprise?._id || candidature.entreprise);
+      if (userEntId !== candEntId) {
+        res.status(403);
+        throw new Error("Accès refusé : vous ne pouvez pas modifier un dossier d'une autre institution.");
+      }
+    }
     candidature.niveauEtude = req.body.niveauEtude || candidature.niveauEtude;
     candidature.specialite = req.body.specialite || candidature.specialite;
     candidature.diplome = req.body.diplome || candidature.diplome;
@@ -341,8 +381,15 @@ const updateCandidature = asyncHandler(async (req, res) => {
     candidature.scoreTotal = req.body.scoreTotal || candidature.scoreTotal;
     candidature.controle1 = req.body.controle1 || candidature.controle1;
     candidature.controle2 = req.body.controle2 || candidature.controle2;
-    candidature.isControl1 = req.body.isControl1 || candidature.isControl1;
-    candidature.isControl2 = req.body.isControl2 || candidature.isControl2;
+    candidature.controle3 = req.body.controle3 || candidature.controle3;
+    candidature.isControl1 = req.body.isControl1 !== undefined ? req.body.isControl1 : candidature.isControl1;
+    candidature.isControl2 = req.body.isControl2 !== undefined ? req.body.isControl2 : candidature.isControl2;
+    candidature.isControl3 = req.body.isControl3 !== undefined ? req.body.isControl3 : candidature.isControl3;
+    candidature.statutAI = req.body.statutAI || candidature.statutAI;
+    candidature.statutCommission = req.body.statutCommission || candidature.statutCommission;
+    if (req.body.auditAI) {
+      candidature.auditAI = req.body.auditAI;
+    }
     candidature.conforme = req.body.conforme || candidature.conforme;
     candidature.eligibilite = req.body.eligibilite || candidature.eligibilite;
     candidature.motif = req.body.motif || candidature.motif;
@@ -384,9 +431,13 @@ const updateCandidature = asyncHandler(async (req, res) => {
       scoreTotal: updatedCandidature.scoreTotal,
       controle1: updatedCandidature.controle1,
       controle2: updatedCandidature.controle2,
+      controle3: updatedCandidature.controle3,
       isControl1: updatedCandidature.isControl1,
       isControl2: updatedCandidature.isControl2,
-      conforme: updatedCandidature.conforme,
+      isControl3: updatedCandidature.isControl3,
+      statutAI: updatedCandidature.statutAI,
+      auditAI: updatedCandidature.auditAI,
+      statutCommission: updatedCandidature.statutCommission,
       eligibilite: updatedCandidature.eligibilite,
       motif: updatedCandidature.motif,
       dossier: updatedCandidature.dossier,
@@ -463,6 +514,175 @@ const getControllerCandidatures2 = asyncHandler(async (req, res) => {
   res.json(candidatures);
 });
 
+//@desc GET logged in controller candidatures (Troisième Contrôle - Commission Finale EHC)
+//@route GET /api/candidatures/controlleurs/list/3
+//@access Private
+const getControllerCandidatures3 = asyncHandler(async (req, res) => {
+  const query = {
+    isControl1: true,
+    isControl2: true,
+  };
+
+  if (req.query.entreprise) {
+    query.entreprise = req.query.entreprise;
+  } else if (req.user && req.user.entreprise && !req.user.isAdmin) {
+    query.entreprise = req.user.entreprise;
+  }
+  if (req.query.offre) {
+    query.offre = req.query.offre;
+  }
+
+  const candidatures = await Candidature.find(query)
+    .populate('user')
+    .populate('offre')
+    .populate('entreprise');
+  res.json(candidatures);
+});
+
+//@desc Lancer l'Audit IA sur une candidature individuelle (Niveau 1)
+//@route POST /api/candidatures/:id/ai-audit
+//@access Private/Staff
+const runCandidatureAIAudit = asyncHandler(async (req, res) => {
+  const candidature = await Candidature.findById(req.params.id)
+    .populate('user')
+    .populate('offre');
+
+  if (!candidature) {
+    res.status(404);
+    throw new Error('Candidature introuvable');
+  }
+
+  const aiResult = await executeAIAudit(candidature, candidature.user, candidature.offre);
+
+  candidature.statutAI = aiResult.statutAI;
+  candidature.auditAI = aiResult.auditAI;
+  candidature.isControl1 = true;
+  candidature.controle1 = `Audit IA (${aiResult.statutAI}) — Score confiance: ${aiResult.auditAI.scoreConfiance}%`;
+
+  if (aiResult.statutAI === 'VALIDE_IA') {
+    candidature.conforme = 'CONFORME';
+    candidature.eligibilite = 'ELIGIBLE';
+  } else if (aiResult.statutAI === 'REJETE_IA') {
+    candidature.conforme = 'NON CONFORME';
+    candidature.eligibilite = 'NON ELIGIBLE';
+    candidature.motif = 'NENA';
+  }
+
+  const saved = await candidature.save();
+  res.json({
+    success: true,
+    candidature: saved,
+    aiResult,
+  });
+});
+
+//@desc Lancer l'Audit IA en lot (Batch Processing 90k+)
+//@route POST /api/candidatures/batch/ai-audit
+//@access Private/Staff
+const runBatchAIAudit = asyncHandler(async (req, res) => {
+  const query = req.body.offreId ? { offre: req.body.offreId } : {};
+  const candidatures = await Candidature.find(query)
+    .populate('user')
+    .populate('offre');
+
+  let processedCount = 0;
+  let conformesCount = 0;
+  let anomaliesCount = 0;
+  let rejetesCount = 0;
+
+  for (const cand of candidatures) {
+    const aiResult = await executeAIAudit(cand, cand.user, cand.offre);
+    cand.statutAI = aiResult.statutAI;
+    cand.auditAI = aiResult.auditAI;
+    // Garde isControl1 à false pour permettre la revue du contrôleur humain, sauf si déjà validé
+    if (!cand.isControl1) {
+      cand.isControl1 = false;
+    }
+    cand.controle1 = `Audit IA (${aiResult.statutAI}) — Confiance: ${aiResult.auditAI.scoreConfiance}%`;
+
+    if (aiResult.statutAI === 'VALIDE_IA') {
+      conformesCount++;
+      cand.conforme = 'CONFORME';
+      cand.eligibilite = 'ELIGIBLE';
+    } else if (aiResult.statutAI === 'ANOMALIE_IA') {
+      anomaliesCount++;
+    } else {
+      rejetesCount++;
+      cand.conforme = 'NON CONFORME';
+      cand.eligibilite = 'NON ELIGIBLE';
+    }
+
+    await cand.save();
+    processedCount++;
+  }
+
+  res.json({
+    success: true,
+    processedCount,
+    conformesCount,
+    anomaliesCount,
+    rejetesCount,
+  });
+});
+
+//@desc Valider les dossiers du Contrôle 1 vers le Contrôle 2 (individuel ou tous les conformes IA)
+//@route POST /api/candidatures/batch/validate-control1
+//@access Private/Staff
+const validateBatchControl1 = asyncHandler(async (req, res) => {
+  const { ids, onlyConformes } = req.body;
+  let filter = {};
+
+  if (Array.isArray(ids) && ids.length > 0) {
+    filter = { _id: { $in: ids } };
+  } else if (onlyConformes) {
+    filter = { statutAI: 'VALIDE_IA', isControl1: false };
+  } else {
+    filter = { isControl1: false };
+  }
+
+  const controllerName = req.user ? `${req.user.prenom || ''} ${req.user.nom || ''}`.trim() : 'Contrôleur EHC';
+  const result = await Candidature.updateMany(filter, {
+    $set: {
+      isControl1: true,
+      controle1: `Validé Niveau 1 par ${controllerName} (Audit IA vérifié)`,
+    },
+  });
+
+  res.json({
+    success: true,
+    modifiedCount: result.modifiedCount || result.nModified || 0,
+  });
+});
+
+//@desc Valider les dossiers du Contrôle 3 (Commission EHC - Validation Finale avant transmission RH)
+//@route POST /api/candidatures/batch/validate-control3
+//@access Private/Staff
+const validateBatchControl3 = asyncHandler(async (req, res) => {
+  const { ids } = req.body;
+  let filter = { isControl1: true, isControl2: true };
+
+  if (Array.isArray(ids) && ids.length > 0) {
+    filter._id = { $in: ids };
+  }
+
+  const commissionName = req.user
+    ? `Commission EHC (${req.user.prenom || ''} ${req.user.nom || ''})`.trim()
+    : 'Commission EHC Audit Marchés Publics';
+
+  const result = await Candidature.updateMany(filter, {
+    $set: {
+      isControl3: true,
+      statutCommission: 'VALIDE_COMMISSION',
+      controle3: commissionName,
+    },
+  });
+
+  res.json({
+    success: true,
+    modifiedCount: result.modifiedCount || result.nModified || 0,
+  });
+});
+
 export {
   addCandidature,
   getCandidatureById,
@@ -471,4 +691,9 @@ export {
   updateCandidature,
   getControllerCandidatures,
   getControllerCandidatures2,
+  getControllerCandidatures3,
+  runCandidatureAIAudit,
+  runBatchAIAudit,
+  validateBatchControl1,
+  validateBatchControl3,
 };

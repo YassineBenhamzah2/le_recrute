@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Col, Container, Row, Button, Form, InputGroup } from 'react-bootstrap';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router';
+import axios from 'axios';
 import Spinner from '../../components/Spinner';
 import Message from '../../components/Message';
 import { getCandidatureDetails } from '../../actions/candidatureActions';
@@ -37,6 +38,7 @@ const CandidaturesInformationsScreen = () => {
   const [copieCNI, setCopieCNI] = useState('');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
+  const [rerunLoading, setRerunLoading] = useState(false);
 
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
@@ -47,6 +49,23 @@ const CandidaturesInformationsScreen = () => {
     error: errorCandidature,
     candidature,
   } = candidatureDetails;
+
+  const handleRerunAI = async () => {
+    try {
+      setRerunLoading(true);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      await axios.post(`/api/candidatures/${params.id}/ai-audit`, {}, config);
+      dispatch(getCandidatureDetails(params.id));
+    } catch (err) {
+      alert("Erreur lors de la réévaluation de l'audit IA");
+    } finally {
+      setRerunLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (!userInfo && !userInfo.isController) {
@@ -104,6 +123,104 @@ const CandidaturesInformationsScreen = () => {
                 headerTitle={`Informations personnelles de ${candidature.user.prenom} ${candidature.user.nom}`}
               />
             )}
+
+            {/* BANDEAU AUDIT IA NIVEAU 1 */}
+            {candidature?.auditAI && (
+              <div
+                className={`mx-4 mt-3 p-3 rounded-3 shadow-sm border ${
+                  candidature.statutAI === 'VALIDE_IA'
+                    ? 'bg-light border-success'
+                    : candidature.statutAI === 'ANOMALIE_IA'
+                    ? 'bg-light border-warning'
+                    : 'bg-light border-danger'
+                }`}
+                style={{ borderLeftWidth: '6px' }}
+              >
+                <div className='d-flex flex-wrap justify-content-between align-items-center mb-2'>
+                  <div className='d-flex align-items-center gap-2'>
+                    <i
+                      className={`fas ${
+                        candidature.statutAI === 'VALIDE_IA'
+                          ? 'fa-check-circle text-success'
+                          : candidature.statutAI === 'ANOMALIE_IA'
+                          ? 'fa-exclamation-triangle text-warning'
+                          : 'fa-times-circle text-danger'
+                      } fs-4`}
+                    ></i>
+                    <div>
+                      <h6 className='fw-bold mb-0'>
+                        <i className='fas fa-robot me-1 text-primary'></i>
+                        Rapport d'Audit Automatisé IA (Contrôle Niveau 1)
+                      </h6>
+                      <span className='small text-muted'>
+                        Audité le :{' '}
+                        {candidature.auditAI.dateAudit
+                          ? moment(candidature.auditAI.dateAudit).format('LLL')
+                          : 'Récemment'}
+                      </span>
+                    </div>
+                  </div>
+                  <div className='d-flex align-items-center gap-2 mt-2 mt-md-0'>
+                    <span
+                      className={`badge ${
+                        candidature.statutAI === 'VALIDE_IA'
+                          ? 'bg-success'
+                          : candidature.statutAI === 'ANOMALIE_IA'
+                          ? 'bg-warning text-dark'
+                          : 'bg-danger'
+                      } fs-6 px-3 py-2`}
+                    >
+                      {candidature.statutAI === 'VALIDE_IA'
+                        ? '🟢 Conforme IA'
+                        : candidature.statutAI === 'ANOMALIE_IA'
+                        ? '🟠 Anomalie Détectée'
+                        : '🔴 Rejeté IA'}
+                    </span>
+                    <span className='badge bg-dark text-white fs-6 px-3 py-2'>
+                      Score Confiance : {candidature.auditAI.scoreConfiance}%
+                    </span>
+                    <Button
+                      variant='outline-primary'
+                      size='sm'
+                      className='fw-bold'
+                      disabled={rerunLoading}
+                      onClick={handleRerunAI}
+                    >
+                      {rerunLoading ? (
+                        <>
+                          <span className='spinner-border spinner-border-sm me-1'></span>
+                          Scan...
+                        </>
+                      ) : (
+                        <>
+                          <i className='fas fa-sync me-1'></i> Re-scanner
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className='fw-semibold text-secondary mb-2'>
+                  {candidature.auditAI.summary}
+                </div>
+
+                {candidature.auditAI.anomalies?.length > 0 && (
+                  <div className='p-2 bg-white rounded border'>
+                    <div className='fw-bold text-danger small mb-1'>
+                      <i className='fas fa-flag me-1'></i> Anomalies détectées par l'IA :
+                    </div>
+                    <ul className='mb-0 ps-3 small'>
+                      {candidature.auditAI.anomalies.map((anom, idx) => (
+                        <li key={idx} className='text-danger fw-bold'>
+                          {anom}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+
             {loadingCandidature ? (
               <Spinner />
             ) : errorCandidature ? (
@@ -195,15 +312,24 @@ const CandidaturesInformationsScreen = () => {
                         <Row>
                           <Col>
                             <Form.Label className='fw-bold mt-3'>
-                              <i className='far fa-calendar'></i> Date de
-                              naissance :
+                              <i className='far fa-calendar'></i> Date de naissance :
+                              {candidature?.auditAI?.verifications?.age?.status === 'REJECT' && (
+                                <span className='badge bg-danger ms-2 small'>
+                                  ⚠️ {candidature.auditAI.verifications.age.message}
+                                </span>
+                              )}
+                              {candidature?.auditAI?.verifications?.age?.status === 'WARNING' && (
+                                <span className='badge bg-warning text-dark ms-2 small'>
+                                  ⚠️ {candidature.auditAI.verifications.age.message}
+                                </span>
+                              )}
                             </Form.Label>
                             <InputGroup className='mb-3'>
                               <Calendar
                                 className='form-control'
                                 value={dateNaissance}
                                 onChange={(dateNaissance) =>
-                                  setDateNaissance(dateNaissance)
+                                   setDateNaissance(dateNaissance)
                                 }
                                 date={'Date de Naissance'}
                               />
@@ -245,8 +371,13 @@ const CandidaturesInformationsScreen = () => {
                           </Col>
                           <Col>
                             <Form.Label className='fw-bold mt-3'>
-                              <i className='fas fa-address-card'></i> Numero CNI
-                              :
+                              <i className='fas fa-address-card'></i> Numero CNI :
+                              {candidature?.auditAI?.verifications?.cni?.status &&
+                                candidature.auditAI.verifications.cni.status !== 'VALID' && (
+                                  <span className='badge bg-warning text-dark ms-2 small'>
+                                    ⚠️ {candidature.auditAI.verifications.cni.message}
+                                  </span>
+                                )}
                             </Form.Label>
                             <InputGroup className='mb-3'>
                               <Form.Control
@@ -276,8 +407,13 @@ const CandidaturesInformationsScreen = () => {
                         <Row>
                           <Col>
                             <Form.Label className='fw-bold mt-3'>
-                              <i className='fas fa-map-marker-alt'></i> Adresse
-                              :
+                              <i className='fas fa-map-marker-alt'></i> Adresse :
+                              {candidature?.auditAI?.verifications?.adresse?.status &&
+                                candidature.auditAI.verifications.adresse.status !== 'VALID' && (
+                                  <span className='badge bg-warning text-dark ms-2 small'>
+                                    ⚠️ {candidature.auditAI.verifications.adresse.message}
+                                  </span>
+                                )}
                             </Form.Label>
                             <InputGroup className='mb-3'>
                               <Form.Control
@@ -292,6 +428,12 @@ const CandidaturesInformationsScreen = () => {
                           <Col>
                             <Form.Label className='fw-bold mt-3'>
                               <i className='fas fa-map-marker-alt'></i> Ville :
+                              {candidature?.auditAI?.verifications?.adresse?.status &&
+                                candidature.auditAI.verifications.adresse.status !== 'VALID' && (
+                                  <span className='badge bg-warning text-dark ms-2 small'>
+                                    ⚠️ Hors zone / certificat requis
+                                  </span>
+                                )}
                             </Form.Label>
                             <InputGroup className='mb-3'>
                               <Form.Control

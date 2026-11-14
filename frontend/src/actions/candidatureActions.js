@@ -291,3 +291,39 @@ export const listControllerCandidatures2 = () => async (dispatch, getState) => {
     });
   }
 };
+
+export const listControllerCandidatures3 = () => async (dispatch, getState) => {
+  try {
+    dispatch({
+      type: CANDIDATURE_LIST_CONTROLER_REQUEST,
+    });
+
+    const {
+      userLogin: { userInfo },
+    } = getState();
+
+    const config = {
+      headers: {
+        Authorization: `Bearer ${userInfo.token}`,
+      },
+    };
+
+    const { data } = await axios.get(
+      `/api/candidatures/controlleurs/list/3`,
+      config
+    );
+
+    dispatch({
+      type: CANDIDATURE_LIST_CONTROLER_SUCCESS,
+      payload: data,
+    });
+  } catch (error) {
+    dispatch({
+      type: CANDIDATURE_LIST_CONTROLER_FAIL,
+      payload:
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : error.message,
+    });
+  }
+};

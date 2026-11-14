@@ -173,6 +173,9 @@ const candidatureSchema = mongoose.Schema(
     controle2: {
       type: String,
     },
+    controle3: {
+      type: String,
+    },
     isControl1: {
       type: Boolean,
       required: true,
@@ -182,6 +185,35 @@ const candidatureSchema = mongoose.Schema(
       type: Boolean,
       required: true,
       default: false,
+    },
+    isControl3: {
+      type: Boolean,
+      required: true,
+      default: false,
+    },
+    // MODULE IA - CONTRÔLE NIVEAU 1 AUTOMATISÉ (AUDIT INTELLIGENT)
+    statutAI: {
+      type: String,
+      enum: ['EN_ATTENTE_IA', 'VALIDE_IA', 'ANOMALIE_IA', 'REJETE_IA'],
+      default: 'EN_ATTENTE_IA',
+    },
+    auditAI: {
+      scoreConfiance: { type: Number, default: 0 },
+      anomalies: [{ type: String }],
+      verifications: {
+        age: { type: mongoose.Schema.Types.Mixed },
+        cni: { type: mongoose.Schema.Types.Mixed },
+        adresse: { type: mongoose.Schema.Types.Mixed },
+        diplome: { type: mongoose.Schema.Types.Mixed },
+        notes: { type: mongoose.Schema.Types.Mixed },
+      },
+      dateAudit: { type: Date },
+      summary: { type: String },
+    },
+    statutCommission: {
+      type: String,
+      enum: ['EN_COURS_AUDIT', 'VALIDE_COMMISSION', 'REJETE_COMMISSION'],
+      default: 'EN_COURS_AUDIT',
     },
     conforme: {
       type: String,

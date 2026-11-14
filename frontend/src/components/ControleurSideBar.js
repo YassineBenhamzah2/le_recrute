@@ -33,14 +33,19 @@ const ControleurSideBar = ({ prenom, nom }) => {
               {userInfo?.isMaitreOuvrage ? 'Tableau de bord RH' : 'Tableau de bord'}
             </Link>
           </MenuItem>
-          <MenuItem icon={<i className='fas fa-database fa-2x'></i>}>
+          <MenuItem icon={<i className='fas fa-robot fa-2x text-primary'></i>}>
             <Link to='/controlleurs/candidatures/control1'>
-              Controle 1 niveau
+              Contrôle 1 (Audit IA)
             </Link>
           </MenuItem>
-          <MenuItem icon={<i className='fas fa-database fa-2x'></i>}>
+          <MenuItem icon={<i className='fas fa-user-check fa-2x text-warning'></i>}>
             <Link to='/controlleurs/candidatures/control2'>
-              Controle 2 niveau
+              Contrôle 2 (Auditeur EHC)
+            </Link>
+          </MenuItem>
+          <MenuItem icon={<i className='fas fa-award fa-2x text-success'></i>}>
+            <Link to='/controlleurs/candidatures/control3'>
+              Contrôle 3 (Commission EHC)
             </Link>
           </MenuItem>
         </Menu>

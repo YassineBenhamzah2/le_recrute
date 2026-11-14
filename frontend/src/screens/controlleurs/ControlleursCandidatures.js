@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router';
+import axios from 'axios';
 import { listControllerCandidatures } from '../../actions/candidatureActions';
 import HeaderAdministrateur from '../../components/HeaderAdministrateur';
 import paginationFactory from 'react-bootstrap-table2-paginator';
@@ -23,6 +24,9 @@ const ControlleursCandidaturesScreen = () => {
   const dispatch = useDispatch();
 
   const [open, setOpen] = useState(false);
+  const [aiAuditLoading, setAiAuditLoading] = useState(false);
+  const [validatingControl1Loading, setValidatingControl1Loading] = useState(false);
+  const [filterTab, setFilterTab] = useState('ALL');
 
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
@@ -38,6 +42,50 @@ const ControlleursCandidaturesScreen = () => {
     loading: loadingCandidatures1,
     error: errorCandidatures1,
   } = candidaturesListController;
+
+  const handleBatchAIAudit = async () => {
+    if (!window.confirm("Lancer l'audit automatique par Intelligence Artificielle (Niveau 1) sur tous les dossiers ?")) return;
+    try {
+      setAiAuditLoading(true);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      const { data: res } = await axios.post('/api/candidatures/batch/ai-audit', {}, config);
+      alert(
+        `Audit IA Terminé avec succès !\n• Traités : ${res.processedCount}\n• Conformes IA : ${res.conformesCount}\n• Anomalies IA : ${res.anomaliesCount}\n• Rejetés IA : ${res.rejetesCount}`
+      );
+      dispatch(listControllerCandidatures());
+    } catch (err) {
+      alert(err.response?.data?.message || "Erreur lors de l'audit IA");
+    } finally {
+      setAiAuditLoading(false);
+    }
+  };
+
+  const handleValidateConformesToControl2 = async () => {
+    if (!window.confirm("Transmettre tous les dossiers conformes IA vers le Contrôle 2 ?")) return;
+    try {
+      setValidatingControl1Loading(true);
+      const config = {
+        headers: {
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      const { data: res } = await axios.post(
+        '/api/candidatures/batch/validate-control1',
+        { onlyConformes: true },
+        config
+      );
+      alert(`${res.modifiedCount} dossiers conformes validés et transmis avec succès au Contrôle 2.`);
+      dispatch(listControllerCandidatures());
+    } catch (err) {
+      alert(err.response?.data?.message || "Erreur lors de la validation");
+    } finally {
+      setValidatingControl1Loading(false);
+    }
+  };
 
   useEffect(() => {
     if (userInfo && userInfo.isController) {
@@ -88,10 +136,37 @@ const ControlleursCandidaturesScreen = () => {
     postulations &&
     postulations.filter((postulation) => postulation.isControl1 === false);
 
+  const totalCount = candidaturesNonValidees ? candidaturesNonValidees.length : 0;
+  const countConformes = candidaturesNonValidees
+    ? candidaturesNonValidees.filter((c) => c.statutAI === 'VALIDE_IA').length
+    : 0;
+  const countAnomalies = candidaturesNonValidees
+    ? candidaturesNonValidees.filter((c) => c.statutAI === 'ANOMALIE_IA').length
+    : 0;
+  const countRejetes = candidaturesNonValidees
+    ? candidaturesNonValidees.filter((c) => c.statutAI === 'REJETE_IA').length
+    : 0;
+
+  const filteredByTab = candidaturesNonValidees
+    ? candidaturesNonValidees.filter((p) => {
+        if (filterTab === 'ANOMALIES') return p.statutAI === 'ANOMALIE_IA';
+        if (filterTab === 'CONFORMES') return p.statutAI === 'VALIDE_IA';
+        if (filterTab === 'REJETES') return p.statutAI === 'REJETE_IA';
+        return true;
+      })
+    : [];
+
   const data =
-    candidaturesNonValidees &&
-    candidaturesNonValidees.map((postulation) => ({
+    filteredByTab &&
+    filteredByTab.map((postulation) => ({
       id: postulation._id || '-',
+      statutAI: postulation.statutAI || 'EN_ATTENTE_IA',
+      scoreConfiance:
+        postulation.auditAI?.scoreConfiance !== undefined && postulation.auditAI?.scoreConfiance !== null
+          ? postulation.auditAI.scoreConfiance
+          : null,
+      anomaliesAI: postulation.auditAI?.anomalies || [],
+      summaryAI: postulation.auditAI?.summary || '',
       dateCandidature:
         (postulation.createdAt && moment(postulation.createdAt).format('L')) ||
         '-',
@@ -333,6 +408,98 @@ const ControlleursCandidaturesScreen = () => {
           <b>{cell !== undefined && cell !== null && cell !== '-' ? cell : '0'}</b>
         </span>
       ),
+    },
+    {
+      dataField: 'statutAI',
+      text: 'Audit IA (Niveau 1) 🤖',
+      sort: true,
+      filter: textFilter(),
+      headerStyle: {
+        backgroundColor: '#cce5ff',
+        color: '#004085',
+        fontWeight: 'bold',
+        textAlign: 'center',
+      },
+      formatter: (cell) => {
+        if (cell === 'VALIDE_IA') {
+          return (
+            <span className='badge bg-success text-white px-2 py-1'>
+              <i className='fas fa-check-circle me-1'></i> Conforme IA
+            </span>
+          );
+        } else if (cell === 'ANOMALIE_IA') {
+          return (
+            <span className='badge bg-warning text-dark px-2 py-1 fw-bold'>
+              <i className='fas fa-exclamation-triangle me-1'></i> Anomalie Détectée
+            </span>
+          );
+        } else if (cell === 'REJETE_IA') {
+          return (
+            <span className='badge bg-danger text-white px-2 py-1'>
+              <i className='fas fa-times-circle me-1'></i> Rejeté IA
+            </span>
+          );
+        } else {
+          return (
+            <span className='badge bg-secondary text-white px-2 py-1'>
+              <i className='fas fa-clock me-1'></i> En Attente
+            </span>
+          );
+        }
+      },
+    },
+    {
+      dataField: 'anomaliesAI',
+      text: 'Anomalies Détectées (Âge / Adresse / CNI...)',
+      headerStyle: {
+        backgroundColor: '#fff3cd',
+        color: '#856404',
+        fontWeight: 'bold',
+      },
+      formatter: (cell) => {
+        if (!cell || cell.length === 0) {
+          return (
+            <span className='text-success small fw-bold'>
+              <i className='fas fa-check me-1'></i>Aucune
+            </span>
+          );
+        }
+        return (
+          <div style={{ maxWidth: '280px', textAlign: 'left', fontSize: '0.82rem' }}>
+            {cell.map((anom, idx) => (
+              <div key={idx} className='text-danger fw-bold mb-1'>
+                • {anom}
+              </div>
+            ))}
+          </div>
+        );
+      },
+    },
+    {
+      dataField: 'scoreConfiance',
+      text: 'Confiance IA',
+      sort: true,
+      headerStyle: {
+        backgroundColor: '#e2e3e5',
+        textAlign: 'center',
+      },
+      formatter: (cell) => {
+        if (cell === null || cell === undefined) return '-';
+        const num = Number(cell);
+        const color = num >= 80 ? 'bg-success' : num >= 50 ? 'bg-warning' : 'bg-danger';
+        return (
+          <div style={{ minWidth: '80px' }}>
+            <span className='fw-bold small'>{num}%</span>
+            <div className='progress' style={{ height: '6px' }}>
+              <div
+                className={`progress-bar ${color}`}
+                role='progressbar'
+                style={{ width: `${num}%` }}
+              ></div>
+            </div>
+          </div>
+        );
+      },
     },
     {
       dataField: 'action',
@@ -1106,11 +1273,114 @@ const ControlleursCandidaturesScreen = () => {
         <ControleurSideBar prenom={userInfo.prenom} nom={userInfo.nom} />
         <main>
           <HeaderAdministrateur
-            headerTitle='Liste des candidatures pour le premier controle'
+            headerTitle='Contrôle Niveau 1 : Audit Automatisé par IA (Tiers de Confiance)'
             endPoint='/admin'
           />
+
+          <Container className='mt-4'>
+            {/* BANDEAU PILOTAGE AUDIT IA NIVEAU 1 */}
+            <div
+              className='bg-white rounded-3 shadow-sm p-4 mb-4 border'
+              style={{ borderLeft: '5px solid #0284c7' }}
+            >
+              <div className='d-flex flex-wrap justify-content-between align-items-center mb-3 pb-3 border-bottom'>
+                <div>
+                  <h4 className='fw-bold text-primary mb-1 d-flex align-items-center gap-2'>
+                    <i className='fas fa-robot text-info fs-3'></i>
+                    <span>Pipeline Contrôle 1 : Audit Intelligent par IA</span>
+                  </h4>
+                  <p className='text-muted small mb-0'>
+                    L'IA inspecte les candidatures, détecte les anomalies d'âge, les résidences hors zone, les CNI erronées, les diplômes et notes.
+                  </p>
+                </div>
+                <div className='d-flex flex-wrap gap-2 mt-2 mt-md-0'>
+                  <Button
+                    variant='primary'
+                    className='fw-bold shadow-sm'
+                    disabled={aiAuditLoading}
+                    onClick={handleBatchAIAudit}
+                  >
+                    {aiAuditLoading ? (
+                      <>
+                        <span className='spinner-border spinner-border-sm me-2'></span>
+                        Audit IA en cours...
+                      </>
+                    ) : (
+                      <>
+                        <i className='fas fa-microchip me-2'></i>
+                        Lancer l'Audit IA sur Tous les Dossiers
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    variant='success'
+                    className='fw-bold shadow-sm'
+                    disabled={validatingControl1Loading || countConformes === 0}
+                    onClick={handleValidateConformesToControl2}
+                  >
+                    {validatingControl1Loading ? (
+                      <>
+                        <span className='spinner-border spinner-border-sm me-2'></span>
+                        Transmission...
+                      </>
+                    ) : (
+                      <>
+                        <i className='fas fa-check-double me-2'></i>
+                        Transmettre les {countConformes} Conformes vers Contrôle 2
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* CARTES KPI AUDIT IA AVEC FILTRES CLIQUABLES */}
+              <Row className='g-3 text-center'>
+                <Col xs={6} md={3}>
+                  <div
+                    className={`p-3 rounded-3 border ${filterTab === 'ALL' ? 'bg-primary text-white shadow' : 'bg-light text-dark'}`}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                    onClick={() => setFilterTab('ALL')}
+                  >
+                    <div className='fs-3 fw-bold'>{totalCount}</div>
+                    <div className='small text-uppercase fw-semibold'>Tous les dossiers</div>
+                  </div>
+                </Col>
+                <Col xs={6} md={3}>
+                  <div
+                    className={`p-3 rounded-3 border ${filterTab === 'CONFORMES' ? 'bg-success text-white shadow' : 'bg-light text-dark'}`}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                    onClick={() => setFilterTab('CONFORMES')}
+                  >
+                    <div className='fs-3 fw-bold'>{countConformes}</div>
+                    <div className='small text-uppercase fw-semibold'>🟢 Conformes IA</div>
+                  </div>
+                </Col>
+                <Col xs={6} md={3}>
+                  <div
+                    className={`p-3 rounded-3 border ${filterTab === 'ANOMALIES' ? 'bg-warning text-dark shadow' : 'bg-light text-dark'}`}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                    onClick={() => setFilterTab('ANOMALIES')}
+                  >
+                    <div className='fs-3 fw-bold text-danger'>{countAnomalies}</div>
+                    <div className='small text-uppercase fw-semibold'>🟠 Anomalies (À Vérifier)</div>
+                  </div>
+                </Col>
+                <Col xs={6} md={3}>
+                  <div
+                    className={`p-3 rounded-3 border ${filterTab === 'REJETES' ? 'bg-danger text-white shadow' : 'bg-light text-dark'}`}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                    onClick={() => setFilterTab('REJETES')}
+                  >
+                    <div className='fs-3 fw-bold'>{countRejetes}</div>
+                    <div className='small text-uppercase fw-semibold'>🔴 Rejetés IA</div>
+                  </div>
+                </Col>
+              </Row>
+            </div>
+          </Container>
+
           <Container
-            className='mb-4 mt-4 pt-3  pb-3 font-weight-bold'
+            className='mb-4 pt-3 pb-3 font-weight-bold'
             style={{
               backgroundColor: '#fff',
               transition: 'box-shadow 0.25s',

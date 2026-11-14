@@ -1115,11 +1115,11 @@ const ControlleursCandidatures2Screen = () => {
         <ControleurSideBar prenom={userInfo.prenom} nom={userInfo.nom} />
         <main>
           <HeaderAdministrateur
-            headerTitle='Liste des candidatures pour le deuxieme controle'
+            headerTitle='Contrôle Niveau 2 : Auditeur Humain EHC (Résolution des Anomalies & Conformité)'
             endPoint='/admin'
           />
           <Container
-            className='mb-4 mt-4 pt-3  pb-3 font-weight-bold'
+            className='mb-4 mt-4 pt-3 pb-3 font-weight-bold'
             style={{
               backgroundColor: '#fff',
               transition: 'box-shadow 0.25s',

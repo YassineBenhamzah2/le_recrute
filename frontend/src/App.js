@@ -13,6 +13,7 @@ import CandidaturesExperiencesScreen from './screens/controlleurs/CandidaturesEx
 import CandidaturesInformationsScreen from './screens/controlleurs/CandidaturesInformationsScreen';
 import CandidatureVlidationScreen from './screens/controlleurs/CandidatureValidationScreen';
 import ControlleursCandidatures2Screen from './screens/controlleurs/ConrolleursCandidatures2Screen';
+import ControlleursCandidatures3Screen from './screens/controlleurs/ControlleursCandidatures3Screen';
 import ControlleurDashboard from './screens/controlleurs/ControlleurDashboard';
 import ControlleursCandidaturesScreen from './screens/controlleurs/ControlleursCandidatures';
 import DiplomesScreen from './screens/DiplomesScreen';
@@ -164,6 +165,14 @@ const App = () => {
               element={
                 <ProtectedRoute allowedRoles={['controleur']}>
                   <ControlleursCandidatures2Screen />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path='/controlleurs/candidatures/control3'
+              element={
+                <ProtectedRoute allowedRoles={['controleur']}>
+                  <ControlleursCandidatures3Screen />
                 </ProtectedRoute>
               }
             />
