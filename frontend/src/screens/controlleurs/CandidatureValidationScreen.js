@@ -231,7 +231,8 @@ const CandidatureVlidationScreen = () => {
       eligibilite: postulation.eligibilite || '-',
       motif: postulation.motif || '-',
       dossier: postulation.dossier || '-',
-    }));
+    };
+  });
 
   const columns = [
     {
