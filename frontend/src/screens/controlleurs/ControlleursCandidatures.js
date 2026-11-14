@@ -386,7 +386,12 @@ const ControlleursCandidaturesScreen = () => {
         color: '#004085',
         fontWeight: 'bold',
         textAlign: 'center',
-        minWidth: '150px',
+        minWidth: '160px',
+        width: '160px',
+      },
+      style: {
+        verticalAlign: 'middle',
+        textAlign: 'center',
       },
       formatter: (cell) => {
         if (cell === 'VALIDE_IA') {
@@ -423,20 +428,25 @@ const ControlleursCandidaturesScreen = () => {
         backgroundColor: '#fff3cd',
         color: '#856404',
         fontWeight: 'bold',
-        minWidth: '220px',
+        minWidth: '320px',
+        width: '360px',
+      },
+      style: {
+        verticalAlign: 'middle',
+        textAlign: 'left',
       },
       formatter: (cell) => {
         if (!cell || cell.length === 0) {
           return (
-            <span className='text-success small fw-bold'>
-              <i className='fas fa-check me-1'></i>Aucune anomalie
+            <span className='text-success small fw-bold d-inline-flex align-items-center gap-1'>
+              <i className='fas fa-check-circle text-success'></i> Aucune anomalie détectée
             </span>
           );
         }
         return (
-          <div style={{ maxWidth: '280px', textAlign: 'left', fontSize: '0.82rem' }}>
+          <div style={{ maxWidth: '340px', textAlign: 'left', fontSize: '0.82rem', lineHeight: '1.4' }}>
             {cell.map((anom, idx) => (
-              <div key={idx} className='text-danger fw-bold mb-1'>
+              <div key={idx} className='text-danger fw-semibold mb-1' style={{ wordBreak: 'break-word' }}>
                 • {anom}
               </div>
             ))}
@@ -451,16 +461,21 @@ const ControlleursCandidaturesScreen = () => {
       headerStyle: {
         backgroundColor: '#e2e3e5',
         textAlign: 'center',
-        width: '120px',
+        width: '130px',
+        minWidth: '130px',
+      },
+      style: {
+        verticalAlign: 'middle',
+        textAlign: 'center',
       },
       formatter: (cell) => {
         if (cell === null || cell === undefined) return '-';
-        const num = Number(cell);
+        const num = Math.max(0, Math.min(100, Math.round(Number(cell) || 0)));
         const color = num >= 80 ? 'bg-success' : num >= 50 ? 'bg-warning' : 'bg-danger';
         return (
-          <div style={{ minWidth: '80px' }}>
-            <span className='fw-bold small'>{num}%</span>
-            <div className='progress' style={{ height: '6px' }}>
+          <div style={{ width: '90px', margin: '0 auto', textAlign: 'center' }}>
+            <span className='fw-bold small d-block mb-1'>{num}%</span>
+            <div className='progress' style={{ height: '7px' }}>
               <div
                 className={`progress-bar ${color}`}
                 role='progressbar'
@@ -479,10 +494,15 @@ const ControlleursCandidaturesScreen = () => {
         textAlign: 'center',
         fontWeight: 'bold',
         width: '120px',
+        minWidth: '120px',
+      },
+      style: {
+        verticalAlign: 'middle',
+        textAlign: 'center',
       },
       formatter: (cell, row) => (
         <button
-          className='btn btn-primary btn-sm px-3 fw-bold shadow-sm'
+          className='btn btn-dark btn-sm px-3 py-1 fw-bold shadow-sm text-nowrap'
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/controlleurs/candidatures/informations/${row.id}`);

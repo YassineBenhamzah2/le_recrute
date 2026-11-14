@@ -36,11 +36,21 @@ export const executeAIAudit = async (candidature, user, offre) => {
       verifications.age = { status: 'WARNING', message: 'Format de date suspect' };
     } else {
       birthYear = validBirth.format('YYYY');
+      const moisFrancais = [
+        'janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin',
+        'juillet', 'août', 'aout', 'septembre', 'octobre', 'novembre', 'décembre', 'decembre'
+      ];
+      const jour = validBirth.format('D');
+      const jourPadded = validBirth.format('DD');
+      const moisNom = moisFrancais[validBirth.month()] || '';
+
       birthFormats = [
         validBirth.format('DD/MM/YYYY'),
         validBirth.format('DD-MM-YYYY'),
         validBirth.format('DD.MM.YYYY'),
         validBirth.format('YYYY-MM-DD'),
+        `${jour} ${moisNom} ${birthYear}`,
+        `${jourPadded} ${moisNom} ${birthYear}`,
         birthYear,
       ];
 
@@ -109,33 +119,23 @@ export const executeAIAudit = async (candidature, user, offre) => {
   }
 
   // 4. CONTRÔLE DU DIPLÔME & SPÉCIALITÉ RECHERCHÉE
-  const niveauCandidat = String(candidature.niveauEtude || '').toLowerCase();
-  const specialiteCandidat = String(candidature.specialite || '').toLowerCase();
-  const niveauRequis = String(candOffre.niveau || '').toLowerCase();
-  const specialiteRequise = String(candOffre.specialite || '').toLowerCase();
-
-  // Hiérarchie des niveaux d'études
-  const levelWeight = {
-    bac: 1,
-    'bac+2': 2,
-    ts: 2,
-    bts: 2,
-    dts: 2,
-    dut: 2,
-    deug: 2,
-    'bac+3': 3,
-    licence: 3,
-    'bac+5': 5,
-    master: 5,
-    ingenieur: 5,
+  const getLevelWeight = (str) => {
+    if (!str) return 0;
+    const s = String(str).toLowerCase();
+    if (s.includes('bac+5') || s.includes('master') || s.includes('ingenieur') || s.includes('ingénieur')) return 5;
+    if (s.includes('bac+3') || s.includes('licence') || s.includes('bachelor')) return 3;
+    if (s.includes('bac+2') || s.includes('ts') || s.includes('bts') || s.includes('dut') || s.includes('dts') || s.includes('deug')) return 2;
+    if (s.includes('bac')) return 1;
+    return 0;
   };
 
-  const candLvl = Object.entries(levelWeight).find(([k]) => niveauCandidat.includes(k))?.[1] || 2;
-  const reqLvl = Object.entries(levelWeight).find(([k]) => niveauRequis.includes(k))?.[1] || 2;
+  const candLvl = getLevelWeight(candidature.niveauEtude);
+  const reqLvl = getLevelWeight(candOffre.niveau || candOffre.profil);
 
-  if (candLvl < reqLvl) {
+  // On ne vérifie le niveau que si l'offre a expressément défini un niveau requis non vide
+  if (reqLvl > 0 && candLvl < reqLvl) {
     anomalies.push(
-      `Niveau académique insuffisant : Candidat déclare ${candidature.niveauEtude} alors que l'offre exige ${candOffre.niveau}.`
+      `Niveau académique insuffisant : Candidat déclare ${candidature.niveauEtude || 'non renseigné'} alors que l'offre exige ${candOffre.niveau}.`
     );
     isEliminatoire = true;
     scoreConfiance -= 40;
@@ -143,8 +143,7 @@ export const executeAIAudit = async (candidature, user, offre) => {
   } else {
     verifications.diplome = {
       status: 'VALID',
-      niveau: candidature.niveauEtude,
-      specialite: candidature.specialite,
+      niveau: candidature.niveauEtude || 'Conforme',
       message: 'Niveau académique conforme aux critères',
     };
   }
@@ -173,7 +172,22 @@ export const executeAIAudit = async (candidature, user, offre) => {
   }
 
   // 6. CONTRÔLE APPROFONDI DU CONTENU DES PIÈCES NUMÉRISÉES (ANTI-FRAUDE & VÉRIFICATION CROISÉE)
-  const uploadDir = path.join(path.resolve(), 'uploads');
+  const resolveDocPath = (cleanFileName) => {
+    const candidates = [
+      path.join(process.cwd(), 'uploads', cleanFileName),
+      path.join(process.cwd(), 'backend', 'uploads', cleanFileName),
+      path.join(process.cwd(), 'recrutement-ccp-main', 'backend', 'uploads', cleanFileName),
+      path.join(process.cwd(), 'recrutement-ccp-main', 'uploads', cleanFileName),
+      path.join(process.cwd(), cleanFileName),
+      path.join(path.resolve(), 'uploads', cleanFileName),
+      path.join(path.resolve(), 'backend', 'uploads', cleanFileName),
+      path.join(path.resolve(), '..', 'uploads', cleanFileName),
+      path.join(path.resolve(), '..', 'backend', 'uploads', cleanFileName),
+      path.join(path.resolve(), '..', 'recrutement-ccp-main', 'backend', 'uploads', cleanFileName),
+    ];
+    return candidates.find((p) => fs.existsSync(p)) || candidates[0];
+  };
+
   const pieceChecks = [
     { name: 'CNI', file: candUser.copieCNI, isCNI: true },
     { name: 'Diplôme', file: candidature.copieDiplomes, isDiplome: true },
@@ -187,7 +201,7 @@ export const executeAIAudit = async (candidature, user, offre) => {
       scoreConfiance -= 25;
     } else {
       const cleanFileName = path.basename(piece.file).split('?')[0];
-      const filePath = path.join(uploadDir, cleanFileName);
+      const filePath = resolveDocPath(cleanFileName);
       if (!fs.existsSync(filePath)) {
         anomalies.push(`Fichier numérisé introuvable sur le serveur pour ${piece.name} (${cleanFileName}).`);
         scoreConfiance -= 15;
@@ -246,12 +260,83 @@ export const executeAIAudit = async (candidature, user, offre) => {
             scoreConfiance -= 20;
           }
         }
+
+        // D. VÉRIFICATION CROISÉE DU NOM ET PRÉNOM DU CANDIDAT DANS LA PIÈCE CNI / DOSSIER
+        if (piece.isCNI && pdfText.length > 30) {
+          const candNom = String(candUser.nom || '').trim().toLowerCase();
+          const candPrenom = String(candUser.prenom || '').trim().toLowerCase();
+          const escapeReg = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+          const hasNom = candNom.length >= 2 && new RegExp(`\\b${escapeReg(candNom)}\\b`, 'i').test(pdfText);
+          const hasPrenom = candPrenom.length >= 2 && new RegExp(`\\b${escapeReg(candPrenom)}\\b`, 'i').test(pdfText);
+
+          const fullName = `${candUser.prenom || ''} ${candUser.nom || ''}`.trim();
+          if (!hasNom && !hasPrenom) {
+            anomalies.push(
+              `🚨 Discordance d'identité critique : Le nom "${fullName}" n'apparaît pas dans la pièce justificative téléversée (document appartenant potentiellement à un tiers).`
+            );
+            isEliminatoire = true;
+            scoreConfiance -= 40;
+          }
+        }
+
+        // E. VÉRIFICATION CROISÉE DE L'ADRESSE ET DE LA VILLE DE RÉSIDENCE DANS LA CNI
+        if (piece.isCNI && pdfText.length > 30) {
+          const declaredVille = String(candUser.ville || '').trim().toLowerCase();
+          const declaredAdresse = String(candUser.adresse || '').trim().toLowerCase();
+
+          // Mots significatifs de l'adresse (ex: "massira", "deroua", "anfa", "maarif")
+          const adresseMots = declaredAdresse
+            .split(/[\s,.'\-\/]+/)
+            .filter(
+              (w) =>
+                w.length >= 4 &&
+                ![
+                  'rue',
+                  'av',
+                  'avenue',
+                  'boulevard',
+                  'bd',
+                  'lot',
+                  'lotissement',
+                  'n°',
+                  'num',
+                  'numero',
+                  'immeuble',
+                  'imm',
+                  'residence',
+                  'res',
+                  'quartier',
+                  'hay',
+                ].includes(w)
+            );
+
+          const hasVilleInDoc = declaredVille.length >= 3 && pdfText.includes(declaredVille);
+          const hasAdresseMotInDoc = adresseMots.some((mot) => pdfText.includes(mot));
+          const hasCertifResidence = Boolean(candUser.residence);
+
+          if (hasVilleInDoc || hasAdresseMotInDoc) {
+            verifications.adresseDoc = {
+              status: 'VALID',
+              message: `Adresse / Ville ("${candUser.ville || declaredAdresse}") vérifiée dans la pièce justificative`,
+            };
+          } else if (declaredVille && !hasCertifResidence) {
+            anomalies.push(
+              `⚠️ Incohérence d'adresse / résidence : La ville déclarée ("${candUser.ville}") n'apparaît pas dans la pièce CNI téléversée, et aucun certificat de résidence n'est joint.`
+            );
+            scoreConfiance -= 15;
+            verifications.adresseDoc = {
+              status: 'WARNING',
+              message: 'Adresse / Ville non attestée par la CNI sans certificat de résidence',
+            };
+          }
+        }
       }
     }
   }
 
-  // 7. VERDICT GLOBAL DE L'AUDIT IA
-  scoreConfiance = Math.max(scoreConfiance, 0);
+  // 7. VERDICT GLOBAL DE L'AUDIT IA (SCORE CLAMPÉ ENTRE 0 ET 100)
+  scoreConfiance = Math.max(0, Math.min(100, Math.round(scoreConfiance)));
 
   let statutAI = 'VALIDE_IA';
   let summary = 'Dossier complet, âge et pièces conformes. Aucun écart détecté par l’IA.';

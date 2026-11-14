@@ -177,7 +177,7 @@ const CandidaturesInformationsScreen = () => {
                         : '🔴 Rejeté IA'}
                     </span>
                     <span className='badge bg-dark text-white fs-6 px-3 py-2'>
-                      Score Confiance : {candidature.auditAI.scoreConfiance}%
+                      Score Confiance : {Math.max(0, Math.min(100, Math.round(Number(candidature.auditAI.scoreConfiance) || 0)))}%
                     </span>
                     <Button
                       variant='outline-primary'
@@ -414,6 +414,12 @@ const CandidaturesInformationsScreen = () => {
                                     ⚠️ {candidature.auditAI.verifications.adresse.message}
                                   </span>
                                 )}
+                              {candidature?.auditAI?.verifications?.adresseDoc?.status &&
+                                candidature.auditAI.verifications.adresseDoc.status !== 'VALID' && (
+                                  <span className='badge bg-warning text-dark ms-2 small'>
+                                    ⚠️ {candidature.auditAI.verifications.adresseDoc.message}
+                                  </span>
+                                )}
                             </Form.Label>
                             <InputGroup className='mb-3'>
                               <Form.Control
@@ -428,12 +434,15 @@ const CandidaturesInformationsScreen = () => {
                           <Col>
                             <Form.Label className='fw-bold mt-3'>
                               <i className='fas fa-map-marker-alt'></i> Ville :
-                              {candidature?.auditAI?.verifications?.adresse?.status &&
-                                candidature.auditAI.verifications.adresse.status !== 'VALID' && (
-                                  <span className='badge bg-warning text-dark ms-2 small'>
-                                    ⚠️ Hors zone / certificat requis
-                                  </span>
-                                )}
+                              {candidature?.auditAI?.verifications?.adresseDoc?.status === 'VALID' ? (
+                                <span className='badge bg-success ms-2 small'>
+                                  <i className='fas fa-check me-1'></i>Vérifiée dans CNI
+                                </span>
+                              ) : candidature?.auditAI?.verifications?.adresseDoc?.status === 'WARNING' ? (
+                                <span className='badge bg-warning text-dark ms-2 small'>
+                                  ⚠️ Non attestée dans CNI
+                                </span>
+                              ) : null}
                             </Form.Label>
                             <InputGroup className='mb-3'>
                               <Form.Control
