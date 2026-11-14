@@ -479,8 +479,10 @@ const getControllerCandidatures = asyncHandler(async (req, res) => {
   const controllerName = `${req.user.prenom} ${req.user.nom}`;
   const query = {
     $or: [
-      { controle1: controllerName },
+      { controle1: { $regex: controllerName, $options: 'i' } },
+      { controle1: { $regex: 'Audit IA', $options: 'i' } },
       { isControl1: false },
+      { isControl1: true },
       { controle1: null },
       { controle1: '' },
       { controle1: { $exists: false } },

@@ -40,52 +40,60 @@ const ControlleurDashboard = () => {
 
   const candidatures1NonTraites =
     candidatures1 &&
-    candidatures1.filter((candidature) => candidature.isControl1 === false);
+    candidatures1.filter(
+      (candidature) =>
+        candidature.isControl1 === false &&
+        (!candidature.statutAI || candidature.statutAI === 'ATTENTE_IA')
+    );
 
   const candidaturesPremierControl =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.controle1 === `${userInfo.prenom} ${userInfo.nom}`
+        candidature.isControl1 === true ||
+        Boolean(candidature.statutAI) ||
+        (candidature.controle1 && candidature.controle1.length > 0)
     );
 
   const candidaturesDeuxiemeControl =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.controle2 === `${userInfo.prenom} ${userInfo.nom}`
+        candidature.isControl2 === true ||
+        (candidature.controle2 && candidature.controle2.length > 0)
     );
 
   const candidaturesConformes =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.controle1 === `${userInfo.prenom} ${userInfo.nom}` &&
-        candidature.conforme === 'CONFORME'
+        candidature.conforme === 'CONFORME' ||
+        candidature.statutAI === 'VALIDE_IA'
     );
 
   const candidaturesNonConformes =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.controle1 === `${userInfo.prenom} ${userInfo.nom}` &&
-        candidature.conforme === 'NON CONFORME'
+        candidature.conforme === 'NON CONFORME' ||
+        candidature.statutAI === 'REJETE_IA' ||
+        candidature.statutAI === 'ANOMALIE_IA'
     );
 
   const candidaturesElligibles =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.controle1 === `${userInfo.prenom} ${userInfo.nom}` &&
-        candidature.eligibilite === 'ELIGIBLE'
+        candidature.eligibilite === 'ELIGIBLE' ||
+        candidature.statutAI === 'VALIDE_IA'
     );
 
   const candidaturesNonElligibles =
     candidatures1 &&
     candidatures1.filter(
       (candidature) =>
-        candidature.controle1 === `${userInfo.prenom} ${userInfo.nom}` &&
-        candidature.eligibilite === 'NON ELIGIBLE'
+        candidature.eligibilite === 'NON ELIGIBLE' ||
+        candidature.statutAI === 'REJETE_IA'
     );
 
   return (
@@ -174,10 +182,10 @@ const ControlleurDashboard = () => {
                     </Row>
                     <Row className='justify-content-center'>
                       <Col md={6} lg={3} sm={12}>
-                        <Link to='/controlleurs/dashboard'>
+                        <Link to='/controlleurs/candidatures'>
                           <CardItem
-                            icon='fas fa-check fa-4x'
-                            title='Premier controle'
+                            icon='fas fa-robot fa-4x'
+                            title='Premier contrôle (Audit IA)'
                             number={
                               <CountUp
                                 end={
@@ -202,10 +210,10 @@ const ControlleurDashboard = () => {
                         </Link>
                       </Col>
                       <Col md={6} lg={3} sm={12}>
-                        <Link to='/controlleurs/dashboard'>
+                        <Link to='/controlleurs/candidatures2'>
                           <CardItem
                             icon='fas fa-check-double fa-4x'
-                            title='Deuxieme controle'
+                            title='Deuxième contrôle (Humain)'
                             number={
                               <CountUp
                                 end={
