@@ -30,7 +30,12 @@ const protect = asyncHandler(async (req, res, next) => {
 const admin = (req, res, next) => {
   if (
     req.user &&
-    (req.user.isAdmin || req.user.isMaitreOuvrage || req.user.isController)
+    (req.user.isAdmin ||
+      req.user.isMaitreOuvrage ||
+      req.user.isController ||
+      req.user.isControleur ||
+      req.user.isControleur1 ||
+      req.user.isControleur2)
   ) {
     next();
   } else {

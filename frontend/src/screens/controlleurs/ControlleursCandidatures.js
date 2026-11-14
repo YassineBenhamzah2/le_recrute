@@ -109,26 +109,46 @@ const ControlleursCandidaturesScreen = () => {
             String(user._id) ===
             String(candidature.user?._id || candidature.user)
         );
-      if (temp && temp.civilite) {
-        candidature.civilite = temp.civilite;
-        candidature.prenom = temp.prenom;
-        candidature.nom = temp.nom;
-        candidature.mleBr = temp.mleBr;
-        candidature.mleC = temp.mleC;
-        candidature.dateNaissance = temp.dateNaissance;
-        candidature.lieuNaissance = temp.lieuNaissance;
-        candidature.email = temp.email;
-        candidature.cni = temp.cni;
-        candidature.dateObtentionBac = temp.dateObtentionBac;
-        candidature.nationalite = temp.nationalite;
-        candidature.phone = temp.phone;
-        candidature.adresse = temp.adresse;
-        candidature.ville = temp.ville;
-        candidature.codePostale = temp.codePostale;
-        candidature.scoreAge = temp.scoreAge;
-        candidature.copieCNI = temp.copieCNI;
-        candidature.residence = temp.residence;
-      }
+      const candUser =
+        (typeof candidature.user === 'object' && candidature.user) ||
+        temp ||
+        {};
+
+      candidature.civilite =
+        candUser.civilite || candidature.civilite || temp?.civilite || '-';
+      candidature.prenom =
+        candUser.prenom || candidature.prenom || temp?.prenom || '-';
+      candidature.nom =
+        candUser.nom || candidature.nom || temp?.nom || '-';
+      candidature.mleBr = candUser.mleBr || temp?.mleBr;
+      candidature.mleC = candUser.mleC || temp?.mleC;
+      candidature.dateNaissance =
+        candUser.dateNaissance || candidature.dateNaissance || temp?.dateNaissance || '-';
+      candidature.lieuNaissance =
+        candUser.lieuNaissance || temp?.lieuNaissance;
+      candidature.email =
+        candUser.email || candidature.email || temp?.email || '-';
+      candidature.cni =
+        candUser.cni || candidature.cni || temp?.cni || '-';
+      candidature.dateObtentionBac =
+        candUser.dateObtentionBac || temp?.dateObtentionBac;
+      candidature.nationalite =
+        candUser.nationalite || temp?.nationalite;
+      candidature.phone =
+        candUser.phone || candidature.phone || temp?.phone || '-';
+      candidature.adresse =
+        candUser.adresse || candidature.adresse || temp?.adresse || '-';
+      candidature.ville =
+        candUser.ville || candidature.ville || temp?.ville || '-';
+      candidature.codePostale =
+        candUser.codePostale || candidature.codePostale || temp?.codePostale || '-';
+      candidature.scoreAge =
+        candUser.scoreAge !== undefined ? candUser.scoreAge : temp?.scoreAge;
+      candidature.copieCNI =
+        candUser.copieCNI || candidature.copieCNI || temp?.copieCNI;
+      candidature.residence =
+        candUser.residence || candidature.residence || temp?.residence;
+
       return candidature;
     });
 
@@ -146,9 +166,13 @@ const ControlleursCandidaturesScreen = () => {
   const countRejetes = candidaturesNonValidees
     ? candidaturesNonValidees.filter((c) => c.statutAI === 'REJETE_IA').length
     : 0;
+  const countEnAttente = candidaturesNonValidees
+    ? candidaturesNonValidees.filter((c) => !c.statutAI || c.statutAI === 'EN_ATTENTE_IA').length
+    : 0;
 
   const filteredByTab = candidaturesNonValidees
     ? candidaturesNonValidees.filter((p) => {
+        if (filterTab === 'ATTENTE') return !p.statutAI || p.statutAI === 'EN_ATTENTE_IA';
         if (filterTab === 'ANOMALIES') return p.statutAI === 'ANOMALIE_IA';
         if (filterTab === 'CONFORMES') return p.statutAI === 'VALIDE_IA';
         if (filterTab === 'REJETES') return p.statutAI === 'REJETE_IA';
@@ -160,6 +184,7 @@ const ControlleursCandidaturesScreen = () => {
     filteredByTab &&
     filteredByTab.map((postulation) => ({
       id: postulation._id || '-',
+      candidat: `${postulation.nom || ''} ${postulation.prenom || ''}`.trim() || 'Candidat',
       statutAI: postulation.statutAI || 'EN_ATTENTE_IA',
       scoreConfiance:
         postulation.auditAI?.scoreConfiance !== undefined && postulation.auditAI?.scoreConfiance !== null
@@ -310,39 +335,36 @@ const ControlleursCandidaturesScreen = () => {
   const columns = [
     {
       dataField: 'id',
-      text: 'ID',
+      text: 'ID / Dossier',
       sort: true,
       filter: textFilter(),
       headerStyle: {
-        backgroundColor: '#d1ecf1',
+        backgroundColor: '#e2e8f0',
+        width: '110px',
+        textAlign: 'center',
       },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
+      formatter: (cell) => (
+        <span className='badge bg-light text-dark border small fw-bold font-monospace'>
+          {String(cell).substring(0, 8)}...
+        </span>
+      ),
     },
     {
-      dataField: 'dateCandidature',
-      text: 'Date de condidature',
+      dataField: 'candidat',
+      text: 'Candidat (Nom & Prénom)',
       sort: true,
       filter: textFilter(),
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        fontWeight: 'bold',
+        minWidth: '160px',
       },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'heureCandidature',
-      text: 'Heure de condidature',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
+      formatter: (cell, row) => (
+        <div>
+          <span className='fw-bold text-primary fs-6 d-block'>{cell}</span>
+          <small className='text-muted font-monospace'>{row.cni || ''}</small>
+        </div>
+      ),
     },
     {
       dataField: 'poste',
@@ -351,63 +373,8 @@ const ControlleursCandidaturesScreen = () => {
       filter: textFilter(),
       headerStyle: {
         backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'civilite',
-      text: 'Civilite',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'nom',
-      text: 'Nom du candidat',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'prenom',
-      text: 'Prenom du candidat',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'scoreTotal',
-      text: 'Score Total ⭐',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#ffeeba',
         fontWeight: 'bold',
-        color: '#856404',
-        textAlign: 'center',
       },
-      formatter: (cell) => (
-        <span className='badge bg-warning text-dark fs-6 px-3 py-1'>
-          <b>{cell !== undefined && cell !== null && cell !== '-' ? cell : '0'}</b>
-        </span>
-      ),
     },
     {
       dataField: 'statutAI',
@@ -419,29 +386,30 @@ const ControlleursCandidaturesScreen = () => {
         color: '#004085',
         fontWeight: 'bold',
         textAlign: 'center',
+        minWidth: '150px',
       },
       formatter: (cell) => {
         if (cell === 'VALIDE_IA') {
           return (
-            <span className='badge bg-success text-white px-2 py-1'>
+            <span className='badge bg-success text-white px-2 py-2 fs-6 shadow-sm'>
               <i className='fas fa-check-circle me-1'></i> Conforme IA
             </span>
           );
         } else if (cell === 'ANOMALIE_IA') {
           return (
-            <span className='badge bg-warning text-dark px-2 py-1 fw-bold'>
+            <span className='badge bg-warning text-dark px-2 py-2 fs-6 fw-bold shadow-sm'>
               <i className='fas fa-exclamation-triangle me-1'></i> Anomalie Détectée
             </span>
           );
         } else if (cell === 'REJETE_IA') {
           return (
-            <span className='badge bg-danger text-white px-2 py-1'>
+            <span className='badge bg-danger text-white px-2 py-2 fs-6 shadow-sm'>
               <i className='fas fa-times-circle me-1'></i> Rejeté IA
             </span>
           );
         } else {
           return (
-            <span className='badge bg-secondary text-white px-2 py-1'>
+            <span className='badge bg-secondary text-white px-2 py-2 fs-6 shadow-sm'>
               <i className='fas fa-clock me-1'></i> En Attente
             </span>
           );
@@ -455,12 +423,13 @@ const ControlleursCandidaturesScreen = () => {
         backgroundColor: '#fff3cd',
         color: '#856404',
         fontWeight: 'bold',
+        minWidth: '220px',
       },
       formatter: (cell) => {
         if (!cell || cell.length === 0) {
           return (
             <span className='text-success small fw-bold'>
-              <i className='fas fa-check me-1'></i>Aucune
+              <i className='fas fa-check me-1'></i>Aucune anomalie
             </span>
           );
         }
@@ -482,6 +451,7 @@ const ControlleursCandidaturesScreen = () => {
       headerStyle: {
         backgroundColor: '#e2e3e5',
         textAlign: 'center',
+        width: '120px',
       },
       formatter: (cell) => {
         if (cell === null || cell === undefined) return '-';
@@ -508,10 +478,11 @@ const ControlleursCandidaturesScreen = () => {
         backgroundColor: '#b8daff',
         textAlign: 'center',
         fontWeight: 'bold',
+        width: '120px',
       },
       formatter: (cell, row) => (
         <button
-          className='btn btn-primary btn-sm px-3 fw-bold'
+          className='btn btn-primary btn-sm px-3 fw-bold shadow-sm'
           onClick={(e) => {
             e.stopPropagation();
             navigate(`/controlleurs/candidatures/informations/${row.id}`);
@@ -520,6 +491,68 @@ const ControlleursCandidaturesScreen = () => {
           <i className='fas fa-search me-1'></i> Vérifier
         </button>
       ),
+    },
+    {
+      dataField: 'scoreTotal',
+      text: 'Score ⭐',
+      sort: true,
+      filter: textFilter(),
+      headerStyle: {
+        backgroundColor: '#ffeeba',
+        fontWeight: 'bold',
+        color: '#856404',
+        textAlign: 'center',
+      },
+      formatter: (cell) => (
+        <span className='badge bg-warning text-dark fs-6 px-3 py-1'>
+          <b>{cell !== undefined && cell !== null && cell !== '-' ? cell : '0'}</b>
+        </span>
+      ),
+    },
+    {
+      dataField: 'dateCandidature',
+      text: 'Date',
+      sort: true,
+      filter: textFilter(),
+      headerStyle: {
+        backgroundColor: '#d1ecf1',
+      },
+    },
+    {
+      dataField: 'cni',
+      text: 'Num CNI',
+      sort: true,
+      filter: textFilter(),
+      headerStyle: {
+        backgroundColor: '#d1ecf1',
+      },
+    },
+    {
+      dataField: 'dateNaissance',
+      text: 'Date Naissance',
+      sort: true,
+      filter: textFilter(),
+      headerStyle: {
+        backgroundColor: '#d1ecf1',
+      },
+    },
+    {
+      dataField: 'ville',
+      text: 'Ville',
+      sort: true,
+      filter: textFilter(),
+      headerStyle: {
+        backgroundColor: '#d1ecf1',
+      },
+    },
+    {
+      dataField: 'civilite',
+      text: 'Civilite',
+      sort: true,
+      filter: textFilter(),
+      headerStyle: {
+        backgroundColor: '#d1ecf1',
+      },
     },
     {
       dataField: 'dateNaissance',
@@ -1333,9 +1366,35 @@ const ControlleursCandidaturesScreen = () => {
                 </div>
               </div>
 
+              {/* ALERTE DOSSIERS EN ATTENTE D'AUDIT */}
+              {countEnAttente > 0 && (
+                <div className='alert alert-info d-flex flex-wrap align-items-center justify-content-between mb-3 shadow-sm rounded-3'>
+                  <div className='d-flex align-items-center gap-2 mb-2 mb-md-0'>
+                    <i className='fas fa-info-circle fa-2x text-primary'></i>
+                    <div>
+                      <div className='fw-bold fs-6'>
+                        {countEnAttente} dossier(s) n'ont pas encore été scannés par l'IA !
+                      </div>
+                      <div className='small text-muted'>
+                        Cliquez sur "Lancer l'Audit IA" pour détecter automatiquement les erreurs d'âge, d'adresse/résidence, de CIN et de diplômes.
+                      </div>
+                    </div>
+                  </div>
+                  <Button
+                    variant='primary'
+                    size='sm'
+                    className='fw-bold shadow-sm'
+                    disabled={aiAuditLoading}
+                    onClick={handleBatchAIAudit}
+                  >
+                    <i className='fas fa-microchip me-1'></i> Scanner les {countEnAttente} Dossiers
+                  </Button>
+                </div>
+              )}
+
               {/* CARTES KPI AUDIT IA AVEC FILTRES CLIQUABLES */}
               <Row className='g-3 text-center'>
-                <Col xs={6} md={3}>
+                <Col xs={6} md={countEnAttente > 0 ? true : 3}>
                   <div
                     className={`p-3 rounded-3 border ${filterTab === 'ALL' ? 'bg-primary text-white shadow' : 'bg-light text-dark'}`}
                     style={{ cursor: 'pointer', transition: 'all 0.2s' }}
@@ -1345,7 +1404,19 @@ const ControlleursCandidaturesScreen = () => {
                     <div className='small text-uppercase fw-semibold'>Tous les dossiers</div>
                   </div>
                 </Col>
-                <Col xs={6} md={3}>
+                {countEnAttente > 0 && (
+                  <Col xs={6} md={true}>
+                    <div
+                      className={`p-3 rounded-3 border ${filterTab === 'ATTENTE' ? 'bg-secondary text-white shadow' : 'bg-light text-dark'}`}
+                      style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                      onClick={() => setFilterTab('ATTENTE')}
+                    >
+                      <div className='fs-3 fw-bold'>{countEnAttente}</div>
+                      <div className='small text-uppercase fw-semibold'>⚪ En Attente IA</div>
+                    </div>
+                  </Col>
+                )}
+                <Col xs={6} md={countEnAttente > 0 ? true : 3}>
                   <div
                     className={`p-3 rounded-3 border ${filterTab === 'CONFORMES' ? 'bg-success text-white shadow' : 'bg-light text-dark'}`}
                     style={{ cursor: 'pointer', transition: 'all 0.2s' }}
@@ -1355,7 +1426,7 @@ const ControlleursCandidaturesScreen = () => {
                     <div className='small text-uppercase fw-semibold'>🟢 Conformes IA</div>
                   </div>
                 </Col>
-                <Col xs={6} md={3}>
+                <Col xs={6} md={countEnAttente > 0 ? true : 3}>
                   <div
                     className={`p-3 rounded-3 border ${filterTab === 'ANOMALIES' ? 'bg-warning text-dark shadow' : 'bg-light text-dark'}`}
                     style={{ cursor: 'pointer', transition: 'all 0.2s' }}
@@ -1365,7 +1436,7 @@ const ControlleursCandidaturesScreen = () => {
                     <div className='small text-uppercase fw-semibold'>🟠 Anomalies (À Vérifier)</div>
                   </div>
                 </Col>
-                <Col xs={6} md={3}>
+                <Col xs={6} md={countEnAttente > 0 ? true : 3}>
                   <div
                     className={`p-3 rounded-3 border ${filterTab === 'REJETES' ? 'bg-danger text-white shadow' : 'bg-light text-dark'}`}
                     style={{ cursor: 'pointer', transition: 'all 0.2s' }}

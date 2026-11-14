@@ -329,6 +329,29 @@ const getCandidatures = asyncHandler(async (req, res) => {
     .populate('user')
     .populate('offre')
     .populate('entreprise');
+
+  // AUTO-AUDIT IA ON THE FLY: Si un dossier n'a pas encore été analysé par l'IA, le scanner automatiquement !
+  for (const cand of candidatures) {
+    if (!cand.statutAI || cand.statutAI === 'EN_ATTENTE_IA') {
+      try {
+        const aiResult = await executeAIAudit(cand, cand.user, cand.offre);
+        cand.statutAI = aiResult.statutAI;
+        cand.auditAI = aiResult.auditAI;
+        cand.controle1 = `Audit IA (${aiResult.statutAI}) — Confiance: ${aiResult.auditAI.scoreConfiance}%`;
+        if (aiResult.statutAI === 'VALIDE_IA') {
+          cand.conforme = 'CONFORME';
+          cand.eligibilite = 'ELIGIBLE';
+        } else if (aiResult.statutAI === 'REJETE_IA') {
+          cand.conforme = 'NON CONFORME';
+          cand.eligibilite = 'NON ELIGIBLE';
+        }
+        await cand.save();
+      } catch (e) {
+        console.warn('Erreur auto-audit IA à la volée:', e);
+      }
+    }
+  }
+
   res.json(candidatures);
 });
 
@@ -479,6 +502,29 @@ const getControllerCandidatures = asyncHandler(async (req, res) => {
     .populate('user')
     .populate('offre')
     .populate('entreprise');
+
+  // AUTO-AUDIT IA ON THE FLY: Si un dossier n'a pas encore été analysé par l'IA, le scanner automatiquement !
+  for (const cand of candidatures) {
+    if (!cand.statutAI || cand.statutAI === 'EN_ATTENTE_IA') {
+      try {
+        const aiResult = await executeAIAudit(cand, cand.user, cand.offre);
+        cand.statutAI = aiResult.statutAI;
+        cand.auditAI = aiResult.auditAI;
+        cand.controle1 = `Audit IA (${aiResult.statutAI}) — Confiance: ${aiResult.auditAI.scoreConfiance}%`;
+        if (aiResult.statutAI === 'VALIDE_IA') {
+          cand.conforme = 'CONFORME';
+          cand.eligibilite = 'ELIGIBLE';
+        } else if (aiResult.statutAI === 'REJETE_IA') {
+          cand.conforme = 'NON CONFORME';
+          cand.eligibilite = 'NON ELIGIBLE';
+        }
+        await cand.save();
+      } catch (e) {
+        console.warn('Erreur auto-audit IA à la volée:', e);
+      }
+    }
+  }
+
   res.json(candidatures);
 });
 
@@ -511,6 +557,29 @@ const getControllerCandidatures2 = asyncHandler(async (req, res) => {
     .populate('user')
     .populate('offre')
     .populate('entreprise');
+
+  // AUTO-AUDIT IA ON THE FLY: Si un dossier n'a pas encore été analysé par l'IA, le scanner automatiquement !
+  for (const cand of candidatures) {
+    if (!cand.statutAI || cand.statutAI === 'EN_ATTENTE_IA') {
+      try {
+        const aiResult = await executeAIAudit(cand, cand.user, cand.offre);
+        cand.statutAI = aiResult.statutAI;
+        cand.auditAI = aiResult.auditAI;
+        cand.controle1 = `Audit IA (${aiResult.statutAI}) — Confiance: ${aiResult.auditAI.scoreConfiance}%`;
+        if (aiResult.statutAI === 'VALIDE_IA') {
+          cand.conforme = 'CONFORME';
+          cand.eligibilite = 'ELIGIBLE';
+        } else if (aiResult.statutAI === 'REJETE_IA') {
+          cand.conforme = 'NON CONFORME';
+          cand.eligibilite = 'NON ELIGIBLE';
+        }
+        await cand.save();
+      } catch (e) {
+        console.warn('Erreur auto-audit IA à la volée:', e);
+      }
+    }
+  }
+
   res.json(candidatures);
 });
 
@@ -536,6 +605,29 @@ const getControllerCandidatures3 = asyncHandler(async (req, res) => {
     .populate('user')
     .populate('offre')
     .populate('entreprise');
+
+  // AUTO-AUDIT IA ON THE FLY: Si un dossier n'a pas encore été analysé par l'IA, le scanner automatiquement !
+  for (const cand of candidatures) {
+    if (!cand.statutAI || cand.statutAI === 'EN_ATTENTE_IA') {
+      try {
+        const aiResult = await executeAIAudit(cand, cand.user, cand.offre);
+        cand.statutAI = aiResult.statutAI;
+        cand.auditAI = aiResult.auditAI;
+        cand.controle1 = `Audit IA (${aiResult.statutAI}) — Confiance: ${aiResult.auditAI.scoreConfiance}%`;
+        if (aiResult.statutAI === 'VALIDE_IA') {
+          cand.conforme = 'CONFORME';
+          cand.eligibilite = 'ELIGIBLE';
+        } else if (aiResult.statutAI === 'REJETE_IA') {
+          cand.conforme = 'NON CONFORME';
+          cand.eligibilite = 'NON ELIGIBLE';
+        }
+        await cand.save();
+      } catch (e) {
+        console.warn('Erreur auto-audit IA à la volée:', e);
+      }
+    }
+  }
+
   res.json(candidatures);
 });
 
