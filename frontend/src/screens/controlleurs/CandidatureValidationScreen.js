@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router';
 import {
   listControllerCandidatures,
   updateCandidature,
+  getCandidatureDetails,
 } from '../../actions/candidatureActions';
 import HeaderAdministrateur from '../../components/HeaderAdministrateur';
 import paginationFactory from 'react-bootstrap-table2-paginator';
@@ -49,9 +50,21 @@ const CandidatureVlidationScreen = () => {
     error: errorUpdate,
   } = candidatureUpdate;
 
+  const candidatureDetails = useSelector(
+    (state) => state.candidatureDetails || {}
+  );
+  const {
+    candidature,
+    loading: loadingDetails,
+    error: errorDetails,
+  } = candidatureDetails;
+
   useEffect(() => {
     if (userInfo && userInfo.isController) {
       dispatch(listControllerCandidatures());
+      if (ID) {
+        dispatch(getCandidatureDetails(ID));
+      }
     } else {
       navigate('/login');
     }
@@ -62,56 +75,61 @@ const CandidatureVlidationScreen = () => {
         autoDismiss: true,
       });
     }
-  }, [userInfo, dispatch, addToast, successUpdate, navigate]);
+  }, [userInfo, dispatch, addToast, successUpdate, navigate, ID]);
 
   const { SearchBar } = Search;
 
+  const postulationTarget =
+    (candidatures1 && candidatures1.find((c) => String(c._id) === String(ID))) ||
+    candidature;
+
   const validations1 =
-    candidatures1 &&
-    candidatures1.filter((candidature1) => candidature1._id === ID);
+    postulationTarget && postulationTarget._id ? [postulationTarget] : [];
 
   const data =
     validations1 &&
-    validations1.map((postulation) => ({
-      id: postulation._id || '-',
-      dateCandidature:
-        (postulation.createdAt &&
-          moment(postulation.createdAt).format('LLL')) ||
-        '-',
-      heureCandidature:
-        (postulation.createdAt &&
-          moment(postulation.createdAt).format('LLL')) ||
-        '-',
-      poste: postulation.poste || '-',
-      civilite: postulation.civilite || '-',
-      nom: postulation.nom || '-',
-      prenom: postulation.prenom || '-',
-      dateNaissance: postulation.dateNaissance || '-',
-      cni: postulation.cni || '-',
-      email: postulation.email || '-',
-      phone: postulation.phone || '-',
-      adresse: postulation.adresse || '-',
-      codePostale: postulation.codePostale || '-',
-      ville: postulation.ville || '-',
-      niveauEtude: postulation.niveauEtude || '-',
-      specialite: postulation.specialite || '-',
-      methodeNotation: postulation.methodeNotation || '-',
-      annee1: postulation.annee1 || '-',
-      annee2: postulation.annee2 || '-',
-      annee3: postulation.annee3 || '-',
-      semestre1: postulation.semestre1 || '-',
-      semestre2: postulation.semestre2 || '-',
-      semestre3: postulation.semestre3 || '-',
-      semestre4: postulation.semestre4 || '-',
-      semestre5: postulation.semestre5 || '-',
-      semestre6: postulation.semestre6 || '-',
-      moyenneOFPPT: postulation.moyenneOFPPT || '-',
-      // noteMoyenne: postulation.noteMoyenne || '-',
-      dateDebutExperience1:
-        (postulation.experiences &&
-          postulation.experiences[0] &&
-          postulation.experiences[0].dateDebut) ||
-        '-',
+    validations1.map((postulation) => {
+      const u = postulation.user || {};
+      return {
+        id: postulation._id || '-',
+        dateCandidature:
+          (postulation.createdAt &&
+            moment(postulation.createdAt).format('LLL')) ||
+          '-',
+        heureCandidature:
+          (postulation.createdAt &&
+            moment(postulation.createdAt).format('LLL')) ||
+          '-',
+        poste: postulation.poste || (postulation.offre && postulation.offre.titre) || '-',
+        civilite: postulation.civilite || u.civilite || '-',
+        nom: postulation.nom || u.nom || '-',
+        prenom: postulation.prenom || u.prenom || '-',
+        dateNaissance: postulation.dateNaissance || u.dateNaissance || '-',
+        cni: postulation.cni || u.cni || '-',
+        email: postulation.email || u.email || '-',
+        phone: postulation.phone || u.phone || '-',
+        adresse: postulation.adresse || u.adresse || '-',
+        codePostale: postulation.codePostale || u.codePostale || '-',
+        ville: postulation.ville || u.ville || '-',
+        niveauEtude: postulation.niveauEtude || '-',
+        specialite: postulation.specialite || '-',
+        methodeNotation: postulation.methodeNotation || '-',
+        annee1: postulation.annee1 || '-',
+        annee2: postulation.annee2 || '-',
+        annee3: postulation.annee3 || '-',
+        semestre1: postulation.semestre1 || '-',
+        semestre2: postulation.semestre2 || '-',
+        semestre3: postulation.semestre3 || '-',
+        semestre4: postulation.semestre4 || '-',
+        semestre5: postulation.semestre5 || '-',
+        semestre6: postulation.semestre6 || '-',
+        moyenneOFPPT: postulation.moyenneOFPPT || '-',
+        // noteMoyenne: postulation.noteMoyenne || '-',
+        dateDebutExperience1:
+          (postulation.experiences &&
+            postulation.experiences[0] &&
+            postulation.experiences[0].dateDebut) ||
+          '-',
       dateFinExperience1:
         (postulation.experiences &&
           postulation.experiences[0] &&
@@ -491,10 +509,48 @@ const CandidatureVlidationScreen = () => {
           >
             {loadingUpdate && <Spinner size={150} />}
             {errorUpdate && <Message variant='danger'>{errorUpdate}</Message>}
-            {loadingCandidatures1 ? (
+
+            {/* BANDEAU RECAPITULATIF DU CANDIDAT */}
+            {postulationTarget && postulationTarget._id && (
+              <div className='p-3 mb-4 rounded-3 border bg-light shadow-sm d-flex flex-wrap justify-content-between align-items-center'>
+                <div>
+                  <h5 className='fw-bold text-primary mb-1'>
+                    <i className='fas fa-clipboard-check me-2'></i>
+                    Validation Finale Contrôle 1 : {postulationTarget.user?.prenom || postulationTarget.prenom} {postulationTarget.user?.nom || postulationTarget.nom}
+                  </h5>
+                  <div className='text-muted small'>
+                    Poste : <b>{postulationTarget.poste || postulationTarget.offre?.titre || 'Guichetier'}</b> | CNI : <b>{postulationTarget.user?.cni || postulationTarget.cni}</b> | Statut IA :{' '}
+                    <span className={`badge ${postulationTarget.statutAI === 'VALIDE_IA' ? 'bg-success' : 'bg-danger'} ms-1`}>
+                      {postulationTarget.statutAI || 'VALIDE_IA'}
+                    </span>
+                  </div>
+                </div>
+                <div className='d-flex align-items-center gap-2 mt-2 mt-md-0'>
+                  {postulationTarget.isControl1 ? (
+                    <span className='badge bg-success fs-6 px-3 py-2'>
+                      <i className='fas fa-check-double me-1'></i> Validé & Transmis à Contrôle 2
+                    </span>
+                  ) : (
+                    <span className='badge bg-warning text-dark fs-6 px-3 py-2'>
+                      <i className='fas fa-clock me-1'></i> En Attente de Transmission vers Contrôle 2
+                    </span>
+                  )}
+                  <Button
+                    variant='outline-primary'
+                    size='sm'
+                    className='fw-bold'
+                    onClick={() => navigate('/controlleurs/candidatures/control1')}
+                  >
+                    <i className='fas fa-arrow-left me-1'></i> Retour Contrôle 1
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {loadingCandidatures1 && loadingDetails ? (
               <Spinner size={150} />
-            ) : errorCandidatures1 ? (
-              <Message variant='danger'>{errorCandidatures1}</Message>
+            ) : errorCandidatures1 && errorDetails ? (
+              <Message variant='danger'>{errorCandidatures1 || errorDetails}</Message>
             ) : (
               data && (
                 <ToolkitProvider
