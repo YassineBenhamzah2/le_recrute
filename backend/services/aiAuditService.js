@@ -240,7 +240,7 @@ export const executeAIAudit = async (candidature, user, offre) => {
 
           if (!hasBirthInDoc && !hasBirthKeywords) {
             anomalies.push(
-              `⚠️ Date de naissance déclarée introuvable dans la pièce CNI téléversée (document incomplet ou sans mention de date de naissance).`
+              `⚠️ Date de naissance déclarée introuvable dans la pièce CNI.`
             );
             scoreConfiance -= 25;
             verifications.age = {
@@ -255,7 +255,7 @@ export const executeAIAudit = async (candidature, user, offre) => {
           const cleanCniLower = cniNum.toLowerCase();
           if (!pdfText.includes(cleanCniLower)) {
             anomalies.push(
-              `⚠️ Numéro CNI déclaré ("${cniNum}") introuvable dans le document numérisé fourni.`
+              `⚠️ Numéro CNI ("${cniNum}") introuvable dans le document.`
             );
             scoreConfiance -= 20;
           }
@@ -273,7 +273,7 @@ export const executeAIAudit = async (candidature, user, offre) => {
           const fullName = `${candUser.prenom || ''} ${candUser.nom || ''}`.trim();
           if (!hasNom && !hasPrenom) {
             anomalies.push(
-              `🚨 Discordance d'identité critique : Le nom "${fullName}" n'apparaît pas dans la pièce justificative téléversée (document appartenant potentiellement à un tiers).`
+              `🚨 Discordance d'identité : Le nom "${fullName}" n'apparaît pas dans la pièce téléversée (document d'un tiers).`
             );
             isEliminatoire = true;
             scoreConfiance -= 40;
@@ -322,7 +322,7 @@ export const executeAIAudit = async (candidature, user, offre) => {
             };
           } else if (declaredVille && !hasCertifResidence) {
             anomalies.push(
-              `⚠️ Incohérence d'adresse / résidence : La ville déclarée ("${candUser.ville}") n'apparaît pas dans la pièce CNI téléversée, et aucun certificat de résidence n'est joint.`
+              `⚠️ Résidence : Ville ("${candUser.ville}") non attestée sur la CNI (aucun certificat de résidence joint).`
             );
             scoreConfiance -= 15;
             verifications.adresseDoc = {

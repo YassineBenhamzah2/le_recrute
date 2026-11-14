@@ -104,6 +104,16 @@ a {
   white-space: nowrap;
 }
 
+/* Permettre le retour à la ligne pour les cellules avec du texte descriptif ou d'anomalies */
+.react-bootstrap-table table td.cell-wrap-text,
+.react-bootstrap-table table th.cell-wrap-text,
+.cell-wrap-text {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+}
+
 .react-bootstrap-table-editing-cell {
   display: block;
 }
@@ -142,6 +152,16 @@ a {
 .react-bootstrap-table table {
   table-layout: auto !important;
   white-space: nowrap;
+}
+
+/* Permettre le retour à la ligne pour les cellules avec du texte descriptif ou d'anomalies */
+.react-bootstrap-table table td.cell-wrap-text,
+.react-bootstrap-table table th.cell-wrap-text,
+.cell-wrap-text {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
 }
 
 .react-bootstrap-table-editing-cell {

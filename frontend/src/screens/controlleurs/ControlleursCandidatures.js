@@ -424,16 +424,22 @@ const ControlleursCandidaturesScreen = () => {
     {
       dataField: 'anomaliesAI',
       text: 'Anomalies Détectées (Âge / Adresse / CNI...)',
+      classes: 'cell-wrap-text',
+      headerClasses: 'cell-wrap-text',
       headerStyle: {
         backgroundColor: '#fff3cd',
         color: '#856404',
         fontWeight: 'bold',
-        minWidth: '320px',
-        width: '360px',
+        minWidth: '340px',
+        width: '380px',
+        whiteSpace: 'normal',
       },
       style: {
         verticalAlign: 'middle',
         textAlign: 'left',
+        whiteSpace: 'normal',
+        minWidth: '340px',
+        width: '380px',
       },
       formatter: (cell) => {
         if (!cell || cell.length === 0) {
@@ -444,9 +450,30 @@ const ControlleursCandidaturesScreen = () => {
           );
         }
         return (
-          <div style={{ maxWidth: '340px', textAlign: 'left', fontSize: '0.82rem', lineHeight: '1.4' }}>
+          <div
+            className='cell-wrap-text'
+            style={{
+              width: '100%',
+              maxWidth: '360px',
+              whiteSpace: 'normal',
+              wordWrap: 'break-word',
+              overflowWrap: 'break-word',
+              textAlign: 'left',
+              fontSize: '0.82rem',
+              lineHeight: '1.4',
+            }}
+          >
             {cell.map((anom, idx) => (
-              <div key={idx} className='text-danger fw-semibold mb-1' style={{ wordBreak: 'break-word' }}>
+              <div
+                key={idx}
+                className='text-danger fw-semibold mb-1'
+                style={{
+                  whiteSpace: 'normal',
+                  wordWrap: 'break-word',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
+                }}
+              >
                 • {anom}
               </div>
             ))}
@@ -461,19 +488,23 @@ const ControlleursCandidaturesScreen = () => {
       headerStyle: {
         backgroundColor: '#e2e3e5',
         textAlign: 'center',
-        width: '130px',
-        minWidth: '130px',
+        width: '120px',
+        minWidth: '120px',
+        whiteSpace: 'nowrap',
       },
       style: {
         verticalAlign: 'middle',
         textAlign: 'center',
+        width: '120px',
+        minWidth: '120px',
+        whiteSpace: 'nowrap',
       },
       formatter: (cell) => {
         if (cell === null || cell === undefined) return '-';
         const num = Math.max(0, Math.min(100, Math.round(Number(cell) || 0)));
         const color = num >= 80 ? 'bg-success' : num >= 50 ? 'bg-warning' : 'bg-danger';
         return (
-          <div style={{ width: '90px', margin: '0 auto', textAlign: 'center' }}>
+          <div style={{ width: '85px', margin: '0 auto', textAlign: 'center' }}>
             <span className='fw-bold small d-block mb-1'>{num}%</span>
             <div className='progress' style={{ height: '7px' }}>
               <div
@@ -495,10 +526,14 @@ const ControlleursCandidaturesScreen = () => {
         fontWeight: 'bold',
         width: '120px',
         minWidth: '120px',
+        whiteSpace: 'nowrap',
       },
       style: {
         verticalAlign: 'middle',
         textAlign: 'center',
+        width: '120px',
+        minWidth: '120px',
+        whiteSpace: 'nowrap',
       },
       formatter: (cell, row) => (
         <button
