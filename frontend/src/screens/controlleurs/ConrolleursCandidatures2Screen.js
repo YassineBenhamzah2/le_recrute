@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router';
+import axios from 'axios';
 import {
   listControllerCandidatures,
   listControllerCandidatures2,
@@ -59,6 +60,40 @@ const ControlleursCandidatures2Screen = () => {
       navigate('/login');
     }
   }, [userInfo, dispatch, navigate]);
+
+  const { addToast } = useToasts();
+  const [validatingControl2Loading, setValidatingControl2Loading] = useState(false);
+
+  const handleValidateConformesToControl3 = async () => {
+    try {
+      setValidatingControl2Loading(true);
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      await axios.post(
+        '/api/candidatures/batch/validate-control2',
+        { onlyConformes: true },
+        config
+      );
+      addToast(
+        'Transmission réussie : les dossiers conformes ont été envoyés vers Contrôle 3 (Commission EHC) !',
+        { appearance: 'success', autoDismiss: true }
+      );
+      dispatch(listControllerCandidatures2());
+    } catch (err) {
+      addToast(
+        err.response && err.response.data.message
+          ? err.response.data.message
+          : 'Erreur lors de la transmission vers Contrôle 3',
+        { appearance: 'error', autoDismiss: true }
+      );
+    } finally {
+      setValidatingControl2Loading(false);
+    }
+  };
 
   const { SearchBar } = Search;
   const { ExportCSVButton } = CSVExport;
@@ -1109,6 +1144,14 @@ const ControlleursCandidatures2Screen = () => {
     },
   };
 
+  const totalCount2 = postulations ? postulations.length : 0;
+  const countConformes2 = postulations
+    ? postulations.filter(
+        (c) => c.conforme === 'CONFORME' || c.statutAI === 'VALIDE_IA'
+      ).length
+    : 0;
+  const countNonConformes2 = totalCount2 - countConformes2;
+
   return (
     <div id='root'>
       <div className='app'>
@@ -1118,6 +1161,67 @@ const ControlleursCandidatures2Screen = () => {
             headerTitle='Contrôle Niveau 2 : Auditeur Humain EHC (Résolution des Anomalies & Conformité)'
             endPoint='/admin'
           />
+          <Container className='mt-4'>
+            {/* BANDEAU PILOTAGE CONTRÔLE 2 : AUDITEUR EHC */}
+            <div
+              className='bg-white rounded-3 shadow-sm p-4 mb-4 border'
+              style={{ borderLeft: '5px solid #f59e0b' }}
+            >
+              <div className='d-flex flex-wrap justify-content-between align-items-center mb-3 pb-3 border-bottom'>
+                <div>
+                  <h4 className='fw-bold text-dark mb-1 d-flex align-items-center gap-2'>
+                    <i className='fas fa-user-check text-warning fs-3'></i>
+                    <span>Pipeline Contrôle 2 : Auditeur Humain EHC</span>
+                  </h4>
+                  <p className='text-muted small mb-0'>
+                    Résolution humaine des anomalies, vérification approfondie des pièces justificatives et transmission vers la Commission Finale (Contrôle 3).
+                  </p>
+                </div>
+                <div className='d-flex flex-wrap gap-2 mt-2 mt-md-0'>
+                  <Button
+                    variant='success'
+                    className='fw-bold shadow-sm'
+                    disabled={validatingControl2Loading || countConformes2 === 0}
+                    onClick={handleValidateConformesToControl3}
+                  >
+                    {validatingControl2Loading ? (
+                      <>
+                        <span className='spinner-border spinner-border-sm me-2'></span>
+                        Transmission vers Commission...
+                      </>
+                    ) : (
+                      <>
+                        <i className='fas fa-award me-2'></i>
+                        Transmettre les {countConformes2} Conformes vers Contrôle 3 (Commission)
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+
+              {/* CARTES KPI CONTRÔLE 2 */}
+              <Row className='g-3 text-center'>
+                <Col xs={4}>
+                  <div className='p-3 rounded-3 border bg-light text-dark shadow-sm'>
+                    <div className='fs-3 fw-bold'>{totalCount2}</div>
+                    <div className='small text-uppercase fw-semibold'>Dossiers Contrôle 2</div>
+                  </div>
+                </Col>
+                <Col xs={4}>
+                  <div className='p-3 rounded-3 border bg-light text-success shadow-sm'>
+                    <div className='fs-3 fw-bold text-success'>{countConformes2}</div>
+                    <div className='small text-uppercase fw-semibold'>🟢 Conformes Certifiés</div>
+                  </div>
+                </Col>
+                <Col xs={4}>
+                  <div className='p-3 rounded-3 border bg-light text-danger shadow-sm'>
+                    <div className='fs-3 fw-bold text-danger'>{countNonConformes2}</div>
+                    <div className='small text-uppercase fw-semibold'>🔴 À Traiter / Rejetés</div>
+                  </div>
+                </Col>
+              </Row>
+            </div>
+          </Container>
           <Container
             className='mb-4 mt-4 pt-3 pb-3 font-weight-bold'
             style={{

@@ -11,6 +11,7 @@ import {
   runCandidatureAIAudit,
   runBatchAIAudit,
   validateBatchControl1,
+  validateBatchControl2,
   validateBatchControl3,
 } from '../controllers/candidatureControllers.js';
 import { admin, protect } from '../middleware/authMiddleware.js';
@@ -26,6 +27,7 @@ router.route('/mescandidatures').get(protect, getMyCandidatures);
 
 router.route('/batch/ai-audit').post(protect, admin, runBatchAIAudit);
 router.route('/batch/validate-control1').post(protect, admin, validateBatchControl1);
+router.route('/batch/validate-control2').post(protect, admin, validateBatchControl2);
 router.route('/batch/validate-control3').post(protect, admin, validateBatchControl3);
 router.route('/:id/ai-audit').post(protect, admin, runCandidatureAIAudit);
 

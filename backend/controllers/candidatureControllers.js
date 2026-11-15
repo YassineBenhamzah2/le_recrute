@@ -736,6 +736,35 @@ const validateBatchControl1 = asyncHandler(async (req, res) => {
   });
 });
 
+//@desc Valider les dossiers du Contrôle 2 (Auditeur EHC - Transmission vers Commission Contrôle 3)
+//@route POST /api/candidatures/batch/validate-control2
+//@access Private/Staff
+const validateBatchControl2 = asyncHandler(async (req, res) => {
+  const { ids, onlyConformes } = req.body;
+  let filter = {};
+
+  if (Array.isArray(ids) && ids.length > 0) {
+    filter = { _id: { $in: ids } };
+  } else if (onlyConformes) {
+    filter = { conforme: 'CONFORME', isControl1: true, isControl2: false };
+  } else {
+    filter = { isControl1: true, isControl2: false };
+  }
+
+  const controllerName = req.user ? `${req.user.prenom || ''} ${req.user.nom || ''}`.trim() : 'Auditeur EHC';
+  const result = await Candidature.updateMany(filter, {
+    $set: {
+      isControl2: true,
+      controle2: `Validé Niveau 2 par ${controllerName} (Conformité certifiée)`,
+    },
+  });
+
+  res.json({
+    success: true,
+    modifiedCount: result.modifiedCount || result.nModified || 0,
+  });
+});
+
 //@desc Valider les dossiers du Contrôle 3 (Commission EHC - Validation Finale avant transmission RH)
 //@route POST /api/candidatures/batch/validate-control3
 //@access Private/Staff
@@ -777,5 +806,6 @@ export {
   runCandidatureAIAudit,
   runBatchAIAudit,
   validateBatchControl1,
+  validateBatchControl2,
   validateBatchControl3,
 };
