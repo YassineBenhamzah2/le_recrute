@@ -337,12 +337,14 @@ const getCandidatures = asyncHandler(async (req, res) => {
       cand.statutAI = aiResult.statutAI;
       cand.auditAI = aiResult.auditAI;
       cand.controle1 = `Audit IA (${aiResult.statutAI}) — Confiance: ${aiResult.auditAI.scoreConfiance}%`;
-      if (aiResult.statutAI === 'VALIDE_IA') {
-        cand.conforme = 'CONFORME';
-        cand.eligibilite = 'ELIGIBLE';
-      } else if (aiResult.statutAI === 'REJETE_IA') {
-        cand.conforme = 'NON CONFORME';
-        cand.eligibilite = 'NON ELIGIBLE';
+      if (!cand.isControl1) {
+        if (aiResult.statutAI === 'VALIDE_IA') {
+          cand.conforme = 'CONFORME';
+          cand.eligibilite = 'ELIGIBLE';
+        } else if (aiResult.statutAI === 'REJETE_IA' && cand.conforme !== 'CONFORME') {
+          cand.conforme = 'NON CONFORME';
+          cand.eligibilite = 'NON ELIGIBLE';
+        }
       }
       await cand.save();
     } catch (e) {
@@ -403,9 +405,24 @@ const updateCandidature = asyncHandler(async (req, res) => {
     candidature.controle1 = req.body.controle1 || candidature.controle1;
     candidature.controle2 = req.body.controle2 || candidature.controle2;
     candidature.controle3 = req.body.controle3 || candidature.controle3;
-    candidature.isControl1 = req.body.isControl1 !== undefined ? req.body.isControl1 : candidature.isControl1;
-    candidature.isControl2 = req.body.isControl2 !== undefined ? req.body.isControl2 : candidature.isControl2;
-    candidature.isControl3 = req.body.isControl3 !== undefined ? req.body.isControl3 : candidature.isControl3;
+
+    if (req.body.isControl1 !== undefined) {
+      const v = req.body.isControl1;
+      candidature.isControl1 = v === true || v === 'true' || v === 'OUI' || v === 'oui';
+      if (candidature.isControl1) {
+        candidature.conforme = req.body.conforme || 'CONFORME';
+        candidature.eligibilite = req.body.eligibilite || 'ELIGIBLE';
+      }
+    }
+    if (req.body.isControl2 !== undefined) {
+      const v = req.body.isControl2;
+      candidature.isControl2 = v === true || v === 'true' || v === 'OUI' || v === 'oui';
+    }
+    if (req.body.isControl3 !== undefined) {
+      const v = req.body.isControl3;
+      candidature.isControl3 = v === true || v === 'true' || v === 'OUI' || v === 'oui';
+    }
+
     candidature.statutAI = req.body.statutAI || candidature.statutAI;
     candidature.statutCommission = req.body.statutCommission || candidature.statutCommission;
     if (req.body.auditAI) {
@@ -506,12 +523,14 @@ const getControllerCandidatures = asyncHandler(async (req, res) => {
       cand.statutAI = aiResult.statutAI;
       cand.auditAI = aiResult.auditAI;
       cand.controle1 = `Audit IA (${aiResult.statutAI}) — Confiance: ${aiResult.auditAI.scoreConfiance}%`;
-      if (aiResult.statutAI === 'VALIDE_IA') {
-        cand.conforme = 'CONFORME';
-        cand.eligibilite = 'ELIGIBLE';
-      } else if (aiResult.statutAI === 'REJETE_IA') {
-        cand.conforme = 'NON CONFORME';
-        cand.eligibilite = 'NON ELIGIBLE';
+      if (!cand.isControl1) {
+        if (aiResult.statutAI === 'VALIDE_IA') {
+          cand.conforme = 'CONFORME';
+          cand.eligibilite = 'ELIGIBLE';
+        } else if (aiResult.statutAI === 'REJETE_IA' && cand.conforme !== 'CONFORME') {
+          cand.conforme = 'NON CONFORME';
+          cand.eligibilite = 'NON ELIGIBLE';
+        }
       }
       await cand.save();
     } catch (e) {
@@ -559,12 +578,14 @@ const getControllerCandidatures2 = asyncHandler(async (req, res) => {
       cand.statutAI = aiResult.statutAI;
       cand.auditAI = aiResult.auditAI;
       cand.controle1 = `Audit IA (${aiResult.statutAI}) — Confiance: ${aiResult.auditAI.scoreConfiance}%`;
-      if (aiResult.statutAI === 'VALIDE_IA') {
-        cand.conforme = 'CONFORME';
-        cand.eligibilite = 'ELIGIBLE';
-      } else if (aiResult.statutAI === 'REJETE_IA') {
-        cand.conforme = 'NON CONFORME';
-        cand.eligibilite = 'NON ELIGIBLE';
+      if (!cand.isControl1) {
+        if (aiResult.statutAI === 'VALIDE_IA') {
+          cand.conforme = 'CONFORME';
+          cand.eligibilite = 'ELIGIBLE';
+        } else if (aiResult.statutAI === 'REJETE_IA' && cand.conforme !== 'CONFORME') {
+          cand.conforme = 'NON CONFORME';
+          cand.eligibilite = 'NON ELIGIBLE';
+        }
       }
       await cand.save();
     } catch (e) {
@@ -605,12 +626,14 @@ const getControllerCandidatures3 = asyncHandler(async (req, res) => {
       cand.statutAI = aiResult.statutAI;
       cand.auditAI = aiResult.auditAI;
       cand.controle1 = `Audit IA (${aiResult.statutAI}) — Confiance: ${aiResult.auditAI.scoreConfiance}%`;
-      if (aiResult.statutAI === 'VALIDE_IA') {
-        cand.conforme = 'CONFORME';
-        cand.eligibilite = 'ELIGIBLE';
-      } else if (aiResult.statutAI === 'REJETE_IA') {
-        cand.conforme = 'NON CONFORME';
-        cand.eligibilite = 'NON ELIGIBLE';
+      if (!cand.isControl1) {
+        if (aiResult.statutAI === 'VALIDE_IA') {
+          cand.conforme = 'CONFORME';
+          cand.eligibilite = 'ELIGIBLE';
+        } else if (aiResult.statutAI === 'REJETE_IA' && cand.conforme !== 'CONFORME') {
+          cand.conforme = 'NON CONFORME';
+          cand.eligibilite = 'NON ELIGIBLE';
+        }
       }
       await cand.save();
     } catch (e) {

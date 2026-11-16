@@ -19,6 +19,7 @@ import Spinner from '../../components/Spinner';
 import LInkFichier from '../../components/LInkFichier';
 import ControleurSideBar from '../../components/ControleurSideBar';
 import { useToasts } from 'react-toast-notifications';
+import { CANDIDATURE_UPDATE_RESET } from '../../constants/candidatureConstants';
 
 const CandidatureVlidationScreen = () => {
   moment.locale('fr');
@@ -70,12 +71,34 @@ const CandidatureVlidationScreen = () => {
     }
 
     if (successUpdate) {
-      addToast('Modification effectuee avec succes', {
+      addToast('Modification effectuée avec succès', {
         appearance: 'success',
         autoDismiss: true,
       });
+      if (ID) {
+        dispatch(getCandidatureDetails(ID));
+      }
+      dispatch(listControllerCandidatures());
+      dispatch({ type: CANDIDATURE_UPDATE_RESET });
     }
   }, [userInfo, dispatch, addToast, successUpdate, navigate, ID]);
+
+  const handleValidateAndTransmitToControl2 = () => {
+    if (!postulationTarget || !postulationTarget._id) return;
+    const targetName = `${postulationTarget.user?.prenom || postulationTarget.prenom || ''} ${postulationTarget.user?.nom || postulationTarget.nom || ''}`.trim();
+    if (!window.confirm(`Confirmer la validation manuelle et la transmission du dossier de ${targetName} vers le Contrôle 2 ?`)) {
+      return;
+    }
+    const controllerName = `${userInfo.prenom || ''} ${userInfo.nom || ''}`.trim();
+    dispatch(
+      updateCandidature(postulationTarget._id, {
+        isControl1: true,
+        conforme: 'CONFORME',
+        eligibilite: 'ELIGIBLE',
+        controle1: `Validé manuellement par ${controllerName} (Contrôle 1 certifié)`,
+      })
+    );
+  };
 
   const { SearchBar } = Search;
 
@@ -263,11 +286,11 @@ const CandidatureVlidationScreen = () => {
         type: Type.SELECT,
         options: [
           {
-            value: true,
+            value: 'OUI',
             label: `OUI`,
           },
           {
-            value: false,
+            value: 'NON',
             label: `NON`,
           },
         ],
@@ -433,12 +456,18 @@ const CandidatureVlidationScreen = () => {
   };
 
   function afterSaveCell(oldValue, newValue, row, column) {
-    alert('Vous etes sur de changement');
-    dispatch(
-      updateCandidature(row.id, {
-        [column.dataField]: newValue ? newValue : '-',
-      })
-    );
+    let payloadValue = newValue ? newValue : '-';
+    if (column.dataField === 'isControl1' || column.dataField === 'isControl2') {
+      payloadValue = (newValue === 'OUI' || newValue === true || newValue === 'true');
+    }
+    const updatePayload = {
+      [column.dataField]: payloadValue,
+    };
+    if (column.dataField === 'isControl1' && payloadValue === true) {
+      updatePayload.conforme = 'CONFORME';
+      updatePayload.eligibilite = 'ELIGIBLE';
+    }
+    dispatch(updateCandidature(row.id, updatePayload));
   }
 
   const CustomToggleList = ({ columns, onColumnToggle, toggles }) => (
@@ -532,9 +561,19 @@ const CandidatureVlidationScreen = () => {
                       <i className='fas fa-check-double me-1'></i> Validé & Transmis à Contrôle 2
                     </span>
                   ) : (
-                    <span className='badge bg-warning text-dark fs-6 px-3 py-2'>
-                      <i className='fas fa-clock me-1'></i> En Attente de Transmission vers Contrôle 2
-                    </span>
+                    <>
+                      <Button
+                        variant='success'
+                        size='sm'
+                        className='fw-bold shadow-sm'
+                        onClick={handleValidateAndTransmitToControl2}
+                      >
+                        <i className='fas fa-check-circle me-1'></i> Valider & Transmettre à Contrôle 2
+                      </Button>
+                      <span className='badge bg-warning text-dark fs-6 px-3 py-2'>
+                        <i className='fas fa-clock me-1'></i> En Attente
+                      </span>
+                    </>
                   )}
                   <Button
                     variant='outline-primary'
