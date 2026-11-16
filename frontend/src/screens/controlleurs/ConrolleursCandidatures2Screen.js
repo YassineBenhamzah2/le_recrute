@@ -387,15 +387,61 @@ const ControlleursCandidatures2Screen = () => {
         fontWeight: 'bold',
       },
       formatter: (cell, row) => (
-        <button
-          className='btn btn-primary btn-sm px-3 fw-bold'
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/controlleurs/candidatures/informations/${row.id}`);
-          }}
-        >
-          <i className='fas fa-search me-1'></i> Vérifier
-        </button>
+        <div className='d-flex align-items-center justify-content-center gap-1'>
+          <button
+            className='btn btn-outline-primary btn-sm px-2 fw-bold'
+            title='Vérifier le dossier'
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/controlleurs/candidatures/informations/${row.id}`);
+            }}
+          >
+            <i className='fas fa-search me-1'></i> Vérifier
+          </button>
+          <button
+            className='btn btn-success btn-sm px-2 fw-bold text-nowrap'
+            title='Transmettre ce dossier seul vers Contrôle 3'
+            onClick={async (e) => {
+              e.stopPropagation();
+              if (
+                !window.confirm(
+                  `Transmettre le dossier de ${row.prenom || ''} ${
+                    row.nom || ''
+                  } seul vers le Contrôle 3 (Commission) ?`
+                )
+              )
+                return;
+              try {
+                const config = {
+                  headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${userInfo.token}`,
+                  },
+                };
+                await axios.post(
+                  '/api/candidatures/batch/validate-control2',
+                  { ids: [row.id] },
+                  config
+                );
+                addToast(
+                  `Dossier de ${row.prenom || ''} ${
+                    row.nom || ''
+                  } transmis avec succès vers Contrôle 3 !`,
+                  { appearance: 'success', autoDismiss: true }
+                );
+                dispatch(listControllerCandidatures2());
+              } catch (err) {
+                addToast(
+                  err.response?.data?.message ||
+                    'Erreur lors de la transmission vers Contrôle 3',
+                  { appearance: 'error', autoDismiss: true }
+                );
+              }
+            }}
+          >
+            <i className='fas fa-paper-plane me-1'></i> Transmettre à C3
+          </button>
+        </div>
       ),
     },
     {

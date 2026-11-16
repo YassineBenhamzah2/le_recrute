@@ -100,6 +100,23 @@ const CandidatureVlidationScreen = () => {
     );
   };
 
+  const handleValidateAndTransmitToControl3 = () => {
+    if (!postulationTarget || !postulationTarget._id) return;
+    const targetName = `${postulationTarget.user?.prenom || postulationTarget.prenom || ''} ${postulationTarget.user?.nom || postulationTarget.nom || ''}`.trim();
+    if (!window.confirm(`Confirmer la transmission individuelle du dossier de ${targetName} vers le Contrôle 3 (Commission EHC) ?`)) {
+      return;
+    }
+    const controllerName = `${userInfo.prenom || ''} ${userInfo.nom || ''}`.trim();
+    dispatch(
+      updateCandidature(postulationTarget._id, {
+        isControl2: true,
+        conforme: 'CONFORME',
+        eligibilite: 'ELIGIBLE',
+        controle2: `Validé Niveau 2 par ${controllerName} (Transmis individuellement à Contrôle 3)`,
+      })
+    );
+  };
+
   const { SearchBar } = Search;
 
   const postulationTarget =
@@ -556,10 +573,24 @@ const CandidatureVlidationScreen = () => {
                   </div>
                 </div>
                 <div className='d-flex align-items-center gap-2 mt-2 mt-md-0'>
-                  {postulationTarget.isControl1 ? (
+                  {postulationTarget.isControl2 ? (
                     <span className='badge bg-success fs-6 px-3 py-2'>
-                      <i className='fas fa-check-double me-1'></i> Validé & Transmis à Contrôle 2
+                      <i className='fas fa-award me-1'></i> Validé & Transmis à Contrôle 3
                     </span>
+                  ) : postulationTarget.isControl1 ? (
+                    <>
+                      <Button
+                        variant='success'
+                        size='sm'
+                        className='fw-bold shadow-sm'
+                        onClick={handleValidateAndTransmitToControl3}
+                      >
+                        <i className='fas fa-paper-plane me-1'></i> Transmettre ce dossier seul à Contrôle 3
+                      </Button>
+                      <span className='badge bg-info text-dark fs-6 px-3 py-2'>
+                        <i className='fas fa-check me-1'></i> En Contrôle 2
+                      </span>
+                    </>
                   ) : (
                     <>
                       <Button
@@ -576,12 +607,20 @@ const CandidatureVlidationScreen = () => {
                     </>
                   )}
                   <Button
+                    variant='outline-secondary'
+                    size='sm'
+                    className='fw-bold'
+                    onClick={() => navigate('/controlleurs/candidatures/control2')}
+                  >
+                    <i className='fas fa-arrow-left me-1'></i> Contrôle 2
+                  </Button>
+                  <Button
                     variant='outline-primary'
                     size='sm'
                     className='fw-bold'
                     onClick={() => navigate('/controlleurs/candidatures/control1')}
                   >
-                    <i className='fas fa-arrow-left me-1'></i> Retour Contrôle 1
+                    <i className='fas fa-arrow-left me-1'></i> Contrôle 1
                   </Button>
                 </div>
               </div>
