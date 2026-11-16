@@ -71,26 +71,28 @@ const CandidaturesInformationsScreen = () => {
     if (!userInfo && !userInfo.isController) {
       navigate('/login');
     } else {
-      if (!candidature || !candidature.niveauEtude) {
+      if (!candidature || !candidature.niveauEtude || String(candidature._id) !== String(params.id)) {
         dispatch(getCandidatureDetails(params.id));
-      } else {
-        setCivilite(candidature.user.civilite);
-        setPrenom(candidature.user.prenom);
-        setNom(candidature.user.nom);
-        setDateNaissance(moment(candidature.user.dateNaissance, 'DD.MM.YYYY'));
-        setLieuNaissance(candidature.user.lieuNaissance);
-        setVille(candidature.user.ville);
-        setEmail(candidature.user.email);
-        setCni(candidature.user.cni);
-        setCopieCNI(candidature.user.copieCNI);
-        setNationalite(candidature.user.nationalite);
-        setPhone(candidature.user.phone);
-        setAdresse(candidature.user.adresse);
+      } else if (candidature.user) {
+        setCivilite(candidature.user.civilite || '');
+        setPrenom(candidature.user.prenom || '');
+        setNom(candidature.user.nom || '');
+        setDateNaissance(
+          candidature.user.dateNaissance
+            ? moment(candidature.user.dateNaissance, 'DD.MM.YYYY')
+            : ''
+        );
+        setLieuNaissance(candidature.user.lieuNaissance || '');
+        setVille(candidature.user.ville || '');
+        setEmail(candidature.user.email || '');
+        setCni(candidature.user.cni || '');
+        setCopieCNI(candidature.user.copieCNI || '');
+        setNationalite(candidature.user.nationalite || '');
+        setPhone(candidature.user.phone || '');
+        setAdresse(candidature.user.adresse || '');
       }
     }
-
-    // navigate(`/controlleurs/candidatures/diplomes/${params.id}`);
-  }, [userInfo, navigate, dispatch, params, candidature]);
+  }, [userInfo, navigate, dispatch, params.id, candidature]);
 
   const submitHandler = (e) => {
     e.preventDefault();
@@ -118,14 +120,14 @@ const CandidaturesInformationsScreen = () => {
                 </button>
               </div>
             )}
-            {candidature && candidature.user && (
+            {candidature && candidature.user && String(candidature._id) === String(params.id) && (
               <HeaderAdministrateur
                 headerTitle={`Informations personnelles de ${candidature.user.prenom} ${candidature.user.nom}`}
               />
             )}
 
             {/* BANDEAU AUDIT IA NIVEAU 1 */}
-            {candidature?.auditAI && (
+            {candidature?.auditAI && String(candidature._id) === String(params.id) && (
               <div
                 className={`mx-4 mt-3 p-3 rounded-3 shadow-sm border ${
                   candidature.statutAI === 'VALIDE_IA'
@@ -221,7 +223,7 @@ const CandidaturesInformationsScreen = () => {
               </div>
             )}
 
-            {loadingCandidature ? (
+            {loadingCandidature || !candidature || String(candidature._id) !== String(params.id) ? (
               <Spinner />
             ) : errorCandidature ? (
               <Message variant='danger'>{errorCandidature}</Message>

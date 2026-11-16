@@ -55,7 +55,7 @@ const CandidaturesDiplomesScreen = () => {
     if (!userInfo && !userInfo.isController) {
       navigate('/login');
     } else {
-      if (!candidature || !candidature.niveauEtude) {
+      if (!candidature || !candidature.niveauEtude || String(candidature._id) !== String(params.id)) {
         dispatch(getCandidatureDetails(params.id));
       } else {
         setNiveauEtude(candidature.niveauEtude);
