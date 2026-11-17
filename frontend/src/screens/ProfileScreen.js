@@ -275,9 +275,11 @@ const ProfileScreen = () => {
   const [phone, setPhone] = useState('');
   const [adresse, setAdresse] = useState('');
   const [ville, setVille] = useState('');
+  const [codePostale, setCodePostale] = useState('');
   const [cni, setCni] = useState('');
   const [email, setEmail] = useState('');
   const [feedbackMsg, setFeedbackMsg] = useState(null);
+  const [fieldErrors, setFieldErrors] = useState({});
 
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
@@ -286,10 +288,23 @@ const ProfileScreen = () => {
   const { user, loading: loadingDetails } = userDetails;
 
   const userUpdateProfil = useSelector((state) => state.userUpdateProfil);
-  const { success: successUpdate, error: errorUpdate, loading: loadingUpdate } = userUpdateProfil;
+  const {
+    success: successUpdate,
+    error: errorUpdate,
+    errors: backendErrors,
+    loading: loadingUpdate,
+  } = userUpdateProfil;
+
+  const activeErrors = { ...(backendErrors || {}), ...(fieldErrors || {}) };
 
   const candidaturesListMy = useSelector((state) => state.candidaturesListMy);
   const { loading: loadingCandidatures, candidatures } = candidaturesListMy;
+
+  useEffect(() => {
+    dispatch({ type: USER_UPDATE_PROFILE_RESET });
+    setFeedbackMsg(null);
+    setFieldErrors({});
+  }, [activeTab, dispatch]);
 
   useEffect(() => {
     if (!userInfo) {
@@ -302,16 +317,22 @@ const ProfileScreen = () => {
       navigate('/controlleurs/dashboard');
     } else {
       if (!user || !user.email) {
-        dispatch({ type: USER_UPDATE_PROFILE_RESET });
         dispatch(getUserDetails('profile'));
         dispatch(listMyCandidatures());
       } else {
         setCivilite(user.civilite || 'Monsieur');
         setPrenom(user.prenom || '');
         setNom(user.nom || '');
-        setDateNaissance(user.dateNaissance ? moment(user.dateNaissance, ['DD.MM.YYYY', 'YYYY-MM-DD']).format('YYYY-MM-DD') : '');
+        setDateNaissance(
+          user.dateNaissance
+            ? moment(user.dateNaissance, ['DD.MM.YYYY', 'YYYY-MM-DD']).format(
+                'YYYY-MM-DD'
+              )
+            : ''
+        );
         setLieuNaissance(user.lieuNaissance || '');
         setVille(user.ville || '');
+        setCodePostale(user.codePostale || '');
         setEmail(user.email || '');
         setCni(user.cni || '');
         setNationalite(user.nationalite || 'Marocaine');
@@ -321,7 +342,10 @@ const ProfileScreen = () => {
     }
 
     if (successUpdate) {
-      setFeedbackMsg({ type: 'success', text: 'Vos informations ont été mises à jour avec succès.' });
+      setFeedbackMsg({
+        type: 'success',
+        text: 'Vos informations ont été mises à jour avec succès.',
+      });
       dispatch({ type: USER_UPDATE_PROFILE_RESET });
       dispatch(getUserDetails('profile'));
     }
@@ -330,25 +354,59 @@ const ProfileScreen = () => {
   const handleProfileSubmit = (e) => {
     e.preventDefault();
     setFeedbackMsg(null);
-    if (!nom || !prenom || !cni || !phone || !email || !ville) {
-      setFeedbackMsg({ type: 'danger', text: 'Veuillez renseigner tous les champs obligatoires.' });
+    dispatch({ type: USER_UPDATE_PROFILE_RESET });
+
+    const errs = {};
+    if (!nom || !nom.trim()) errs.nom = 'Le nom de famille est obligatoire';
+    if (!prenom || !prenom.trim()) errs.prenom = 'Le prénom est obligatoire';
+    if (!cni || !cni.trim()) errs.cni = 'Le numéro de CNI est obligatoire';
+    if (!dateNaissance) errs.dateNaissance = 'La date de naissance est obligatoire';
+    if (!lieuNaissance || !lieuNaissance.trim())
+      errs.lieuNaissance = 'Le lieu de naissance est obligatoire';
+    if (!phone || !phone.trim()) {
+      errs.phone = 'Le numéro de téléphone est obligatoire';
+    } else {
+      const cleanPhone = phone.replace(/\s+/g, '');
+      if (!/^(?:(?:\+|00)212|0)[5-7]\d{8}$/.test(cleanPhone)) {
+        errs.phone = 'Numéro de téléphone marocain invalide (ex: 0612345678)';
+      }
+    }
+    if (!email || !email.trim()) errs.email = "L'adresse email est obligatoire";
+    if (!adresse || !adresse.trim())
+      errs.adresse = "L'adresse de résidence est obligatoire";
+    if (!ville || !ville.trim()) errs.ville = 'La ville de résidence est obligatoire';
+    if (codePostale && !/^\d{5}$/.test(codePostale.toString().trim())) {
+      errs.codePostale = 'Le code postal doit être composé de 5 chiffres (ex: 20000)';
+    }
+
+    if (Object.keys(errs).length > 0) {
+      setFieldErrors(errs);
+      setFeedbackMsg({
+        type: 'danger',
+        text: 'Veuillez renseigner tous les champs obligatoires marqués d’un astérisque (*).',
+      });
       return;
     }
+
+    setFieldErrors({});
 
     dispatch(
       updateUserProfile({
         id: user._id,
         civilite,
-        prenom,
-        nom,
-        dateNaissance: dateNaissance ? moment(dateNaissance).format('DD.MM.YYYY') : undefined,
-        lieuNaissance,
-        email,
-        cni,
+        prenom: prenom.trim(),
+        nom: nom.trim(),
+        dateNaissance: dateNaissance
+          ? moment(dateNaissance).format('DD.MM.YYYY')
+          : undefined,
+        lieuNaissance: lieuNaissance.trim(),
+        email: email.trim(),
+        cni: (cni || '').toUpperCase().trim(),
         nationalite,
-        phone,
-        adresse,
-        ville,
+        phone: phone.replace(/\s+/g, ''),
+        adresse: adresse.trim(),
+        ville: ville.trim(),
+        codePostale: codePostale ? codePostale.toString().trim() : '',
       })
     );
   };
@@ -505,7 +563,7 @@ const ProfileScreen = () => {
 
           {activeTab === 'profil' && (
             <div className='candidate-form-card'>
-              <form onSubmit={handleProfileSubmit}>
+              <form onSubmit={handleProfileSubmit} noValidate>
                 {feedbackMsg && (
                   <div
                     className={`alert alert-${feedbackMsg.type} d-flex align-items-center mb-4`}
@@ -513,7 +571,9 @@ const ProfileScreen = () => {
                   >
                     <i
                       className={`fas ${
-                        feedbackMsg.type === 'success' ? 'fa-check-circle' : 'fa-exclamation-triangle'
+                        feedbackMsg.type === 'success'
+                          ? 'fa-check-circle'
+                          : 'fa-exclamation-triangle'
                       } me-2 fa-lg`}
                     ></i>
                     <div>{feedbackMsg.text}</div>
@@ -535,7 +595,7 @@ const ProfileScreen = () => {
                 <div className='row g-3 mb-4'>
                   <div className='col-md-3'>
                     <label className='form-label-custom'>
-                      <i className='fas fa-venus-mars'></i> Civilité
+                      <i className='fas fa-venus-mars'></i> Civilité <span className='text-danger'>*</span>
                     </label>
                     <select
                       className='form-input-custom'
@@ -548,68 +608,108 @@ const ProfileScreen = () => {
                   </div>
                   <div className='col-md-4'>
                     <label className='form-label-custom'>
-                      <i className='far fa-user'></i> Nom de famille
+                      <i className='far fa-user'></i> Nom de famille <span className='text-danger'>*</span>
                     </label>
                     <input
                       type='text'
-                      className='form-input-custom'
+                      className={`form-input-custom ${
+                        activeErrors.nom ? 'is-invalid border-danger' : ''
+                      }`}
                       value={nom}
-                      onChange={(e) => setNom(e.target.value)}
+                      onChange={(e) => {
+                        setNom(e.target.value);
+                        if (fieldErrors.nom) setFieldErrors((prev) => ({ ...prev, nom: null }));
+                      }}
                       placeholder='Ex: BENHAMZAH'
-                      required
                     />
+                    {activeErrors.nom && (
+                      <div className='text-danger small mt-1'>{activeErrors.nom}</div>
+                    )}
                   </div>
                   <div className='col-md-5'>
                     <label className='form-label-custom'>
-                      <i className='far fa-user'></i> Prénom
+                      <i className='far fa-user'></i> Prénom <span className='text-danger'>*</span>
                     </label>
                     <input
                       type='text'
-                      className='form-input-custom'
+                      className={`form-input-custom ${
+                        activeErrors.prenom ? 'is-invalid border-danger' : ''
+                      }`}
                       value={prenom}
-                      onChange={(e) => setPrenom(e.target.value)}
+                      onChange={(e) => {
+                        setPrenom(e.target.value);
+                        if (fieldErrors.prenom)
+                          setFieldErrors((prev) => ({ ...prev, prenom: null }));
+                      }}
                       placeholder='Ex: Yassine'
-                      required
                     />
+                    {activeErrors.prenom && (
+                      <div className='text-danger small mt-1'>{activeErrors.prenom}</div>
+                    )}
                   </div>
                 </div>
 
                 <div className='row g-3 mb-4'>
                   <div className='col-md-4'>
                     <label className='form-label-custom'>
-                      <i className='fas fa-fingerprint'></i> N° CNI (Carte Nationale)
+                      <i className='fas fa-fingerprint'></i> N° CNI (Carte Nationale) <span className='text-danger'>*</span>
                     </label>
                     <input
                       type='text'
-                      className='form-input-custom'
+                      className={`form-input-custom ${
+                        activeErrors.cni ? 'is-invalid border-danger' : ''
+                      }`}
                       value={cni}
-                      onChange={(e) => setCni(e.target.value)}
+                      onChange={(e) => {
+                        setCni(e.target.value);
+                        if (fieldErrors.cni) setFieldErrors((prev) => ({ ...prev, cni: null }));
+                      }}
                       placeholder='Ex: WA111114'
-                      required
                     />
+                    {activeErrors.cni && (
+                      <div className='text-danger small mt-1'>{activeErrors.cni}</div>
+                    )}
                   </div>
                   <div className='col-md-4'>
                     <label className='form-label-custom'>
-                      <i className='far fa-calendar-alt'></i> Date de naissance
+                      <i className='far fa-calendar-alt'></i> Date de naissance <span className='text-danger'>*</span>
                     </label>
                     <input
                       type='date'
-                      className='form-input-custom'
+                      className={`form-input-custom ${
+                        activeErrors.dateNaissance ? 'is-invalid border-danger' : ''
+                      }`}
                       value={dateNaissance}
-                      onChange={(e) => setDateNaissance(e.target.value)}
+                      onChange={(e) => {
+                        setDateNaissance(e.target.value);
+                        if (fieldErrors.dateNaissance)
+                          setFieldErrors((prev) => ({ ...prev, dateNaissance: null }));
+                      }}
                     />
+                    {activeErrors.dateNaissance && (
+                      <div className='text-danger small mt-1'>{activeErrors.dateNaissance}</div>
+                    )}
                   </div>
                   <div className='col-md-4'>
                     <label className='form-label-custom'>
-                      <i className='fas fa-city'></i> Lieu de naissance
+                      <i className='fas fa-city'></i> Lieu de naissance <span className='text-danger'>*</span>
                     </label>
                     <input
                       type='text'
-                      className='form-input-custom'
+                      className={`form-input-custom ${
+                        activeErrors.lieuNaissance ? 'is-invalid border-danger' : ''
+                      }`}
                       value={lieuNaissance}
-                      onChange={(e) => setLieuNaissance(e.target.value)}
+                      onChange={(e) => {
+                        setLieuNaissance(e.target.value);
+                        if (fieldErrors.lieuNaissance)
+                          setFieldErrors((prev) => ({ ...prev, lieuNaissance: null }));
+                      }}
                       placeholder='Ex: Casablanca'
                     />
+                    {activeErrors.lieuNaissance && (
+                      <div className='text-danger small mt-1'>{activeErrors.lieuNaissance}</div>
+                    )}
                   </div>
                 </div>
 
@@ -622,57 +722,112 @@ const ProfileScreen = () => {
                 <div className='row g-3 mb-4'>
                   <div className='col-md-6'>
                     <label className='form-label-custom'>
-                      <i className='fas fa-phone-alt'></i> Numéro de téléphone portable
+                      <i className='fas fa-phone-alt'></i> Numéro de téléphone portable <span className='text-danger'>*</span>
                     </label>
                     <input
                       type='tel'
-                      className='form-input-custom'
+                      className={`form-input-custom ${
+                        activeErrors.phone ? 'is-invalid border-danger' : ''
+                      }`}
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      onChange={(e) => {
+                        setPhone(e.target.value);
+                        if (fieldErrors.phone)
+                          setFieldErrors((prev) => ({ ...prev, phone: null }));
+                      }}
                       placeholder='Ex: 0666666666'
-                      required
                     />
+                    {activeErrors.phone && (
+                      <div className='text-danger small mt-1'>{activeErrors.phone}</div>
+                    )}
                   </div>
                   <div className='col-md-6'>
                     <label className='form-label-custom'>
-                      <i className='far fa-envelope'></i> Adresse email officielle
+                      <i className='far fa-envelope'></i> Adresse email officielle <span className='text-danger'>*</span>
                     </label>
                     <input
                       type='email'
-                      className='form-input-custom'
+                      className={`form-input-custom ${
+                        activeErrors.email ? 'is-invalid border-danger' : ''
+                      }`}
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (fieldErrors.email)
+                          setFieldErrors((prev) => ({ ...prev, email: null }));
+                      }}
                       placeholder='Ex: candidat@domaine.ma'
-                      required
                     />
+                    {activeErrors.email && (
+                      <div className='text-danger small mt-1'>{activeErrors.email}</div>
+                    )}
                   </div>
                 </div>
 
                 <div className='row g-3 mb-4'>
-                  <div className='col-md-8'>
+                  <div className='col-md-6'>
                     <label className='form-label-custom'>
-                      <i className='fas fa-map-marker-alt'></i> Adresse de résidence
+                      <i className='fas fa-map-marker-alt'></i> Adresse de résidence <span className='text-danger'>*</span>
                     </label>
                     <input
                       type='text'
-                      className='form-input-custom'
+                      className={`form-input-custom ${
+                        activeErrors.adresse ? 'is-invalid border-danger' : ''
+                      }`}
                       value={adresse}
-                      onChange={(e) => setAdresse(e.target.value)}
+                      onChange={(e) => {
+                        setAdresse(e.target.value);
+                        if (fieldErrors.adresse)
+                          setFieldErrors((prev) => ({ ...prev, adresse: null }));
+                      }}
                       placeholder='Ex: 12 Boulevard Hassan II'
                     />
+                    {activeErrors.adresse && (
+                      <div className='text-danger small mt-1'>{activeErrors.adresse}</div>
+                    )}
                   </div>
-                  <div className='col-md-4'>
+                  <div className='col-md-3'>
                     <label className='form-label-custom'>
-                      <i className='fas fa-map'></i> Ville
+                      <i className='fas fa-map'></i> Ville <span className='text-danger'>*</span>
                     </label>
                     <input
                       type='text'
-                      className='form-input-custom'
+                      className={`form-input-custom ${
+                        activeErrors.ville ? 'is-invalid border-danger' : ''
+                      }`}
                       value={ville}
-                      onChange={(e) => setVille(e.target.value)}
+                      onChange={(e) => {
+                        setVille(e.target.value);
+                        if (fieldErrors.ville)
+                          setFieldErrors((prev) => ({ ...prev, ville: null }));
+                      }}
                       placeholder='Ex: Casablanca'
-                      required
                     />
+                    {activeErrors.ville && (
+                      <div className='text-danger small mt-1'>{activeErrors.ville}</div>
+                    )}
+                  </div>
+                  <div className='col-md-3'>
+                    <label className='form-label-custom'>
+                      <i className='fas fa-mail-bulk'></i> Code Postal
+                    </label>
+                    <input
+                      type='text'
+                      className={`form-input-custom ${
+                        activeErrors.codePostale ? 'is-invalid border-danger' : ''
+                      }`}
+                      value={codePostale}
+                      onChange={(e) => {
+                        setCodePostale(e.target.value);
+                        if (fieldErrors.codePostale)
+                          setFieldErrors((prev) => ({ ...prev, codePostale: null }));
+                      }}
+                      placeholder='Ex: 20000'
+                      maxLength={5}
+                    />
+                    {activeErrors.codePostale && (
+                      <div className='text-danger small mt-1'>{activeErrors.codePostale}</div>
+                    )}
                   </div>
                 </div>
 
