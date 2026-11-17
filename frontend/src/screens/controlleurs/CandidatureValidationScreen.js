@@ -252,7 +252,7 @@ const CandidatureVlidationScreen = () => {
                 <Card className='shadow-sm border-0 mb-4'>
                   <Card.Header className='bg-primary text-white py-3 d-flex justify-content-between align-items-center'>
                     <h5 className='mb-0 fw-bold'>
-                      <i className='fas fa-gavel me-2'></i> Formulaire d'Arbitrage & Décision Officielle
+                      <i className='fas fa-gavel me-2'></i> Formulaire d'Arbitrage et de Décision Officielle
                     </h5>
                     <Badge bg='light' text='dark' className='fs-6'>
                       Dossier ID : {postulationTarget._id?.substring(0, 8)}...
