@@ -78,6 +78,57 @@ const ControlleursCandidatures3Screen = () => {
     }
   };
 
+  const handleValidateSingle = async (row) => {
+    if (!window.confirm(`Confirmer la validation finale par la Commission pour ${row.candidat} ?`)) return;
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      await axios.post(
+        '/api/candidatures/batch/validate-control3',
+        { ids: [row.id] },
+        config
+      );
+      setSuccessMsg(`Candidat ${row.candidat} validé avec succès par la Commission EHC !`);
+      dispatch(listControllerCandidatures3());
+    } catch (err) {
+      alert(err.response?.data?.message || 'Erreur lors de la validation');
+    }
+  };
+
+  const handleRejectSingle = async (row) => {
+    const motif = window.prompt(
+      `Motif d'exclusion de la Commission pour ${row.candidat} :`,
+      'Non retenu par la Commission EHC'
+    );
+    if (!motif) return;
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      };
+      await axios.put(
+        `/api/candidatures/${row.id}`,
+        {
+          conforme: 'NON CONFORME',
+          eligibilite: 'NON ELIGIBLE',
+          statutCommission: 'REJETE_COMMISSION',
+          controle3: `Exclu par Commission EHC : ${motif}`,
+        },
+        config
+      );
+      setSuccessMsg(`Candidat ${row.candidat} exclu de la shortlist finale.`);
+      dispatch(listControllerCandidatures3());
+    } catch (err) {
+      alert(err.response?.data?.message || "Erreur lors de l'exclusion");
+    }
+  };
+
   const { SearchBar } = Search;
 
   let postulations =
@@ -208,15 +259,38 @@ const ControlleursCandidatures3Screen = () => {
     },
     {
       dataField: 'actions',
-      text: 'Action',
-      headerStyle: { backgroundColor: '#e2e8f0', textAlign: 'center' },
+      text: 'Actions Individuelles',
+      headerStyle: { backgroundColor: '#e2e8f0', textAlign: 'center', minWidth: '250px' },
       formatter: (cell, row) => (
-        <button
-          className='btn btn-outline-primary btn-sm fw-bold px-2'
-          onClick={() => navigate(`/controlleurs/candidatures/informations/${row.id}`)}
-        >
-          <i className='fas fa-eye me-1'></i> Détails
-        </button>
+        <div className='d-flex align-items-center justify-content-center gap-1'>
+          <button
+            className='btn btn-outline-primary btn-sm fw-bold px-2'
+            title='Consulter les pièces et informations'
+            onClick={() => navigate(`/controlleurs/candidatures/informations/${row.id}`)}
+          >
+            <i className='fas fa-eye me-1'></i> Détails
+          </button>
+          {row.statutCommission !== 'VALIDE_COMMISSION' ? (
+            <button
+              className='btn btn-success btn-sm fw-bold px-2 text-nowrap'
+              title='Valider ce candidat seul dans la shortlist'
+              onClick={() => handleValidateSingle(row)}
+            >
+              <i className='fas fa-check me-1'></i> Valider seul
+            </button>
+          ) : (
+            <span className='badge bg-success-subtle text-success border border-success px-2 py-1 small fw-bold'>
+              <i className='fas fa-check-double me-1'></i> Validé
+            </span>
+          )}
+          <button
+            className='btn btn-outline-danger btn-sm fw-bold px-2 text-nowrap'
+            title='Exclure ce candidat de la shortlist finale'
+            onClick={() => handleRejectSingle(row)}
+          >
+            <i className='fas fa-times me-1'></i> Exclure
+          </button>
+        </div>
       ),
     },
   ];

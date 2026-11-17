@@ -7,16 +7,10 @@ import {
   getCandidatureDetails,
 } from '../../actions/candidatureActions';
 import HeaderAdministrateur from '../../components/HeaderAdministrateur';
-import paginationFactory from 'react-bootstrap-table2-paginator';
-import filterFactory, { textFilter } from 'react-bootstrap-table2-filter';
-import cellEditFactory, { Type } from 'react-bootstrap-table2-editor';
-import ToolkitProvider, { Search } from 'react-bootstrap-table2-toolkit';
-import { Col, Collapse, Container, Row, Button } from 'react-bootstrap';
-import BootstrapTable from 'react-bootstrap-table-next';
+import { Col, Container, Row, Button, Form, Card, Badge } from 'react-bootstrap';
 import moment from 'moment';
 import Message from '../../components/Message';
 import Spinner from '../../components/Spinner';
-import LInkFichier from '../../components/LInkFichier';
 import ControleurSideBar from '../../components/ControleurSideBar';
 import { useToasts } from 'react-toast-notifications';
 import { CANDIDATURE_UPDATE_RESET } from '../../constants/candidatureConstants';
@@ -117,424 +111,54 @@ const CandidatureVlidationScreen = () => {
     );
   };
 
-  const { SearchBar } = Search;
-
   const postulationTarget =
     (candidatures1 && candidatures1.find((c) => String(c._id) === String(ID))) ||
     candidature;
 
-  const validations1 =
-    postulationTarget && postulationTarget._id ? [postulationTarget] : [];
+  const [conformeVal, setConformeVal] = useState('CONFORME');
+  const [eligibiliteVal, setEligibiliteVal] = useState('ELIGIBLE');
+  const [motifVal, setMotifVal] = useState('-');
+  const [dossierVal, setDossierVal] = useState('-');
 
-  const data =
-    validations1 &&
-    validations1.map((postulation) => {
-      const u = postulation.user || {};
-      return {
-        id: postulation._id || '-',
-        dateCandidature:
-          (postulation.createdAt &&
-            moment(postulation.createdAt).format('LLL')) ||
-          '-',
-        heureCandidature:
-          (postulation.createdAt &&
-            moment(postulation.createdAt).format('LLL')) ||
-          '-',
-        poste: postulation.poste || (postulation.offre && postulation.offre.titre) || '-',
-        civilite: postulation.civilite || u.civilite || '-',
-        nom: postulation.nom || u.nom || '-',
-        prenom: postulation.prenom || u.prenom || '-',
-        dateNaissance: postulation.dateNaissance || u.dateNaissance || '-',
-        cni: postulation.cni || u.cni || '-',
-        email: postulation.email || u.email || '-',
-        phone: postulation.phone || u.phone || '-',
-        adresse: postulation.adresse || u.adresse || '-',
-        codePostale: postulation.codePostale || u.codePostale || '-',
-        ville: postulation.ville || u.ville || '-',
-        niveauEtude: postulation.niveauEtude || '-',
-        specialite: postulation.specialite || '-',
-        methodeNotation: postulation.methodeNotation || '-',
-        annee1: postulation.annee1 || '-',
-        annee2: postulation.annee2 || '-',
-        annee3: postulation.annee3 || '-',
-        semestre1: postulation.semestre1 || '-',
-        semestre2: postulation.semestre2 || '-',
-        semestre3: postulation.semestre3 || '-',
-        semestre4: postulation.semestre4 || '-',
-        semestre5: postulation.semestre5 || '-',
-        semestre6: postulation.semestre6 || '-',
-        moyenneOFPPT: postulation.moyenneOFPPT || '-',
-        // noteMoyenne: postulation.noteMoyenne || '-',
-        dateDebutExperience1:
-          (postulation.experiences &&
-            postulation.experiences[0] &&
-            postulation.experiences[0].dateDebut) ||
-          '-',
-      dateFinExperience1:
-        (postulation.experiences &&
-          postulation.experiences[0] &&
-          postulation.experiences[0].dateFin) ||
-        '-',
-      dateDebutExperience2:
-        (postulation.experiences &&
-          postulation.experiences[1] &&
-          postulation.experiences[1].dateDebut) ||
-        '-',
-      dateFinExperience2:
-        (postulation.experiences &&
-          postulation.experiences[1] &&
-          postulation.experiences[1].dateFin) ||
-        '-',
-      dateDebutExperience3:
-        (postulation.experiences &&
-          postulation.experiences[2] &&
-          postulation.experiences[2].dateDebut) ||
-        '-',
-      dateFinExperience3:
-        (postulation.experiences &&
-          postulation.experiences[2] &&
-          postulation.experiences[2].dateFin) ||
-        '-',
-      dateDebutExperience4:
-        (postulation.experiences &&
-          postulation.experiences[3] &&
-          postulation.experiences[3].dateDebut) ||
-        '-',
-      dateFinExperience4:
-        (postulation.experiences &&
-          postulation.experiences[3] &&
-          postulation.experiences[3].dateFin) ||
-        '-',
-      dateDebutExperience5:
-        (postulation.experiences &&
-          postulation.experiences[4] &&
-          postulation.experiences[4].dateDebut) ||
-        '-',
-      dateFinExperience5:
-        (postulation.experiences &&
-          postulation.experiences[4] &&
-          postulation.experiences[4].dateFin) ||
-        '-',
-      dateDebutExperience6:
-        (postulation.experiences &&
-          postulation.experiences[5] &&
-          postulation.experiences[5].dateDebut) ||
-        '-',
-      dateFinExperience6:
-        (postulation.experiences &&
-          postulation.experiences[5] &&
-          postulation.experiences[5].dateFin) ||
-        '-',
+  useEffect(() => {
+    if (postulationTarget && postulationTarget._id) {
+      setConformeVal(postulationTarget.conforme || 'CONFORME');
+      setEligibiliteVal(postulationTarget.eligibilite || 'ELIGIBLE');
+      setMotifVal(postulationTarget.motif || '-');
+      setDossierVal(postulationTarget.dossier || '-');
+    }
+  }, [postulationTarget]);
 
-      disponibilite: postulation.disponibilite || '-',
-      scoreAge: postulation.scoreAge || '-',
-      scoreNote: postulation.scoreNote || '-',
-      scoreExperience: postulation.scoreExperience || '-',
-      scoreExperienceBancaire: postulation.scoreExperienceBancaire || '-',
-      scoreTotal: postulation.scoreTotal || '-',
-      copieCNI:
-        (postulation.copieCNI && (
-          <LInkFichier link={postulation.copieCNI} />
-        )) ||
-        '-',
-      residence:
-        (postulation.residence && (
-          <LInkFichier link={postulation.residence} />
-        )) ||
-        '-',
-      releves:
-        (postulation.releves && (
-          <LInkFichier link={postulation.releves} />
-        )) ||
-        '-',
-      copieDiplomes:
-        (postulation.copieDiplomes && (
-          <LInkFichier link={postulation.copieDiplomes} />
-        )) ||
-        '-',
-      attestationsTravail:
-        (postulation.attestationsTravail && (
-          <LInkFichier link={postulation.attestationsTravail} />
-        )) ||
-        '-',
-      controle1: postulation.controle1 || '-',
-      isControl1:
-        postulation.isControl1 && postulation.isControl1 === true
-          ? 'OUI'
-          : 'NON' || '-',
-      controle2: postulation.controle2 || '-',
-      isControl2:
-        postulation.isControl2 && postulation.isControl2 === true
-          ? 'OUI'
-          : 'NON' || '-',
-      conforme: postulation.conforme || '-',
-      eligibilite: postulation.eligibilite || '-',
-      motif: postulation.motif || '-',
-      dossier: postulation.dossier || '-',
-    };
-  });
-
-  const columns = [
-    {
-      dataField: 'id',
-      text: 'ID',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-
-    {
-      dataField: 'isControl1',
-      text: 'Controle premier effectue',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-      editor: {
-        type: Type.SELECT,
-        options: [
-          {
-            value: 'OUI',
-            label: `OUI`,
-          },
-          {
-            value: 'NON',
-            label: `NON`,
-          },
-        ],
-      },
-    },
-    {
-      dataField: 'conforme',
-      text: 'Candidatures conformes ?',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-      editor: {
-        type: Type.SELECT,
-        options: [
-          {
-            value: `CONFORME`,
-            label: `CONFORME`,
-          },
-          {
-            value: `NON CONFORME`,
-            label: `NON CONFORME`,
-          },
-        ],
-      },
-    },
-    {
-      dataField: 'eligibilite',
-      text: 'Eligibilite de la candidature',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-      editor: {
-        type: Type.SELECT,
-        options: [
-          {
-            value: `ELIGIBLE`,
-            label: `ELIGIBLE`,
-          },
-          {
-            value: `NON ELIGIBLE`,
-            label: `NON ELIGIBLE`,
-          },
-        ],
-      },
-    },
-    {
-      dataField: 'motif',
-      text: 'Motif de la non eligibilite',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-      editor: {
-        type: Type.SELECT,
-        options: [
-          {
-            value: `NENA`,
-            label: `NENA`,
-          },
-          {
-            value: `NEA`,
-            label: `NEA`,
-          },
-          {
-            value: `NED`,
-            label: `NED`,
-          },
-          {
-            value: `NEP`,
-            label: `NEP`,
-          },
-        ],
-      },
-    },
-    {
-      dataField: 'dossier',
-      text: 'Manque dans le dossier',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-      editor: {
-        type: Type.SELECT,
-        options: [
-          {
-            value: `NEP-CIN`,
-            label: `NEP-CIN`,
-          },
-          {
-            value: `NEP-AR`,
-            label: `NEP-AR`,
-          },
-          {
-            value: `NEP-DIP`,
-            label: `NEP-DIP`,
-          },
-          {
-            value: `NEP-AE`,
-            label: `NEP-AE`,
-          },
-          {
-            value: `NEP-RN`,
-            label: `NEP-RN`,
-          },
-          {
-            value: `NEP-AT`,
-            label: `NEP-AT`,
-          },
-        ],
-      },
-    },
-  ];
-
-  const defaultSorted = [
-    {
-      dataField: 'scoreTotal',
-      order: 'dsc',
-    },
-  ];
-  const options = {
-    paginationSize: 4,
-    pageStartIndex: 1,
-    sizePerPageList: [
-      {
-        text: '10',
-        value: 10,
-      },
-      {
-        text: '20',
-        value: 20,
-      },
-      {
-        text: '50',
-        value: 50,
-      },
-      {
-        text: '100',
-        value: 100,
-      },
-      {
-        text: '200',
-        value: 200,
-      },
-    ],
+  const handleConformeChange = (val) => {
+    setConformeVal(val);
+    if (val === 'CONFORME') {
+      setEligibiliteVal('ELIGIBLE');
+      setMotifVal('-');
+      setDossierVal('-');
+    } else {
+      setEligibiliteVal('NON ELIGIBLE');
+      if (motifVal === '-') {
+        setMotifVal('NEP');
+      }
+    }
   };
 
-  function afterSaveCell(oldValue, newValue, row, column) {
-    let payloadValue = newValue ? newValue : '-';
-    if (column.dataField === 'isControl1' || column.dataField === 'isControl2') {
-      payloadValue = (newValue === 'OUI' || newValue === true || newValue === 'true');
-    }
-    const updatePayload = {
-      [column.dataField]: payloadValue,
+  const handleSaveDecision = () => {
+    if (!postulationTarget || !postulationTarget._id) return;
+    const controllerName = `${userInfo.prenom || ''} ${userInfo.nom || ''}`.trim();
+    const payload = {
+      conforme: conformeVal,
+      eligibilite: eligibiliteVal,
+      motif: motifVal !== '-' ? motifVal : undefined,
+      dossier: dossierVal !== '-' ? dossierVal : undefined,
+      controle1: `Arbitrage par ${controllerName} (${conformeVal} / ${eligibiliteVal})`,
     };
-    if (column.dataField === 'isControl1' && payloadValue === true) {
-      updatePayload.conforme = 'CONFORME';
-      updatePayload.eligibilite = 'ELIGIBLE';
-    }
-    dispatch(updateCandidature(row.id, updatePayload));
-  }
-
-  const CustomToggleList = ({ columns, onColumnToggle, toggles }) => (
-    <div className='btn-group btn-group-toggle' data-toggle='buttons'>
-      <Container>
-        <Row className='justify-content-center'>
-          <Container>
-            <Button
-              className='btn-primary'
-              onClick={() => setOpen(!open)}
-              aria-controls='example-collapse-text'
-              aria-expanded={open}
-            >
-              <i className='fas fa-filter'></i> Filter par :{' '}
-            </Button>
-          </Container>
-        </Row>
-
-        <Row className='justify-content-center'>
-          <Col md={12} lg={12} className='mt-2' style={{ marginLeft: '11em' }}>
-            <Collapse in={open}>
-              <div id='example-collapse-text'>
-                <>
-                  {columns
-                    .map((column) => ({
-                      ...column,
-                      toggle: toggles[column.dataField],
-                    }))
-                    .map((column) => (
-                      <button
-                        type='button'
-                        key={column.dataField}
-                        className={`m-1  btn btn-outline-info btn-sm ${
-                          column.toggle ? 'active' : ''
-                        }`}
-                        data-toggle='button'
-                        aria-pressed={column.toggle ? 'true' : 'false'}
-                        onClick={() => onColumnToggle(column.dataField)}
-                      >
-                        {column.text}
-                      </button>
-                    ))}
-                </>
-              </div>
-            </Collapse>
-          </Col>
-        </Row>
-      </Container>
-    </div>
-  );
+    dispatch(updateCandidature(postulationTarget._id, payload));
+    addToast('Décision officielle enregistrée avec succès !', {
+      appearance: 'success',
+      autoDismiss: true,
+    });
+  };
 
   return (
     <div id='root'>
@@ -542,28 +166,20 @@ const CandidatureVlidationScreen = () => {
         <ControleurSideBar prenom={userInfo.prenom} nom={userInfo.nom} />
         <main>
           <HeaderAdministrateur
-            headerTitle='Liste des candidatures pour le premier controle'
+            headerTitle="Validation & Arbitrage du Candidat (Contrôle d'Éligibilité)"
             endPoint='/admin'
           />
-          <Container
-            className='mb-4 mt-4 pt-3  pb-3 font-weight-bold'
-            style={{
-              backgroundColor: '#fff',
-              transition: 'box-shadow 0.25s',
-              boxShadow:
-                '0 2px 5px 0 rgb(0 0 0 / 16%), 0 2px 10px 0 rgb(0 0 0 / 12%)',
-            }}
-          >
+          <Container className='mb-4 mt-4'>
             {loadingUpdate && <Spinner size={150} />}
             {errorUpdate && <Message variant='danger'>{errorUpdate}</Message>}
 
-            {/* BANDEAU RECAPITULATIF DU CANDIDAT */}
+            {/* BANDEAU RECAPITULATIF DU CANDIDAT & ACTIONS DE PIPELINE */}
             {postulationTarget && postulationTarget._id && (
               <div className='p-3 mb-4 rounded-3 border bg-light shadow-sm d-flex flex-wrap justify-content-between align-items-center'>
                 <div>
                   <h5 className='fw-bold text-primary mb-1'>
                     <i className='fas fa-clipboard-check me-2'></i>
-                    Validation Finale Contrôle 1 : {postulationTarget.user?.prenom || postulationTarget.prenom} {postulationTarget.user?.nom || postulationTarget.nom}
+                    Fiche Candidat : {postulationTarget.user?.prenom || postulationTarget.prenom} {postulationTarget.user?.nom || postulationTarget.nom}
                   </h5>
                   <div className='text-muted small'>
                     Poste : <b>{postulationTarget.poste || postulationTarget.offre?.titre || 'Guichetier'}</b> | CNI : <b>{postulationTarget.user?.cni || postulationTarget.cni}</b> | Statut IA :{' '}
@@ -630,53 +246,251 @@ const CandidatureVlidationScreen = () => {
               <Spinner size={150} />
             ) : errorCandidatures1 && errorDetails ? (
               <Message variant='danger'>{errorCandidatures1 || errorDetails}</Message>
-            ) : (
-              data && (
-                <ToolkitProvider
-                  keyField='id'
-                  data={data}
-                  columns={columns}
-                  columnToggle
-                  search
-                >
-                  {(props) => (
-                    <>
-                      <Container>
-                        <Row className='mt-2'>
-                          <h5>
-                            <i className='fas fa-search'></i> Rechercher :
-                          </h5>
-                          <Col md={8} lg={8}>
-                            {' '}
-                            <SearchBar {...props.searchProps} />
-                          </Col>
-                        </Row>
-                      </Container>
-                      <hr />
-                      <CustomToggleList {...props.columnToggleProps} />
-                      <hr />
-                      <BootstrapTable
-                        {...props.baseProps}
-                        keyField='id'
-                        bootstrap4={true}
-                        data={data}
-                        columns={columns}
-                        wrapperClasses='table-responsive text-center'
-                        hover
-                        noDataIndication='Table is Empty'
-                        defaultSorted={defaultSorted}
-                        pagination={paginationFactory(options)}
-                        filter={filterFactory()}
-                        cellEdit={cellEditFactory({
-                          mode: 'click',
-                          afterSaveCell,
-                        })}
-                      />
-                    </>
-                  )}
-                </ToolkitProvider>
-              )
-            )}
+            ) : postulationTarget && postulationTarget._id ? (
+              <>
+                {/* 1. FORMULAIRE D'ARBITRAGE ET DE DÉCISION OFFICIELLE */}
+                <Card className='shadow-sm border-0 mb-4'>
+                  <Card.Header className='bg-primary text-white py-3 d-flex justify-content-between align-items-center'>
+                    <h5 className='mb-0 fw-bold'>
+                      <i className='fas fa-gavel me-2'></i> Formulaire d'Arbitrage & Décision Officielle
+                    </h5>
+                    <Badge bg='light' text='dark' className='fs-6'>
+                      Dossier ID : {postulationTarget._id?.substring(0, 8)}...
+                    </Badge>
+                  </Card.Header>
+                  <Card.Body className='p-4'>
+                    <Row className='g-4'>
+                      <Col md={6}>
+                        <div className='p-3 bg-light rounded border h-100'>
+                          <h6 className='fw-bold text-dark border-bottom pb-2 mb-3'>
+                            <i className='fas fa-clipboard-check text-success me-2'></i> 1. Statut de Conformité & Éligibilité
+                          </h6>
+                          <Form.Group className='mb-3'>
+                            <Form.Label className='fw-bold small text-muted'>Candidature Conforme ?</Form.Label>
+                            <Form.Select
+                              size='lg'
+                              className={`fw-bold ${conformeVal === 'CONFORME' ? 'text-success border-success' : 'text-danger border-danger'}`}
+                              value={conformeVal}
+                              onChange={(e) => handleConformeChange(e.target.value)}
+                            >
+                              <option value='CONFORME'>✓ CONFORME</option>
+                              <option value='NON CONFORME'>✗ NON CONFORME (Rejet)</option>
+                            </Form.Select>
+                          </Form.Group>
+
+                          <Form.Group className='mb-3'>
+                            <Form.Label className='fw-bold small text-muted'>Éligibilité du Candidat</Form.Label>
+                            <Form.Select
+                              className='fw-bold'
+                              value={eligibiliteVal}
+                              onChange={(e) => setEligibiliteVal(e.target.value)}
+                            >
+                              <option value='ELIGIBLE'>ÉLIGIBLE</option>
+                              <option value='NON ELIGIBLE'>NON ÉLIGIBLE</option>
+                            </Form.Select>
+                          </Form.Group>
+                        </div>
+                      </Col>
+
+                      <Col md={6}>
+                        <div className='p-3 bg-light rounded border h-100'>
+                          <h6 className='fw-bold text-dark border-bottom pb-2 mb-3'>
+                            <i className='fas fa-exclamation-circle text-danger me-2'></i> 2. Preuves & Motifs Légaux (En cas de Rejet)
+                          </h6>
+                          <Form.Group className='mb-3'>
+                            <Form.Label className='fw-bold small text-muted'>Motif Officiel de Rejet</Form.Label>
+                            <Form.Select
+                              className='fw-bold'
+                              value={motifVal}
+                              onChange={(e) => setMotifVal(e.target.value)}
+                              disabled={conformeVal === 'CONFORME'}
+                            >
+                              <option value='-'>- Aucun motif (Dossier conforme) -</option>
+                              <option value='NEP'>NEP - Dossier incomplet / Pièces manquantes</option>
+                              <option value='NENA'>NENA - Niveau académique insuffisant</option>
+                              <option value='NEA'>NEA - Dépassement de la limite d'âge légale</option>
+                              <option value='NED'>NED - Diplôme ou spécialité non conforme</option>
+                            </Form.Select>
+                          </Form.Group>
+
+                          <Form.Group className='mb-3'>
+                            <Form.Label className='fw-bold small text-muted'>Pièce Manquante ou Défaillante</Form.Label>
+                            <Form.Select
+                              className='fw-bold'
+                              value={dossierVal}
+                              onChange={(e) => setDossierVal(e.target.value)}
+                              disabled={conformeVal === 'CONFORME'}
+                            >
+                              <option value='-'>- Aucune pièce manquante -</option>
+                              <option value='NEP-CIN'>NEP-CIN : Carte Nationale d'Identité (CNI/CNIE)</option>
+                              <option value='NEP-DIP'>NEP-DIP : Copie du Diplôme officiel</option>
+                              <option value='NEP-RN'>NEP-RN : Relevés de notes universitaires</option>
+                              <option value='NEP-AR'>NEP-AR : Attestation de résidence</option>
+                              <option value='NEP-AT'>NEP-AT : Attestation de travail / Expérience</option>
+                              <option value='NEP-AE'>NEP-AE : Attestation d'équivalence</option>
+                            </Form.Select>
+                          </Form.Group>
+                        </div>
+                      </Col>
+                    </Row>
+
+                    <div className='d-flex justify-content-end align-items-center gap-3 mt-4 pt-3 border-top'>
+                      <Button
+                        variant='primary'
+                        size='lg'
+                        className='fw-bold px-4 shadow-sm'
+                        onClick={handleSaveDecision}
+                      >
+                        <i className='fas fa-save me-2'></i> Enregistrer la Décision Officielle
+                      </Button>
+                    </div>
+                  </Card.Body>
+                </Card>
+
+                {/* 2. PIÈCES JUSTIFICATIVES NUMÉRISÉES ET DONNÉES DU CANDIDAT */}
+                <Row className='g-4'>
+                  <Col md={6}>
+                    <Card className='shadow-sm border-0 h-100'>
+                      <Card.Header className='bg-dark text-white fw-bold'>
+                        <i className='fas fa-folder-open me-2 text-warning'></i> Pièces Justificatives Téléversées
+                      </Card.Header>
+                      <Card.Body className='p-3'>
+                        <div className='list-group list-group-flush'>
+                          <div className='list-group-item d-flex justify-content-between align-items-center px-0'>
+                            <div>
+                              <i className='fas fa-id-card text-primary me-2'></i>
+                              <strong>Carte Nationale d'Identité (CNI) :</strong>
+                            </div>
+                            {postulationTarget.copieCNI || postulationTarget.user?.copieCNI ? (
+                              <a
+                                href={postulationTarget.copieCNI || postulationTarget.user?.copieCNI}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='btn btn-outline-primary btn-sm fw-bold'
+                              >
+                                <i className='fas fa-external-link-alt me-1'></i> Voir CNI
+                              </a>
+                            ) : (
+                              <Badge bg='danger'>Non Fournie</Badge>
+                            )}
+                          </div>
+
+                          <div className='list-group-item d-flex justify-content-between align-items-center px-0'>
+                            <div>
+                              <i className='fas fa-graduation-cap text-success me-2'></i>
+                              <strong>Diplôme Certifié :</strong>
+                            </div>
+                            {postulationTarget.copieDiplomes ? (
+                              <a
+                                href={postulationTarget.copieDiplomes}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='btn btn-outline-success btn-sm fw-bold'
+                              >
+                                <i className='fas fa-external-link-alt me-1'></i> Voir Diplôme
+                              </a>
+                            ) : (
+                              <Badge bg='danger'>Non Fourni</Badge>
+                            )}
+                          </div>
+
+                          <div className='list-group-item d-flex justify-content-between align-items-center px-0'>
+                            <div>
+                              <i className='fas fa-file-alt text-info me-2'></i>
+                              <strong>Relevés de Notes :</strong>
+                            </div>
+                            {postulationTarget.releves ? (
+                              <a
+                                href={postulationTarget.releves}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='btn btn-outline-info btn-sm fw-bold'
+                              >
+                                <i className='fas fa-external-link-alt me-1'></i> Voir Relevés
+                              </a>
+                            ) : (
+                              <Badge bg='danger'>Non Fournis</Badge>
+                            )}
+                          </div>
+
+                          <div className='list-group-item d-flex justify-content-between align-items-center px-0'>
+                            <div>
+                              <i className='fas fa-briefcase text-secondary me-2'></i>
+                              <strong>Attestations de Travail :</strong>
+                            </div>
+                            {postulationTarget.attestationsTravail ? (
+                              <a
+                                href={postulationTarget.attestationsTravail}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='btn btn-outline-secondary btn-sm fw-bold'
+                              >
+                                <i className='fas fa-external-link-alt me-1'></i> Voir Attestation
+                              </a>
+                            ) : (
+                              <Badge bg='secondary'>Facultatif</Badge>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className='mt-3 text-center'>
+                          <Button
+                            variant='outline-dark'
+                            size='sm'
+                            className='w-100 fw-bold'
+                            onClick={() => navigate(`/controlleurs/candidatures/informations/${postulationTarget._id}`)}
+                          >
+                            <i className='fas fa-search-plus me-1'></i> Ouvrir la Visionneuse Complète HD (DocumentViewer)
+                          </Button>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+
+                  <Col md={6}>
+                    <Card className='shadow-sm border-0 h-100'>
+                      <Card.Header className='bg-dark text-white fw-bold'>
+                        <i className='fas fa-user-circle me-2 text-info'></i> Données Déclarées du Candidat
+                      </Card.Header>
+                      <Card.Body className='p-3'>
+                        <div className='row g-2 small'>
+                          <div className='col-6'>
+                            <span className='text-muted d-block'>Nom & Prénom :</span>
+                            <strong className='text-primary'>{postulationTarget.user?.prenom || postulationTarget.prenom} {postulationTarget.user?.nom || postulationTarget.nom}</strong>
+                          </div>
+                          <div className='col-6'>
+                            <span className='text-muted d-block'>Numéro CNI :</span>
+                            <strong>{postulationTarget.user?.cni || postulationTarget.cni || '-'}</strong>
+                          </div>
+                          <div className='col-6'>
+                            <span className='text-muted d-block'>Date de Naissance :</span>
+                            <strong>{postulationTarget.user?.dateNaissance || postulationTarget.dateNaissance || '-'}</strong>
+                          </div>
+                          <div className='col-6'>
+                            <span className='text-muted d-block'>Ville de Résidence :</span>
+                            <strong>{postulationTarget.user?.ville || postulationTarget.ville || '-'}</strong>
+                          </div>
+                          <div className='col-6'>
+                            <span className='text-muted d-block'>Niveau Académique :</span>
+                            <strong>{postulationTarget.niveauEtude || '-'}</strong>
+                          </div>
+                          <div className='col-6'>
+                            <span className='text-muted d-block'>Diplôme :</span>
+                            <strong>{postulationTarget.diplome || '-'}</strong>
+                          </div>
+                          <div className='col-12 mt-2 pt-2 border-top'>
+                            <span className='text-muted d-block'>Score au Barème Officiel :</span>
+                            <Badge bg='warning' text='dark' className='fs-6 px-3 py-1'>
+                              Total : {Number(postulationTarget.scoreTotal || 0).toFixed(2)} pts
+                            </Badge>
+                          </div>
+                        </div>
+                      </Card.Body>
+                    </Card>
+                  </Col>
+                </Row>
+              </>
+            ) : null}
           </Container>
         </main>
       </div>
