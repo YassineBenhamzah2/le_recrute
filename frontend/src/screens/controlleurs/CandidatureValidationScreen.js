@@ -14,6 +14,7 @@ import Spinner from '../../components/Spinner';
 import ControleurSideBar from '../../components/ControleurSideBar';
 import { useToasts } from 'react-toast-notifications';
 import { CANDIDATURE_UPDATE_RESET } from '../../constants/candidatureConstants';
+import { getFileUrl } from '../../utils/fileUrl';
 
 const CandidatureVlidationScreen = () => {
   moment.locale('fr');
@@ -363,7 +364,7 @@ const CandidatureVlidationScreen = () => {
                             </div>
                             {postulationTarget.copieCNI || postulationTarget.user?.copieCNI ? (
                               <a
-                                href={postulationTarget.copieCNI || postulationTarget.user?.copieCNI}
+                                href={getFileUrl(postulationTarget.copieCNI || postulationTarget.user?.copieCNI)}
                                 target='_blank'
                                 rel='noopener noreferrer'
                                 className='btn btn-outline-primary btn-sm fw-bold'
@@ -382,7 +383,7 @@ const CandidatureVlidationScreen = () => {
                             </div>
                             {postulationTarget.copieDiplomes ? (
                               <a
-                                href={postulationTarget.copieDiplomes}
+                                href={getFileUrl(postulationTarget.copieDiplomes)}
                                 target='_blank'
                                 rel='noopener noreferrer'
                                 className='btn btn-outline-success btn-sm fw-bold'
@@ -401,7 +402,7 @@ const CandidatureVlidationScreen = () => {
                             </div>
                             {postulationTarget.releves ? (
                               <a
-                                href={postulationTarget.releves}
+                                href={getFileUrl(postulationTarget.releves)}
                                 target='_blank'
                                 rel='noopener noreferrer'
                                 className='btn btn-outline-info btn-sm fw-bold'
@@ -420,7 +421,7 @@ const CandidatureVlidationScreen = () => {
                             </div>
                             {postulationTarget.attestationsTravail ? (
                               <a
-                                href={postulationTarget.attestationsTravail}
+                                href={getFileUrl(postulationTarget.attestationsTravail)}
                                 target='_blank'
                                 rel='noopener noreferrer'
                                 className='btn btn-outline-secondary btn-sm fw-bold'

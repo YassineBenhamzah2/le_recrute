@@ -11,6 +11,7 @@ import OfficialReceiptPDF from '../components/OfficialReceiptPDF';
 import { getUserDetails, updateUserProfile } from '../actions/userActions';
 import { listMyCandidatures } from '../actions/candidatureActions';
 import { USER_UPDATE_PROFILE_RESET } from '../constants/userConstants';
+import { getFileUrl } from '../utils/fileUrl';
 import './ProfileScreen.css';
 
 const CandidatureCard = ({ candidature, userInfo, onPreviewReceipt }) => {
@@ -316,7 +317,7 @@ const ProfileScreen = () => {
     } else if (userInfo.isController) {
       navigate('/controlleurs/dashboard');
     } else {
-      if (!user || !user.email) {
+      if (!user || !user.email || String(user._id) !== String(userInfo._id)) {
         dispatch(getUserDetails('profile'));
         dispatch(listMyCandidatures());
       } else {
@@ -928,7 +929,7 @@ const ProfileScreen = () => {
                                 <i className='fas fa-check-circle text-success'></i> Déposé
                               </div>
                               <a
-                                href={doc.path}
+                                href={getFileUrl(doc.path)}
                                 target='_blank'
                                 rel='noopener noreferrer'
                                 className='btn btn-outline-primary btn-sm py-0 px-2 fw-bold'
