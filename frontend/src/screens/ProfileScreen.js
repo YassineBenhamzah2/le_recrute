@@ -841,80 +841,116 @@ const ProfileScreen = () => {
             </div>
           )}
 
-          {activeTab === 'documents' && (
-            <div className='candidate-form-card'>
-              <div className='candidate-form-section-title'>
-                <i className='fas fa-folder-open'></i>
-                <span>Inventaire des Pièces Justificatives Déposées</span>
+          {activeTab === 'documents' && (() => {
+            const latestCandidature =
+              candidatures && candidatures.length > 0 ? candidatures[0] : null;
+            const cniPath = user?.copieCNI || latestCandidature?.user?.copieCNI;
+            const diplomePath = latestCandidature?.copieDiplomes;
+            const relevesPath = latestCandidature?.releves;
+            const attestationsPath = latestCandidature?.attestationsTravail;
+
+            const docsInventory = [
+              {
+                title: 'Carte Nationale d’Identité (CNI)',
+                icon: 'fa-id-card',
+                path: cniPath,
+                required: true,
+                description: 'Justificatif d’identité officiel',
+              },
+              {
+                title: 'Diplôme / Attestation Bac+2/3',
+                icon: 'fa-graduation-cap',
+                path: diplomePath,
+                required: true,
+                description: 'Diplôme académique ou attestation de réussite',
+              },
+              {
+                title: 'Relevés de Notes Globaux',
+                icon: 'fa-file-invoice',
+                path: relevesPath,
+                required: true,
+                description: 'Relevés de notes officiels (S1 à S6)',
+              },
+              {
+                title: 'Attestations d’Expérience',
+                icon: 'fa-briefcase',
+                path: attestationsPath,
+                required: false,
+                description: 'Certificats de travail (facultatif)',
+              },
+            ];
+
+            const totalUploaded = docsInventory.filter((d) => Boolean(d.path)).length;
+
+            return (
+              <div className='candidate-form-card'>
+                <div className='candidate-form-section-title'>
+                  <i className='fas fa-folder-open'></i>
+                  <span>Inventaire des Pièces Justificatives Déposées</span>
+                </div>
+                <p className='text-muted' style={{ fontSize: '13.5px' }}>
+                  Conformément aux directives de la commission de recrutement, ces pièces justificatives certifiées sont
+                  rattachées à votre dossier numérique sécurisé.
+                </p>
+
+                {totalUploaded === 0 ? (
+                  <div className='p-4 text-center my-3 bg-light rounded-3 border'>
+                    <div className='mb-3 text-muted'>
+                      <i className='fas fa-folder-open fa-3x text-secondary opacity-50'></i>
+                    </div>
+                    <h6 className='fw-bold text-dark mb-2'>
+                      Aucune pièce justificative déposée pour le moment
+                    </h6>
+                    <p className='text-muted small mx-auto mb-3' style={{ maxWidth: '520px' }}>
+                      Vous n'avez téléversé aucun document (PDF / image) sur ce compte. 
+                      Vos pièces justificatives (Carte d'identité, Diplômes, Relevés de notes, etc.) seront automatiquement répertoriées ici dès votre candidature à une offre de concours.
+                    </p>
+                    <button
+                      type='button'
+                      className='btn btn-primary btn-sm fw-bold px-3 py-2'
+                      onClick={() => navigate('/')}
+                    >
+                      <i className='fas fa-briefcase me-2'></i> Consulter les Offres & Concours
+                    </button>
+                  </div>
+                ) : (
+                  <div className='docs-list-grid'>
+                    {docsInventory.map((doc, idx) => (
+                      <div className='doc-item-card' key={idx}>
+                        <div className='doc-item-icon'>
+                          <i className={`fas ${doc.icon}`}></i>
+                        </div>
+                        <div className='doc-item-meta w-100'>
+                          <h5>{doc.title}</h5>
+                          {doc.path ? (
+                            <div className='d-flex align-items-center justify-content-between mt-2'>
+                              <div className='doc-item-status'>
+                                <i className='fas fa-check-circle text-success'></i> Déposé
+                              </div>
+                              <a
+                                href={doc.path}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='btn btn-outline-primary btn-sm py-0 px-2 fw-bold'
+                                style={{ fontSize: '11px' }}
+                              >
+                                <i className='fas fa-external-link-alt me-1'></i> Voir
+                              </a>
+                            </div>
+                          ) : (
+                            <div className='doc-item-status text-secondary mt-1'>
+                              <i className='fas fa-minus-circle me-1'></i> Non déposé{' '}
+                              {doc.required ? '(Requis pour postuler)' : '(Facultatif)'}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <p className='text-muted' style={{ fontSize: '13.5px' }}>
-                Conformément aux directives de la commission de recrutement, ces pièces justificatives certifiées sont
-                rattachées à votre dossier numérique sécurisé.
-              </p>
-
-              <div className='docs-list-grid'>
-                <div className='doc-item-card'>
-                  <div className='doc-item-icon'>
-                    <i className='fas fa-id-card'></i>
-                  </div>
-                  <div className='doc-item-meta'>
-                    <h5>Carte Nationale (CNI)</h5>
-                    <div className='doc-item-status'>
-                      <i className='fas fa-check-circle'></i> Certifiée Conforme
-                    </div>
-                  </div>
-                </div>
-
-                <div className='doc-item-card'>
-                  <div className='doc-item-icon'>
-                    <i className='fas fa-graduation-cap'></i>
-                  </div>
-                  <div className='doc-item-meta'>
-                    <h5>Diplôme / Attestation Bac+2/3</h5>
-                    <div className='doc-item-status'>
-                      <i className='fas fa-check-circle'></i> Validé au Barème
-                    </div>
-                  </div>
-                </div>
-
-                <div className='doc-item-card'>
-                  <div className='doc-item-icon'>
-                    <i className='fas fa-file-invoice'></i>
-                  </div>
-                  <div className='doc-item-meta'>
-                    <h5>Relevés de Notes Globaux</h5>
-                    <div className='doc-item-status'>
-                      <i className='fas fa-check-circle'></i> Mentions Enregistrées
-                    </div>
-                  </div>
-                </div>
-
-                <div className='doc-item-card'>
-                  <div className='doc-item-icon'>
-                    <i className='fas fa-briefcase'></i>
-                  </div>
-                  <div className='doc-item-meta'>
-                    <h5>Attestations d'Expérience</h5>
-                    <div className='doc-item-status'>
-                      <i className='fas fa-check-circle'></i> Comptabilisées
-                    </div>
-                  </div>
-                </div>
-
-                <div className='doc-item-card'>
-                  <div className='doc-item-icon'>
-                    <i className='fas fa-file-alt'></i>
-                  </div>
-                  <div className='doc-item-meta'>
-                    <h5>Curriculum Vitae (CV)</h5>
-                    <div className='doc-item-status'>
-                      <i className='fas fa-check-circle'></i> Format Officiel PDF
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </div>
       </main>
 
