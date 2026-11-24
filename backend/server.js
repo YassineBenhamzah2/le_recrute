@@ -20,7 +20,8 @@ import { documentVault } from './middleware/documentVaultMiddleware.js';
 dotenv.config();
 dotenv.config({ path: path.resolve('backend', '.env') });
 if (!process.env.JWT_SECRET) {
-  process.env.JWT_SECRET = 'albaridbank_recrutement_secret_key_2026_xyz123!';
+  console.error('FATAL ERROR: JWT_SECRET is not defined in .env'.red.bold);
+  process.exit(1);
 }
 
 //connect the database
