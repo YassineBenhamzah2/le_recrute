@@ -4,9 +4,8 @@ import { useNavigate } from 'react-router';
 import axios from 'axios';
 import { Container, Row, Col, Button, Card, Badge, Alert } from 'react-bootstrap';
 import BootstrapTable from 'react-bootstrap-table-next';
-import ToolkitProvider, { Search } from 'react-bootstrap-table2-toolkit';
+import ToolkitProvider, { Search, CSVExport } from 'react-bootstrap-table2-toolkit';
 import paginationFactory from 'react-bootstrap-table2-paginator';
-import filterFactory, { textFilter } from 'react-bootstrap-table2-filter';
 import moment from 'moment';
 import { listControllerCandidatures3 } from '../../actions/candidatureActions';
 import { listUsers } from '../../actions/userActions';
@@ -14,6 +13,8 @@ import ControleurSideBar from '../../components/ControleurSideBar';
 import HeaderAdministrateur from '../../components/HeaderAdministrateur';
 import Spinner from '../../components/Spinner';
 import Message from '../../components/Message';
+import ControleurDrawer from '../../components/ControleurDrawer';
+import PvCommissionModal from '../../components/PvCommissionModal';
 
 const ControlleursCandidatures3Screen = () => {
   moment.locale('fr');
@@ -22,6 +23,12 @@ const ControlleursCandidatures3Screen = () => {
 
   const [validating, setValidating] = useState(false);
   const [successMsg, setSuccessMsg] = useState('');
+  const [showPvModal, setShowPvModal] = useState(false);
+
+  // État du Drawer d'examen latéral
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
@@ -68,7 +75,7 @@ const ControlleursCandidatures3Screen = () => {
         config
       );
       setSuccessMsg(
-        `Commission EHC : ${res.modifiedCount} dossiers validés avec succès ! La shortlist officielle est désormais disponible pour le Maître d'Ouvrage.`
+        `Commission EHC : ${res.modifiedCount || 'Tous les'} dossiers validés avec succès ! La shortlist officielle est désormais scellée pour le Client RH.`
       );
       dispatch(listControllerCandidatures3());
     } catch (err) {
@@ -78,58 +85,8 @@ const ControlleursCandidatures3Screen = () => {
     }
   };
 
-  const handleValidateSingle = async (row) => {
-    if (!window.confirm(`Confirmer la validation finale par la Commission pour ${row.candidat} ?`)) return;
-    try {
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-      await axios.post(
-        '/api/candidatures/batch/validate-control3',
-        { ids: [row.id] },
-        config
-      );
-      setSuccessMsg(`Candidat ${row.candidat} validé avec succès par la Commission EHC !`);
-      dispatch(listControllerCandidatures3());
-    } catch (err) {
-      alert(err.response?.data?.message || 'Erreur lors de la validation');
-    }
-  };
-
-  const handleRejectSingle = async (row) => {
-    const motif = window.prompt(
-      `Motif d'exclusion de la Commission pour ${row.candidat} :`,
-      'Non retenu par la Commission EHC'
-    );
-    if (!motif) return;
-    try {
-      const config = {
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${userInfo.token}`,
-        },
-      };
-      await axios.put(
-        `/api/candidatures/${row.id}`,
-        {
-          conforme: 'NON CONFORME',
-          eligibilite: 'NON ELIGIBLE',
-          statutCommission: 'REJETE_COMMISSION',
-          controle3: `Exclu par Commission EHC : ${motif}`,
-        },
-        config
-      );
-      setSuccessMsg(`Candidat ${row.candidat} exclu de la shortlist finale.`);
-      dispatch(listControllerCandidatures3());
-    } catch (err) {
-      alert(err.response?.data?.message || "Erreur lors de l'exclusion");
-    }
-  };
-
   const { SearchBar } = Search;
+  const { ExportCSVButton } = CSVExport;
 
   let postulations =
     candidatures3 &&
@@ -155,283 +112,462 @@ const ControlleursCandidatures3Screen = () => {
       return candidature;
     });
 
-  const data =
-    postulations &&
-    postulations.map((p, idx) => ({
-      rang: idx + 1,
-      id: p._id || '-',
-      candidat: `${p.nom || ''} ${p.prenom || ''}`.trim() || 'Candidat',
-      cni: p.cni || '-',
-      poste: p.poste || p.offre?.titre || 'Concours',
-      scoreTotal: Number(p.scoreTotal || 0).toFixed(2),
-      statutAI: p.statutAI || 'VALIDE_IA',
-      controle1: p.controle1 || 'Audit IA Conforme',
-      controle2: p.controle2 || 'Auditeur EHC Validé',
-      statutCommission: p.statutCommission || (p.isControl3 ? 'VALIDE_COMMISSION' : 'EN_COURS_AUDIT'),
-      date: p.createdAt ? moment(p.createdAt).format('DD/MM/YYYY') : '-',
-    }));
+  const rawCandidatures = postulations || [];
 
-  const totalDossiers = data ? data.length : 0;
-  const countValidesCommission = data
-    ? data.filter((d) => d.statutCommission === 'VALIDE_COMMISSION').length
-    : 0;
+  const handleOpenDrawer = (candidateObj, index) => {
+    setSelectedCandidate(candidateObj);
+    setSelectedIndex(index);
+    setShowDrawer(true);
+  };
 
+  const handleNextCandidate = () => {
+    if (selectedIndex < rawCandidatures.length - 1) {
+      const nextIndex = selectedIndex + 1;
+      setSelectedIndex(nextIndex);
+      setSelectedCandidate(rawCandidatures[nextIndex]);
+    }
+  };
+
+  const handlePrevCandidate = () => {
+    if (selectedIndex > 0) {
+      const prevIndex = selectedIndex - 1;
+      setSelectedIndex(prevIndex);
+      setSelectedCandidate(rawCandidatures[prevIndex]);
+    }
+  };
+
+  const totalDossiers = rawCandidatures.length;
+  const countValidesCommission = rawCandidatures.filter(
+    (d) => d.statutCommission === 'VALIDE_COMMISSION' || d.isControl3
+  ).length;
+  const countRejetes = rawCandidatures.filter(
+    (d) => d.conforme === 'NON CONFORME' || d.statutCommission === 'REJETE_COMMISSION'
+  ).length;
+  const countEnAttente = totalDossiers - countValidesCommission - countRejetes;
+
+  // 8 COLONNES ÉPURÉES POUR CONTRÔLE 3
   const columns = [
     {
       dataField: 'rang',
-      text: 'Rang #',
+      text: 'Rang',
       sort: true,
-      headerStyle: { backgroundColor: '#e2e8f0', width: '80px', textAlign: 'center' },
-      formatter: (cell) => <span className='fw-bold text-dark'>#{cell}</span>,
+      headerStyle: { backgroundColor: '#F8FAFC', width: '70px', textAlign: 'center', fontWeight: '800' },
+      style: { verticalAlign: 'middle', textAlign: 'center' },
+      formatter: (cell, row, rowIndex) => (
+        <span className='fw-bold text-dark font-monospace'>#{rowIndex + 1}</span>
+      ),
     },
     {
-      dataField: 'candidat',
-      text: 'Nom & Prénom',
+      dataField: '_id',
+      text: 'Réf / Dossier',
       sort: true,
-      filter: textFilter(),
-      headerStyle: { backgroundColor: '#e2e8f0' },
-      formatter: (cell) => <span className='fw-bold text-primary'>{cell}</span>,
+      headerStyle: { backgroundColor: '#F8FAFC', width: '130px', fontWeight: '800' },
+      style: { verticalAlign: 'middle' },
+      formatter: (cell, row) => (
+        <div style={{ lineHeight: 1.2 }}>
+          <span className='font-monospace text-muted fw-bold' style={{ fontSize: '12px' }}>
+            {row.numeroDossier || (cell ? cell.substring(0, 10) + '...' : '-')}
+          </span>
+          <div className='text-muted' style={{ fontSize: '11px' }}>
+            {row.createdAt ? moment(row.createdAt).format('DD/MM/YYYY') : '-'}
+          </div>
+        </div>
+      ),
     },
     {
-      dataField: 'cni',
-      text: 'CIN',
+      dataField: 'nom',
+      text: 'Candidat (Nom & CNI)',
       sort: true,
-      filter: textFilter(),
-      headerStyle: { backgroundColor: '#e2e8f0' },
+      headerStyle: { backgroundColor: '#F8FAFC', width: '220px', fontWeight: '800' },
+      style: { verticalAlign: 'middle' },
+      formatter: (cell, row) => {
+        const nomComplet = `${row.nom || ''} ${row.prenom || ''}`.trim() || 'Candidat';
+        const cniVal = row.cni || row.user?.cni || '-';
+        return (
+          <div style={{ lineHeight: 1.3 }}>
+            <span className='fw-bold text-dark' style={{ fontSize: '13.5px' }}>
+              {nomComplet}
+            </span>
+            <div className='d-flex align-items-center gap-2 mt-1'>
+              <span className='badge bg-light text-dark border font-monospace' style={{ fontSize: '11px' }}>
+                {cniVal}
+              </span>
+              {row.dateNaissance && (
+                <span className='text-muted' style={{ fontSize: '11px' }}>
+                  {moment(row.dateNaissance).format('DD.MM.YYYY')}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      },
     },
     {
       dataField: 'poste',
       text: 'Poste Concours',
       sort: true,
-      filter: textFilter(),
-      headerStyle: { backgroundColor: '#e2e8f0' },
+      headerStyle: { backgroundColor: '#F8FAFC', width: '160px', fontWeight: '800' },
+      style: { verticalAlign: 'middle' },
+      formatter: (cell, row) => (
+        <span className='badge bg-light text-secondary border fw-semibold px-2 py-1' style={{ fontSize: '11.5px' }}>
+          {cell || row.offre?.titre || 'Concours'}
+        </span>
+      ),
     },
     {
       dataField: 'scoreTotal',
-      text: 'Barème / 100 ⭐',
+      text: 'Score ⭐',
       sort: true,
-      headerStyle: { backgroundColor: '#fef3c7', color: '#92400e', textAlign: 'center' },
+      headerStyle: { backgroundColor: '#F8FAFC', width: '100px', textAlign: 'center', fontWeight: '800' },
+      style: { verticalAlign: 'middle', textAlign: 'center' },
       formatter: (cell) => (
-        <span className='badge bg-warning text-dark fs-6 px-3 py-1 fw-bold'>
-          {cell} pts
+        <span
+          className='badge px-2.5 py-1.5 fw-bold font-monospace shadow-sm'
+          style={{
+            backgroundColor: '#FEF3C7',
+            color: '#B45309',
+            border: '1px solid #FCD34D',
+            fontSize: '12px',
+          }}
+        >
+          {Number(cell || 0).toFixed(2)} pts
         </span>
       ),
     },
     {
       dataField: 'statutAI',
-      text: 'Contrôle 1 (IA)',
-      headerStyle: { backgroundColor: '#e2e8f0', textAlign: 'center' },
-      formatter: (cell) => (
-        <span className='badge bg-success px-2 py-1'>
-          <i className='fas fa-robot me-1'></i> IA Conforme
-        </span>
-      ),
-    },
-    {
-      dataField: 'controle2',
-      text: 'Contrôle 2 (Auditeur EHC)',
-      headerStyle: { backgroundColor: '#e2e8f0', textAlign: 'center' },
-      formatter: (cell) => (
-        <span className='badge bg-info text-dark px-2 py-1'>
-          <i className='fas fa-user-check me-1'></i> Audité EHC
-        </span>
-      ),
+      text: 'Audit IA (Niv. 1)',
+      sort: true,
+      headerStyle: { backgroundColor: '#F8FAFC', width: '130px', textAlign: 'center', fontWeight: '800' },
+      style: { verticalAlign: 'middle', textAlign: 'center' },
+      formatter: (cell) => {
+        if (cell === 'VALIDE_IA') {
+          return <span className='badge bg-success text-white px-2 py-1' style={{ fontSize: '11px' }}><i className='fas fa-check-circle me-1'></i> Conforme IA</span>;
+        }
+        if (cell === 'ANOMALIE_IA') {
+          return <span className='badge bg-warning text-dark px-2 py-1' style={{ fontSize: '11px' }}><i className='fas fa-exclamation-triangle me-1'></i> Anomalie</span>;
+        }
+        if (cell === 'REJETE_IA') {
+          return <span className='badge bg-danger text-white px-2 py-1' style={{ fontSize: '11px' }}><i className='fas fa-times-circle me-1'></i> Rejeté IA</span>;
+        }
+        return <span className='badge bg-secondary text-white px-2 py-1' style={{ fontSize: '11px' }}>En attente</span>;
+      },
     },
     {
       dataField: 'statutCommission',
-      text: 'Contrôle 3 (Commission)',
+      text: 'Décision Commission',
       sort: true,
-      headerStyle: { backgroundColor: '#dcfce7', color: '#166534', textAlign: 'center' },
-      formatter: (cell) => {
-        if (cell === 'VALIDE_COMMISSION') {
+      headerStyle: { backgroundColor: '#F8FAFC', width: '160px', textAlign: 'center', fontWeight: '800' },
+      style: { verticalAlign: 'middle', textAlign: 'center' },
+      formatter: (cell, row) => {
+        if (cell === 'VALIDE_COMMISSION' || row.isControl3) {
           return (
-            <span className='badge bg-success px-3 py-2'>
-              <i className='fas fa-award me-1'></i> Validé Commission
+            <span className='badge bg-success bg-opacity-25 text-success border border-success px-2.5 py-1 fw-bold' style={{ fontSize: '11.5px' }}>
+              <i className='fas fa-award me-1'></i> Retenu Shortlist
+            </span>
+          );
+        }
+        if (row.conforme === 'NON CONFORME' || cell === 'REJETE_COMMISSION') {
+          return (
+            <span className='badge bg-danger bg-opacity-25 text-danger border border-danger px-2.5 py-1 fw-bold' style={{ fontSize: '11.5px' }}>
+              <i className='fas fa-times-circle me-1'></i> Rejeté ({row.motif || 'Non éligible'})
             </span>
           );
         }
         return (
-          <span className='badge bg-warning text-dark px-3 py-2'>
-            <i className='fas fa-hourglass-half me-1'></i> En Attente Validation
+          <span className='badge bg-warning bg-opacity-25 text-dark border border-warning px-2.5 py-1 fw-bold' style={{ fontSize: '11.5px' }}>
+            <i className='fas fa-clock me-1'></i> En Délibération
           </span>
         );
       },
     },
     {
       dataField: 'actions',
-      text: 'Actions Individuelles',
-      headerStyle: { backgroundColor: '#e2e8f0', textAlign: 'center', minWidth: '250px' },
-      formatter: (cell, row) => (
-        <div className='d-flex align-items-center justify-content-center gap-1'>
-          <button
-            className='btn btn-outline-primary btn-sm fw-bold px-2'
-            title='Consulter les pièces et informations'
-            onClick={() => navigate(`/controlleurs/candidatures/informations/${row.id}`)}
-          >
-            <i className='fas fa-eye me-1'></i> Détails
-          </button>
-          {row.statutCommission !== 'VALIDE_COMMISSION' ? (
-            <button
-              className='btn btn-success btn-sm fw-bold px-2 text-nowrap'
-              title='Valider ce candidat seul dans la shortlist'
-              onClick={() => handleValidateSingle(row)}
-            >
-              <i className='fas fa-check me-1'></i> Valider seul
-            </button>
-          ) : (
-            <span className='badge bg-success-subtle text-success border border-success px-2 py-1 small fw-bold'>
-              <i className='fas fa-check-double me-1'></i> Validé
-            </span>
-          )}
-          <button
-            className='btn btn-outline-danger btn-sm fw-bold px-2 text-nowrap'
-            title='Exclure ce candidat de la shortlist finale'
-            onClick={() => handleRejectSingle(row)}
-          >
-            <i className='fas fa-times me-1'></i> Exclure
-          </button>
-        </div>
+      text: 'Examen',
+      isDummyField: true,
+      headerStyle: { backgroundColor: '#F8FAFC', width: '130px', textAlign: 'center', fontWeight: '800' },
+      style: { verticalAlign: 'middle', textAlign: 'center' },
+      formatter: (cell, row, rowIndex) => (
+        <Button
+          variant='primary'
+          size='sm'
+          className='fw-bold px-3 py-1 shadow-sm'
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpenDrawer(row, rowIndex);
+          }}
+        >
+          <i className='fas fa-gavel me-1'></i> Arbitrer
+        </Button>
       ),
     },
   ];
 
+  const defaultSorted = [
+    {
+      dataField: 'scoreTotal',
+      order: 'desc',
+    },
+  ];
+
+  const rowEvents = {
+    onClick: (e, row, rowIndex) => {
+      handleOpenDrawer(row, rowIndex);
+    },
+  };
+
   return (
-    <div id='root'>
-      <div className='app'>
-        <ControleurSideBar prenom={userInfo?.prenom} nom={userInfo?.nom} />
-        <main>
-          <HeaderAdministrateur
-            headerTitle='Contrôle Niveau 3 : Commission Finale EHC (Tiers de Confiance)'
-            endPoint='/admin'
-          />
+    <div className='app'>
+      <ControleurSideBar prenom={userInfo?.prenom} nom={userInfo?.nom} />
+      <main style={{ backgroundColor: '#F4F7FC', minHeight: '100vh', width: '100%' }}>
+        <HeaderAdministrateur
+          headerTitle="Contrôle Niveau 3 : Commission Mixte d'Arbitrage & Shortlist Finale"
+          endPoint='/admin'
+        />
 
-          <Container className='mt-4'>
-            {successMsg && (
-              <Alert variant='success' dismissible onClose={() => setSuccessMsg('')}>
-                <i className='fas fa-check-circle me-2'></i>
-                {successMsg}
-              </Alert>
-            )}
+        <Container fluid className='px-4 mt-4'>
+          {successMsg && (
+            <Alert variant='success' dismissible onClose={() => setSuccessMsg('')} className='shadow-sm'>
+              <i className='fas fa-check-circle me-2'></i>
+              {successMsg}
+            </Alert>
+          )}
 
-            {/* BANDEAU COMMISSION FINALE EHC */}
-            <div
-              className='bg-white rounded-3 shadow-sm p-4 mb-4 border'
-              style={{ borderLeft: '5px solid #16a34a' }}
-            >
-              <div className='d-flex flex-wrap justify-content-between align-items-center mb-3 pb-3 border-bottom'>
-                <div>
-                  <h4 className='fw-bold text-success mb-1 d-flex align-items-center gap-2'>
-                    <i className='fas fa-award text-warning fs-3'></i>
-                    <span>Commission Finale d'Audit EHC (Marchés Publics)</span>
-                  </h4>
-                  <p className='text-muted small mb-0'>
-                    Étape ultime avant mise à disposition de la liste définitive pour le Maître d'Ouvrage (Client RH). Validation collégiale et scellement du PV de présélection.
-                  </p>
+          {/* BANDEAU PILOTAGE COMMISSION : LOGICAT STYLE */}
+          <div
+            className='p-4 mb-4 text-white position-relative overflow-hidden'
+            style={{
+              borderRadius: '18px',
+              background: 'linear-gradient(135deg, #0A1128 0%, #101E3D 50%, #0052FF 100%)',
+              boxShadow: '0 10px 25px rgba(0, 82, 255, 0.2)',
+            }}
+          >
+            <div className='d-flex flex-wrap justify-content-between align-items-center gap-3 position-relative' style={{ zIndex: 2 }}>
+              <div>
+                <div className='d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill mb-2' style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', backdropFilter: 'blur(10px)' }}>
+                  <i className='fas fa-award text-warning'></i>
+                  <span className='text-uppercase fw-bold' style={{ fontSize: '11px', letterSpacing: '0.05em' }}>Palier 3 : Décision Collégiale & PV</span>
                 </div>
-                <div className='mt-2 mt-md-0'>
-                  <Button
-                    variant='success'
-                    size='lg'
-                    className='fw-bold shadow-sm'
-                    disabled={validating || totalDossiers === 0}
-                    onClick={handleValidateCommission}
-                  >
-                    {validating ? (
-                      <>
-                        <span className='spinner-border spinner-border-sm me-2'></span>
-                        Signature en cours...
-                      </>
-                    ) : (
-                      <>
-                        <i className='fas fa-file-signature me-2'></i>
-                        Valider & Signer le PV de Présélection ({totalDossiers} Dossiers)
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <h3 className='fw-bolder mb-1' style={{ letterSpacing: '-0.02em' }}>
+                  Commission Finale d'Arbitrage EHC (Tiers de Confiance)
+                </h3>
+                <p className='text-white-50 mb-0' style={{ fontSize: '13.5px', maxWidth: '750px' }}>
+                  Validation collégiale finale, classement au mérite et scellement du Procès-Verbal officiel de sélection avant transmission au Client RH.
+                </p>
               </div>
 
-              {/* STATS RAPIDES */}
-              <Row className='g-3 text-center'>
-                <Col xs={6} md={4}>
-                  <div className='p-3 rounded-3 bg-light border'>
-                    <div className='fs-3 fw-bold text-primary'>{totalDossiers}</div>
-                    <div className='small text-uppercase fw-semibold'>Dossiers Présélectionnés</div>
-                  </div>
-                </Col>
-                <Col xs={6} md={4}>
-                  <div className='p-3 rounded-3 bg-light border'>
-                    <div className='fs-3 fw-bold text-success'>{countValidesCommission}</div>
-                    <div className='small text-uppercase fw-semibold'>Validés par la Commission</div>
-                  </div>
-                </Col>
-                <Col xs={12} md={4}>
-                  <div className='p-3 rounded-3 bg-light border'>
-                    <div className='fs-3 fw-bold text-warning'>100 / 100</div>
-                    <div className='small text-uppercase fw-semibold'>Barème d'Excellence Standard</div>
-                  </div>
-                </Col>
-              </Row>
+              {/* ACTIONS STRATÉGIQUES COMMISSION */}
+              <div className='d-flex flex-wrap align-items-center gap-2'>
+                <Button
+                  variant='light'
+                  className='fw-bold px-3 py-2 text-dark shadow-sm'
+                  onClick={() => setShowPvModal(true)}
+                  disabled={totalDossiers === 0}
+                >
+                  <i className='fas fa-file-contract text-primary me-2'></i>
+                  Générer PV de Commission (PDF)
+                </Button>
+
+                <Button
+                  variant='success'
+                  className='fw-bold px-4 py-2 shadow'
+                  style={{
+                    background: 'linear-gradient(135deg, #10B981 0%, #059669 100%)',
+                    border: 'none',
+                  }}
+                  disabled={validating || totalDossiers === 0}
+                  onClick={handleValidateCommission}
+                >
+                  {validating ? (
+                    <>
+                      <span className='spinner-border spinner-border-sm me-2'></span>
+                      Scellement en cours...
+                    </>
+                  ) : (
+                    <>
+                      <i className='fas fa-check-double me-2'></i>
+                      Valider Shortlist Définitive ({countValidesCommission}/{totalDossiers})
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
 
-            {/* TABLEAU DES DOSSIERS EN CONTRÔLE 3 */}
-            <Card className='shadow-sm mb-4 border-0'>
-              <Card.Header className='bg-white py-3 border-bottom'>
-                <h5 className='mb-0 fw-bold text-dark'>
-                  <i className='fas fa-list-check me-2 text-primary'></i>
-                  Liste d'Audit Final Commission — Classement au Mérite
-                </h5>
-              </Card.Header>
-              <Card.Body>
-                {loadingCandidatures3 ? (
-                  <Spinner size={100} />
-                ) : errorCandidatures3 ? (
-                  <Message variant='danger'>{errorCandidatures3}</Message>
-                ) : data && data.length > 0 ? (
-                  <ToolkitProvider
-                    keyField='id'
-                    data={data}
-                    columns={columns}
-                    search
-                  >
-                    {(props) => (
-                      <>
-                        <div className='mb-3 d-flex justify-content-end'>
-                          <div style={{ maxWidth: '320px', width: '100%' }}>
-                            <SearchBar {...props.searchProps} placeholder='Rechercher un candidat...' />
-                          </div>
+            {/* KPI STATS CARDS */}
+            <Row className='g-3 mt-3 position-relative' style={{ zIndex: 2 }}>
+              <Col xs={6} md={3}>
+                <div
+                  className='p-3 rounded-3 text-center'
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                  }}
+                >
+                  <div className='fs-3 fw-bold text-white'>{totalDossiers}</div>
+                  <small className='text-white-50 text-uppercase fw-bold' style={{ fontSize: '10.5px' }}>
+                    Dossiers Présélectionnés
+                  </small>
+                </div>
+              </Col>
+              <Col xs={6} md={3}>
+                <div
+                  className='p-3 rounded-3 text-center'
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                  }}
+                >
+                  <div className='fs-3 fw-bold' style={{ color: '#34D399' }}>{countValidesCommission}</div>
+                  <small className='text-white-50 text-uppercase fw-bold' style={{ fontSize: '10.5px' }}>
+                    Validés Shortlist Finale
+                  </small>
+                </div>
+              </Col>
+              <Col xs={6} md={3}>
+                <div
+                  className='p-3 rounded-3 text-center'
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                  }}
+                >
+                  <div className='fs-3 fw-bold' style={{ color: '#FBBF24' }}>{countEnAttente}</div>
+                  <small className='text-white-50 text-uppercase fw-bold' style={{ fontSize: '10.5px' }}>
+                    En Cours d'Arbitrage
+                  </small>
+                </div>
+              </Col>
+              <Col xs={6} md={3}>
+                <div
+                  className='p-3 rounded-3 text-center'
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                  }}
+                >
+                  <div className='fs-3 fw-bold' style={{ color: '#F87171' }}>{countRejetes}</div>
+                  <small className='text-white-50 text-uppercase fw-bold' style={{ fontSize: '10.5px' }}>
+                    Écartés / Rejetés
+                  </small>
+                </div>
+              </Col>
+            </Row>
+          </div>
+
+          {/* TABLEAU MODERNE ÉPURÉ */}
+          <Card className='shadow-sm mb-4 border-0' style={{ borderRadius: '14px', overflow: 'hidden' }}>
+            <Card.Body className='p-4'>
+              {loadingCandidatures3 ? (
+                <div className='text-center py-5'>
+                  <Spinner size={60} />
+                  <p className='mt-3 text-muted fw-semibold'>Chargement des dossiers de la Commission...</p>
+                </div>
+              ) : errorCandidatures3 ? (
+                <Message variant='danger'>{errorCandidatures3}</Message>
+              ) : rawCandidatures.length > 0 ? (
+                <ToolkitProvider
+                  keyField='_id'
+                  data={rawCandidatures}
+                  columns={columns}
+                  search
+                  exportCSV={{
+                    fileName: `shortlist_commission_${moment().format('YYYY-MM-DD')}.csv`,
+                  }}
+                >
+                  {(props) => (
+                    <>
+                      <div className='d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3 pb-3 border-bottom'>
+                        <div className='d-flex align-items-center gap-2'>
+                          <i className='fas fa-list-check text-primary fs-5'></i>
+                          <h6 className='mb-0 fw-bold text-dark' style={{ letterSpacing: '-0.01em' }}>
+                            Classement Général de la Commission ({rawCandidatures.length})
+                          </h6>
+                          <small className='text-muted ms-2'>(Cliquez sur une ligne pour examiner)</small>
                         </div>
-                        <BootstrapTable
-                          {...props.baseProps}
-                          keyField='id'
-                          bootstrap4
-                          data={data}
-                          columns={columns}
-                          wrapperClasses='table-responsive text-center'
-                          hover
-                          pagination={paginationFactory({ sizePerPage: 15 })}
-                          filter={filterFactory()}
-                        />
-                      </>
-                    )}
-                  </ToolkitProvider>
-                ) : (
-                  <div className='text-center py-5 text-muted'>
-                    <i className='fas fa-inbox fa-3x mb-3 text-secondary'></i>
-                    <p className='fw-bold'>Aucun dossier en attente du Contrôle 3.</p>
-                    <p className='small'>
-                      Les dossiers validés en Contrôle 2 (Auditeur EHC) apparaîtront automatiquement ici.
-                    </p>
-                  </div>
-                )}
-              </Card.Body>
-            </Card>
-          </Container>
-        </main>
-      </div>
+                        <div className='d-flex align-items-center gap-2'>
+                          <div style={{ width: '280px' }}>
+                            <SearchBar
+                              {...props.searchProps}
+                              placeholder='Rechercher un candidat...'
+                              className='form-control-sm'
+                            />
+                          </div>
+                          <ExportCSVButton
+                            {...props.csvProps}
+                            className='btn btn-outline-secondary btn-sm fw-bold px-3 d-flex align-items-center gap-1.5'
+                          >
+                            <i className='fas fa-file-csv'></i> Exporter CSV
+                          </ExportCSVButton>
+                        </div>
+                      </div>
+
+                      <BootstrapTable
+                        {...props.baseProps}
+                        keyField='_id'
+                        bootstrap4
+                        data={rawCandidatures}
+                        columns={columns}
+                        defaultSorted={defaultSorted}
+                        rowEvents={rowEvents}
+                        wrapperClasses='table-responsive'
+                        classes='table table-hover align-middle mb-0'
+                        pagination={paginationFactory({
+                          sizePerPage: 15,
+                          showTotal: true,
+                          paginationTotalRenderer: (from, to, size) => (
+                            <span className='text-muted small ms-2'>
+                              Affichage de <b>{from}</b> à <b>{to}</b> sur <b>{size}</b> dossiers
+                            </span>
+                          ),
+                        })}
+                      />
+                    </>
+                  )}
+                </ToolkitProvider>
+              ) : (
+                <div className='text-center py-5 text-muted'>
+                  <i className='fas fa-inbox fa-3x mb-3 text-secondary'></i>
+                  <h6 className='fw-bold'>Aucun dossier en attente de la Commission Finale (Contrôle 3)</h6>
+                  <p className='small text-muted'>
+                    Les dossiers validés par l'Auditeur Humain (Contrôle 2) apparaîtront automatiquement ici.
+                  </p>
+                </div>
+              )}
+            </Card.Body>
+          </Card>
+        </Container>
+
+        {/* DRAWER D'EXAMEN LATÉRAL SPLIT-SCREEN (NIVEAU 3) */}
+        {selectedCandidate && (
+          <ControleurDrawer
+            show={showDrawer}
+            onClose={() => setShowDrawer(false)}
+            candidature={selectedCandidate}
+            controlLevel={3}
+            userInfo={userInfo}
+            onPrev={handlePrevCandidate}
+            onNext={handleNextCandidate}
+            hasPrev={selectedIndex > 0}
+            hasNext={selectedIndex < rawCandidatures.length - 1}
+            currentIndex={selectedIndex}
+            totalCount={rawCandidatures.length}
+          />
+        )}
+
+        {/* MODAL DU PROCÈS-VERBAL OFFICIEL DE COMMISSION */}
+        <PvCommissionModal
+          show={showPvModal}
+          onHide={() => setShowPvModal(false)}
+          candidatures={rawCandidatures}
+          userInfo={userInfo}
+        />
+      </main>
     </div>
   );
 };
 
 export default ControlleursCandidatures3Screen;
-

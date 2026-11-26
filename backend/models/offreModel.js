@@ -50,9 +50,17 @@ const scoringRulesSchema = mongoose.Schema(
       actif: { type: Boolean, default: true },
       poidsMax: { type: Number, default: 30 },
       nomSpecialite: { type: String, default: 'Bancaire' },
+      modeCalcul: { type: String, default: 'mois' },
       pointsParMoisSpecialite: { type: Number, default: 0.5 },
       pointsParMoisAutre: { type: Number, default: 0.15 },
       maxMois: { type: Number, default: 48 },
+      tranches: [
+        {
+          minAns: { type: Number, default: 0 },
+          maxAns: { type: Number, default: 1 },
+          points: { type: Number, default: 10 },
+        },
+      ],
     },
     // CRITÈRE 5: NIVEAU D'ÉTUDES / DIPLÔME
     diplome: {
@@ -62,10 +70,12 @@ const scoringRulesSchema = mongoose.Schema(
         bac2: { type: Number, default: 10 },
         bac3: { type: Number, default: 15 },
         bac5: { type: Number, default: 20 },
+        doctorat: { type: Number, default: 20 },
+        autre: { type: Number, default: 0 },
       },
     },
   },
-  { _id: false }
+  { _id: false, strict: false }
 );
 
 const offreSchema = mongoose.Schema(

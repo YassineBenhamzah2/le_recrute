@@ -6,27 +6,30 @@ import { listControllerCandidatures } from '../../actions/candidatureActions';
 import HeaderAdministrateur from '../../components/HeaderAdministrateur';
 import paginationFactory from 'react-bootstrap-table2-paginator';
 import filterFactory, { textFilter } from 'react-bootstrap-table2-filter';
-import cellEditFactory, { Type } from 'react-bootstrap-table2-editor';
 import ToolkitProvider, { Search } from 'react-bootstrap-table2-toolkit';
-import { Col, Collapse, Container, Row, Button } from 'react-bootstrap';
+import { Col, Container, Row, Button, Badge } from 'react-bootstrap';
 import BootstrapTable from 'react-bootstrap-table-next';
 import moment from 'moment';
 import Message from '../../components/Message';
 import Spinner from '../../components/Spinner';
 import { CANDIDATURE_UPDATE_RESET } from '../../constants/candidatureConstants';
-import LInkFichier from '../../components/LInkFichier';
 import { listUsers } from '../../actions/userActions';
 import ControleurSideBar from '../../components/ControleurSideBar';
+import ControleurDrawer from '../../components/ControleurDrawer';
 
 const ControlleursCandidaturesScreen = () => {
   moment.locale('fr');
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const [open, setOpen] = useState(false);
   const [aiAuditLoading, setAiAuditLoading] = useState(false);
   const [validatingControl1Loading, setValidatingControl1Loading] = useState(false);
   const [filterTab, setFilterTab] = useState('ALL');
+
+  // État du Drawer d'examen latéral
+  const [showDrawer, setShowDrawer] = useState(false);
+  const [selectedCandidate, setSelectedCandidate] = useState(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
 
   const userLogin = useSelector((state) => state.userLogin);
   const { userInfo } = userLogin;
@@ -184,165 +187,77 @@ const ControlleursCandidaturesScreen = () => {
     filteredByTab &&
     filteredByTab.map((postulation) => ({
       id: postulation._id || '-',
+      numeroDossier: postulation.numeroDossier || postulation._id,
       candidat: `${postulation.nom || ''} ${postulation.prenom || ''}`.trim() || 'Candidat',
+      nom: postulation.nom || '-',
+      prenom: postulation.prenom || '-',
+      cni: postulation.cni || '-',
+      dateNaissance: postulation.dateNaissance || '-',
+      poste: postulation.poste || '-',
       statutAI: postulation.statutAI || 'EN_ATTENTE_IA',
       scoreConfiance:
         postulation.auditAI?.scoreConfiance !== undefined && postulation.auditAI?.scoreConfiance !== null
           ? postulation.auditAI.scoreConfiance
           : null,
       anomaliesAI: postulation.auditAI?.anomalies || [],
-      summaryAI: postulation.auditAI?.summary || '',
-      dateCandidature:
-        (postulation.createdAt && moment(postulation.createdAt).format('L')) ||
-        '-',
-      heureCandidature:
-        (postulation.createdAt &&
-          moment(postulation.createdAt).format('LTS')) ||
-        '-',
-      poste: postulation.poste || '-',
-      civilite: postulation.civilite || '-',
-      nom: postulation.nom || '-',
-      prenom: postulation.prenom || '-',
-      dateNaissance: postulation.dateNaissance || '-',
-      cni: postulation.cni || '-',
-      email: postulation.email || '-',
-      phone: postulation.phone || '-',
-      adresse: postulation.adresse || '-',
-      codePostale: postulation.codePostale || '-',
-      ville: postulation.ville || '-',
-      niveauEtude: postulation.niveauEtude || '-',
-      specialite: postulation.specialite || '-',
-      methodeNotation: postulation.methodeNotation || '-',
-      annee1: postulation.annee1 || '-',
-      annee2: postulation.annee2 || '-',
-      annee3: postulation.annee3 || '-',
-      semestre1: postulation.semestre1 || '-',
-      semestre2: postulation.semestre2 || '-',
-      semestre3: postulation.semestre3 || '-',
-      semestre4: postulation.semestre4 || '-',
-      semestre5: postulation.semestre5 || '-',
-      semestre6: postulation.semestre6 || '-',
-      moyenneOFPPT: postulation.moyenneOFPPT || '-',
-      // noteMoyenne: postulation.noteMoyenne || '-',
-      dateDebutExperience1:
-        (postulation.experiences &&
-          postulation.experiences[0] &&
-          postulation.experiences[0].dateDebut) ||
-        '-',
-      dateFinExperience1:
-        (postulation.experiences &&
-          postulation.experiences[0] &&
-          postulation.experiences[0].dateFin) ||
-        '-',
-      dateDebutExperience2:
-        (postulation.experiences &&
-          postulation.experiences[1] &&
-          postulation.experiences[1].dateDebut) ||
-        '-',
-      dateFinExperience2:
-        (postulation.experiences &&
-          postulation.experiences[1] &&
-          postulation.experiences[1].dateFin) ||
-        '-',
-      dateDebutExperience3:
-        (postulation.experiences &&
-          postulation.experiences[2] &&
-          postulation.experiences[2].dateDebut) ||
-        '-',
-      dateFinExperience3:
-        (postulation.experiences &&
-          postulation.experiences[2] &&
-          postulation.experiences[2].dateFin) ||
-        '-',
-      dateDebutExperience4:
-        (postulation.experiences &&
-          postulation.experiences[3] &&
-          postulation.experiences[3].dateDebut) ||
-        '-',
-      dateFinExperience4:
-        (postulation.experiences &&
-          postulation.experiences[3] &&
-          postulation.experiences[3].dateFin) ||
-        '-',
-      dateDebutExperience5:
-        (postulation.experiences &&
-          postulation.experiences[4] &&
-          postulation.experiences[4].dateDebut) ||
-        '-',
-      dateFinExperience5:
-        (postulation.experiences &&
-          postulation.experiences[4] &&
-          postulation.experiences[4].dateFin) ||
-        '-',
-      dateDebutExperience6:
-        (postulation.experiences &&
-          postulation.experiences[5] &&
-          postulation.experiences[5].dateDebut) ||
-        '-',
-      dateFinExperience6:
-        (postulation.experiences &&
-          postulation.experiences[5] &&
-          postulation.experiences[5].dateFin) ||
-        '-',
-
-      disponibilite: postulation.disponibilite || '-',
-      scoreAge: postulation.scoreAge || '-',
-      scoreNote: postulation.scoreNote || '-',
-      scoreExperience: postulation.scoreExperience || '-',
-      scoreExperienceBancaire: postulation.scoreExperienceBancaire || '-',
-      scoreTotal: postulation.scoreTotal || '-',
-      copieCNI:
-        (postulation.copieCNI && (
-          <LInkFichier link={postulation.copieCNI} />
-        )) ||
-        '-',
-      residence:
-        (postulation.residence && (
-          <LInkFichier link={postulation.residence} />
-        )) ||
-        '-',
-      releves:
-        (postulation.releves && (
-          <LInkFichier link={postulation.releves} />
-        )) ||
-        '-',
-      copieDiplomes:
-        (postulation.copieDiplomes && (
-          <LInkFichier link={postulation.copieDiplomes} />
-        )) ||
-        '-',
-      attestationsTravail:
-        (postulation.attestationsTravail && (
-          <LInkFichier link={postulation.attestationsTravail} />
-        )) ||
-        '-',
-      controle1: postulation.controle1 || '-',
-      isControl1:
-        postulation.isControl1 && postulation.isControl1 === true
-          ? 'OUI'
-          : 'NON' || '-',
-      controle2: postulation.controle2 || '-',
-      isControl2:
-        postulation.isControl2 && postulation.isControl2 === true
-          ? 'OUI'
-          : 'NON' || '-',
+      scoreTotal: postulation.scoreTotal || 0,
       conforme: postulation.conforme || '-',
       eligibilite: postulation.eligibilite || '-',
       motif: postulation.motif || '-',
       dossier: postulation.dossier || '-',
+      raw: postulation,
     }));
+
+  const handleOpenDrawer = (row, idx) => {
+    const cand = candidaturesNonValidees.find((c) => String(c._id) === String(row.id)) || row.raw;
+    setSelectedCandidate(cand);
+    setSelectedIndex(idx);
+    setShowDrawer(true);
+  };
+
+  const handlePrevCandidate = () => {
+    if (selectedIndex > 0) {
+      const prevIdx = selectedIndex - 1;
+      const prevRow = data[prevIdx];
+      const cand = candidaturesNonValidees.find((c) => String(c._id) === String(prevRow.id)) || prevRow.raw;
+      setSelectedCandidate(cand);
+      setSelectedIndex(prevIdx);
+    }
+  };
+
+  const handleNextCandidate = () => {
+    if (selectedIndex < data.length - 1) {
+      const nextIdx = selectedIndex + 1;
+      const nextRow = data[nextIdx];
+      const cand = candidaturesNonValidees.find((c) => String(c._id) === String(nextRow.id)) || nextRow.raw;
+      setSelectedCandidate(cand);
+      setSelectedIndex(nextIdx);
+    }
+  };
+
+  const unifiedHeaderStyle = {
+    backgroundColor: '#F8FAFC',
+    color: '#334155',
+    borderBottom: '2px solid #E2E8F0',
+    fontWeight: '700',
+    fontSize: '12px',
+    textTransform: 'uppercase',
+    letterSpacing: '0.04em',
+    padding: '14px 12px',
+    verticalAlign: 'middle',
+  };
 
   const columns = [
     {
-      dataField: 'id',
-      text: 'ID / Dossier',
+      dataField: 'numeroDossier',
+      text: 'Réf / Dossier',
       sort: true,
-      filter: textFilter(),
       headerStyle: {
-        backgroundColor: '#e2e8f0',
-        width: '110px',
+        ...unifiedHeaderStyle,
+        width: '120px',
         textAlign: 'center',
       },
+      style: { textAlign: 'center', verticalAlign: 'middle' },
       formatter: (cell) => (
         <span className='badge bg-light text-dark border small fw-bold font-monospace'>
           {String(cell).substring(0, 8)}...
@@ -351,42 +266,41 @@ const ControlleursCandidaturesScreen = () => {
     },
     {
       dataField: 'candidat',
-      text: 'Candidat (Nom & Prénom)',
+      text: 'Candidat (Nom & CNI)',
       sort: true,
-      filter: textFilter(),
       headerStyle: {
-        backgroundColor: '#d1ecf1',
-        fontWeight: 'bold',
-        minWidth: '160px',
+        ...unifiedHeaderStyle,
+        minWidth: '180px',
       },
+      style: { verticalAlign: 'middle' },
       formatter: (cell, row) => (
         <div>
-          <span className='fw-bold text-primary fs-6 d-block'>{cell}</span>
-          <small className='text-muted font-monospace'>{row.cni || ''}</small>
+          <span className='fw-bold text-dark fs-6 d-block'>{cell}</span>
+          <div className='d-flex align-items-center gap-2 small text-muted'>
+            <span className='font-monospace fw-semibold'>{row.cni || '-'}</span>
+            {row.dateNaissance && row.dateNaissance !== '-' && <span>• {row.dateNaissance}</span>}
+          </div>
         </div>
       ),
     },
     {
       dataField: 'poste',
-      text: 'Poste',
+      text: 'Poste Postulé',
       sort: true,
-      filter: textFilter(),
       headerStyle: {
-        backgroundColor: '#d1ecf1',
-        fontWeight: 'bold',
+        ...unifiedHeaderStyle,
+        minWidth: '150px',
       },
+      style: { verticalAlign: 'middle' },
+      formatter: (cell) => <span className='badge bg-light text-dark border fw-bold'>{cell}</span>,
     },
     {
       dataField: 'statutAI',
-      text: 'Audit IA (Niveau 1) 🤖',
+      text: 'Audit IA (Niveau 1)',
       sort: true,
-      filter: textFilter(),
       headerStyle: {
-        backgroundColor: '#cce5ff',
-        color: '#004085',
-        fontWeight: 'bold',
+        ...unifiedHeaderStyle,
         textAlign: 'center',
-        minWidth: '160px',
         width: '160px',
       },
       style: {
@@ -396,962 +310,156 @@ const ControlleursCandidaturesScreen = () => {
       formatter: (cell) => {
         if (cell === 'VALIDE_IA') {
           return (
-            <span className='badge bg-success text-white px-2 py-2 fs-6 shadow-sm'>
+            <Badge bg='success' className='px-2 py-1 fs-6 shadow-sm'>
               <i className='fas fa-check-circle me-1'></i> Conforme IA
-            </span>
+            </Badge>
           );
         } else if (cell === 'ANOMALIE_IA') {
           return (
-            <span className='badge bg-warning text-dark px-2 py-2 fs-6 fw-bold shadow-sm'>
+            <Badge bg='warning' text='dark' className='px-2 py-1 fs-6 fw-bold shadow-sm'>
               <i className='fas fa-exclamation-triangle me-1'></i> Anomalie Détectée
-            </span>
+            </Badge>
           );
         } else if (cell === 'REJETE_IA') {
           return (
-            <span className='badge bg-danger text-white px-2 py-2 fs-6 shadow-sm'>
+            <Badge bg='danger' className='px-2 py-1 fs-6 shadow-sm'>
               <i className='fas fa-times-circle me-1'></i> Rejeté IA
-            </span>
+            </Badge>
           );
         } else {
           return (
-            <span className='badge bg-secondary text-white px-2 py-2 fs-6 shadow-sm'>
+            <Badge bg='secondary' className='px-2 py-1 fs-6 shadow-sm'>
               <i className='fas fa-clock me-1'></i> En Attente
-            </span>
+            </Badge>
           );
         }
       },
     },
     {
       dataField: 'anomaliesAI',
-      text: 'Anomalies Détectées (Âge / Adresse / CNI...)',
-      classes: 'cell-wrap-text',
-      headerClasses: 'cell-wrap-text',
+      text: 'Alertes / Anomalies Détectées',
       headerStyle: {
-        backgroundColor: '#fff3cd',
-        color: '#856404',
-        fontWeight: 'bold',
-        minWidth: '340px',
-        width: '380px',
-        whiteSpace: 'normal',
+        ...unifiedHeaderStyle,
+        minWidth: '240px',
       },
       style: {
         verticalAlign: 'middle',
         textAlign: 'left',
-        whiteSpace: 'normal',
-        minWidth: '340px',
-        width: '380px',
+        fontSize: '0.84rem',
       },
       formatter: (cell) => {
         if (!cell || cell.length === 0) {
           return (
             <span className='text-success small fw-bold d-inline-flex align-items-center gap-1'>
-              <i className='fas fa-check-circle text-success'></i> Aucune anomalie détectée
+              <i className='fas fa-check-circle text-success'></i> Aucune anomalie
             </span>
           );
         }
         return (
-          <div
-            className='cell-wrap-text'
-            style={{
-              width: '100%',
-              maxWidth: '360px',
-              whiteSpace: 'normal',
-              wordWrap: 'break-word',
-              overflowWrap: 'break-word',
-              textAlign: 'left',
-              fontSize: '0.82rem',
-              lineHeight: '1.4',
-            }}
-          >
-            {cell.map((anom, idx) => (
-              <div
-                key={idx}
-                className='text-danger fw-semibold mb-1'
-                style={{
-                  whiteSpace: 'normal',
-                  wordWrap: 'break-word',
-                  overflowWrap: 'break-word',
-                  wordBreak: 'break-word',
-                }}
-              >
+          <div style={{ maxWidth: '300px' }}>
+            {cell.slice(0, 2).map((anom, idx) => (
+              <div key={idx} className='text-danger fw-semibold mb-1 text-truncate' title={anom}>
                 • {anom}
               </div>
             ))}
+            {cell.length > 2 && (
+              <span className='badge bg-light text-muted border'>+{cell.length - 2} autre(s)</span>
+            )}
           </div>
         );
       },
-    },
-    {
-      dataField: 'scoreConfiance',
-      text: 'Confiance IA',
-      sort: true,
-      headerStyle: {
-        backgroundColor: '#e2e3e5',
-        textAlign: 'center',
-        width: '120px',
-        minWidth: '120px',
-        whiteSpace: 'nowrap',
-      },
-      style: {
-        verticalAlign: 'middle',
-        textAlign: 'center',
-        width: '120px',
-        minWidth: '120px',
-        whiteSpace: 'nowrap',
-      },
-      formatter: (cell) => {
-        if (cell === null || cell === undefined) return '-';
-        const num = Math.max(0, Math.min(100, Math.round(Number(cell) || 0)));
-        const color = num >= 80 ? 'bg-success' : num >= 50 ? 'bg-warning' : 'bg-danger';
-        return (
-          <div style={{ width: '85px', margin: '0 auto', textAlign: 'center' }}>
-            <span className='fw-bold small d-block mb-1'>{num}%</span>
-            <div className='progress' style={{ height: '7px' }}>
-              <div
-                className={`progress-bar ${color}`}
-                role='progressbar'
-                style={{ width: `${num}%` }}
-              ></div>
-            </div>
-          </div>
-        );
-      },
-    },
-    {
-      dataField: 'action',
-      text: 'Action',
-      headerStyle: {
-        backgroundColor: '#b8daff',
-        textAlign: 'center',
-        fontWeight: 'bold',
-        width: '120px',
-        minWidth: '120px',
-        whiteSpace: 'nowrap',
-      },
-      style: {
-        verticalAlign: 'middle',
-        textAlign: 'center',
-        width: '120px',
-        minWidth: '120px',
-        whiteSpace: 'nowrap',
-      },
-      formatter: (cell, row) => (
-        <button
-          className='btn btn-dark btn-sm px-3 py-1 fw-bold shadow-sm text-nowrap'
-          onClick={(e) => {
-            e.stopPropagation();
-            navigate(`/controlleurs/candidatures/informations/${row.id}`);
-          }}
-        >
-          <i className='fas fa-search me-1'></i> Vérifier
-        </button>
-      ),
     },
     {
       dataField: 'scoreTotal',
       text: 'Score ⭐',
       sort: true,
-      filter: textFilter(),
       headerStyle: {
-        backgroundColor: '#ffeeba',
-        fontWeight: 'bold',
-        color: '#856404',
+        ...unifiedHeaderStyle,
+        textAlign: 'center',
+        width: '95px',
+      },
+      style: {
+        verticalAlign: 'middle',
         textAlign: 'center',
       },
       formatter: (cell) => (
-        <span className='badge bg-warning text-dark fs-6 px-3 py-1'>
+        <span className='badge bg-warning text-dark fs-6 px-2 py-1'>
           <b>{cell !== undefined && cell !== null && cell !== '-' ? cell : '0'}</b>
         </span>
       ),
     },
     {
-      dataField: 'dateCandidature',
-      text: 'Date',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-    },
-    {
-      dataField: 'cni',
-      text: 'Num CNI',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-    },
-    {
-      dataField: 'dateNaissance',
-      text: 'Date Naissance',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-    },
-    {
-      dataField: 'ville',
-      text: 'Ville',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-    },
-    {
-      dataField: 'civilite',
-      text: 'Civilite',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-    },
-    {
-      dataField: 'dateNaissance',
-      text: 'Date de naissance',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'cni',
-      text: 'Num de CNI',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'email',
-      text: 'Email',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'phone',
-      text: 'Num de telephone',
-      sort: true,
-      filter: textFilter(),
-      align: 'left',
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'adresse',
-      text: 'Adresse du candidat',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'codePostale',
-      text: 'Code Postale',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-
-    {
-      dataField: 'ville',
-      text: 'Ville du candidat',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'niveauEtude',
-      text: "Niveau d'etude",
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'specialite',
-      text: 'Specialite',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'methodeNotation',
-      text: 'Methode de notation',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'annee1',
-      text: 'Annee 1',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'annee2',
-      text: 'Annee 2',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'annee3',
-      text: 'Annee 3',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'semestre1',
-      text: 'Semestre 1',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'semestre2',
-      text: 'Smestre 2',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'semestre3',
-      text: 'Semestre 3',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'semestre4',
-      text: 'Semestre 4',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'semestre5',
-      text: 'Semestre 5',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'semestre6',
-      text: 'Semestre 6',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'disponibilite',
-      text: 'Disponibilite',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'scoreAge',
-      text: "Score d'age",
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'scoreNote',
-      text: 'Score de la note',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'scoreExperience',
-      text: "Score d'experience non bancaire",
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'scoreExperienceBancaire',
-      text: "Score d'experience non bancaire",
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'scoreTotal',
-      text: 'Score total',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-
-    {
-      dataField: 'dateDebutExperience1',
-      text: 'Date debut experience 1',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'dateFinExperience1',
-      text: 'Date fin experience 1',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'dateDebutExperience2',
-      text: 'Date debut experience 2',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'dateFinExperience2',
-      text: 'Date fin experience 2',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'dateDebutExperience3',
-      text: 'Date debut experience 3',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'dateFinExperience3',
-      text: 'Date fin experience 3',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'dateDebutExperience4',
-      text: 'Date debut experience 4',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'dateFinExperience4',
-      text: 'Date fin experience 4',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'dateDebutExperience5',
-      text: 'Date debut experience 5',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'dateFinExperience5',
-      text: 'Date fin experience 5',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'dateDebutExperience6',
-      text: 'Date debut experience 6',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'dateFinExperience6',
-      text: 'Date fin experience 6',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'copieCNI',
-      text: 'COPIE CNI',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'residence',
-      text: 'Certificat de residence',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'releves',
-      text: 'Releves des notes',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'copieDiplomes',
-      text: 'Copies des diplomes',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'attestationsTravail',
-      text: 'Attestations de travail',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-    },
-    {
-      dataField: 'isControl1',
-      text: 'Controle premier effectue',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-      editor: {
-        type: Type.SELECT,
-        options: [
-          {
-            value: true,
-            label: `OUI`,
-          },
-          {
-            value: false,
-            label: `NON`,
-          },
-        ],
-      },
-    },
-    {
       dataField: 'conforme',
-      text: 'Candidatures conformes ?',
+      text: 'Statut Dossier',
       sort: true,
-      filter: textFilter(),
       headerStyle: {
-        backgroundColor: '#d1ecf1',
+        ...unifiedHeaderStyle,
+        textAlign: 'center',
+        width: '130px',
       },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
+      style: {
+        verticalAlign: 'middle',
+        textAlign: 'center',
       },
-      editor: {
-        type: Type.SELECT,
-        options: [
-          {
-            value: `CONFORME`,
-            label: `CONFORME`,
-          },
-          {
-            value: `NON CONFORME`,
-            label: `NON CONFORME`,
-          },
-        ],
+      formatter: (cell) => {
+        if (cell === 'CONFORME') {
+          return <span className='badge bg-success text-white px-2 py-1'>Conforme</span>;
+        } else if (cell === 'NON CONFORME') {
+          return <span className='badge bg-danger text-white px-2 py-1'>Non Conforme</span>;
+        } else {
+          return <span className='badge bg-light text-muted border px-2 py-1'>À Traiter</span>;
+        }
       },
     },
     {
-      dataField: 'eligibilite',
-      text: 'Eligibilite de la candidature',
-      sort: true,
-      filter: textFilter(),
+      dataField: 'action',
+      text: 'Contrôle',
       headerStyle: {
-        backgroundColor: '#d1ecf1',
+        ...unifiedHeaderStyle,
+        textAlign: 'center',
+        width: '130px',
       },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
+      style: {
+        verticalAlign: 'middle',
+        textAlign: 'center',
       },
-      editor: {
-        type: Type.SELECT,
-        options: [
-          {
-            value: `ELIGIBLE`,
-            label: `ELIGIBLE`,
-          },
-          {
-            value: `NON ELIGIBLE`,
-            label: `NON ELIGIBLE`,
-          },
-        ],
-      },
-    },
-    {
-      dataField: 'motif',
-      text: 'Motif de la non eligibilite',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-      editor: {
-        type: Type.SELECT,
-        options: [
-          {
-            value: `NENA`,
-            label: `NENA`,
-          },
-          {
-            value: `NEA`,
-            label: `NEA`,
-          },
-          {
-            value: `NED`,
-            label: `NED`,
-          },
-          {
-            value: `NEP`,
-            label: `NEP`,
-          },
-        ],
-      },
-    },
-    {
-      dataField: 'dossier',
-      text: 'Manque dans le dossier',
-      sort: true,
-      filter: textFilter(),
-      headerStyle: {
-        backgroundColor: '#d1ecf1',
-      },
-      editorStyle: {
-        backgroundColor: '#e9ecef',
-      },
-      editor: {
-        type: Type.SELECT,
-        options: [
-          {
-            value: `NEP-CIN`,
-            label: `NEP-CIN`,
-          },
-          {
-            value: `NEP-AR`,
-            label: `NEP-AR`,
-          },
-          {
-            value: `NEP-DIP`,
-            label: `NEP-DIP`,
-          },
-          {
-            value: `NEP-AE`,
-            label: `NEP-AE`,
-          },
-          {
-            value: `NEP-RN`,
-            label: `NEP-RN`,
-          },
-          {
-            value: `NEP-AT`,
-            label: `NEP-AT`,
-          },
-        ],
-      },
+      formatter: (cell, row, rowIndex) => (
+        <Button
+          variant='primary'
+          size='sm'
+          className='fw-bold px-3 py-1 shadow-sm'
+          onClick={(e) => {
+            e.stopPropagation();
+            handleOpenDrawer(row, rowIndex);
+          }}
+        >
+          <i className='fas fa-search me-1'></i> Examiner
+        </Button>
+      ),
     },
   ];
 
   const defaultSorted = [
     {
       dataField: 'scoreTotal',
-      order: 'dsc',
+      order: 'desc',
     },
   ];
+
   const options = {
-    paginationSize: 4,
+    paginationSize: 5,
     pageStartIndex: 1,
     sizePerPageList: [
-      {
-        text: '10',
-        value: 10,
-      },
-      {
-        text: '20',
-        value: 20,
-      },
-      {
-        text: '50',
-        value: 50,
-      },
-      {
-        text: '100',
-        value: 100,
-      },
-      {
-        text: '200',
-        value: 200,
-      },
+      { text: '10 dossiers', value: 10 },
+      { text: '25 dossiers', value: 25 },
+      { text: '50 dossiers', value: 50 },
+      { text: '100 dossiers', value: 100 },
     ],
   };
 
-  const CustomToggleList = ({ columns, onColumnToggle, toggles }) => (
-    <div className='btn-group btn-group-toggle' data-toggle='buttons'>
-      <Container>
-        <Row className='justify-content-center'>
-          <Container>
-            <Button
-              className='btn btn-primary'
-              onClick={() => setOpen(!open)}
-              aria-controls='example-collapse-text'
-              aria-expanded={open}
-            >
-              <i className='fas fa-filter'></i> Filtrer par :{' '}
-            </Button>
-          </Container>
-        </Row>
-
-        <Row className='text-center'>
-          <Col md={12} lg={12} className='mt-2'>
-            <Collapse in={open}>
-              <div id='example-collapse-text'>
-                <>
-                  {columns
-                    .map((column) => ({
-                      ...column,
-                      toggle: toggles[column.dataField],
-                    }))
-                    .map((column) => (
-                      <button
-                        type='button'
-                        key={column.dataField}
-                        className={`m-1  btn btn-outline-info btn-sm ${
-                          column.toggle ? 'active' : ''
-                        }`}
-                        data-toggle='button'
-                        aria-pressed={column.toggle ? 'true' : 'false'}
-                        onClick={() => onColumnToggle(column.dataField)}
-                      >
-                        {column.text}
-                      </button>
-                    ))}
-                </>
-              </div>
-            </Collapse>
-          </Col>
-        </Row>
-      </Container>
-    </div>
-  );
-
   const rowEvents = {
     onClick: (e, row, rowIndex) => {
-      navigate(`/controlleurs/candidatures/informations/${row.id}`);
+      handleOpenDrawer(row, rowIndex);
     },
   };
 
@@ -1361,30 +469,49 @@ const ControlleursCandidaturesScreen = () => {
         <ControleurSideBar prenom={userInfo.prenom} nom={userInfo.nom} />
         <main>
           <HeaderAdministrateur
-            headerTitle='Contrôle Niveau 1 : Audit Automatisé par IA (Tiers de Confiance)'
+            headerTitle='Contrôle Niveau 1 : Audit Automatisé par IA & Validation Rapide'
             endPoint='/admin'
           />
 
           <Container className='mt-4'>
-            {/* BANDEAU PILOTAGE AUDIT IA NIVEAU 1 */}
+            {/* BANDEAU PILOTAGE AUDIT IA NIVEAU 1 - STYLE LOGICAT */}
             <div
-              className='bg-white rounded-3 shadow-sm p-4 mb-4 border'
-              style={{ borderLeft: '5px solid #0284c7' }}
+              className='p-4 mb-4 text-white position-relative overflow-hidden'
+              style={{
+                borderRadius: '18px',
+                background: 'linear-gradient(135deg, #0A1128 0%, #101E3D 55%, #0052FF 100%)',
+                boxShadow: '0 10px 25px rgba(0, 82, 255, 0.2)',
+              }}
             >
-              <div className='d-flex flex-wrap justify-content-between align-items-center mb-3 pb-3 border-bottom'>
+              <div className='d-flex flex-wrap justify-content-between align-items-center mb-3 pb-3 border-bottom border-light border-opacity-10'>
                 <div>
-                  <h4 className='fw-bold text-primary mb-1 d-flex align-items-center gap-2'>
-                    <i className='fas fa-robot text-info fs-3'></i>
-                    <span>Pipeline Contrôle 1 : Audit Intelligent par IA</span>
+                  <div className='d-flex align-items-center gap-2 mb-2'>
+                    <span
+                      style={{
+                        padding: '3px 10px',
+                        borderRadius: '20px',
+                        background: 'rgba(255, 255, 255, 0.15)',
+                        fontSize: '11px',
+                        fontWeight: '700',
+                        letterSpacing: '0.04em',
+                        textTransform: 'uppercase',
+                      }}
+                    >
+                      <i className='fas fa-robot me-1 text-info'></i> Contrôle Palier 1
+                    </span>
+                  </div>
+                  <h4 className='fw-bold mb-1 text-white' style={{ letterSpacing: '-0.02em' }}>
+                    Pipeline Contrôle 1 : Audit Intelligent par IA
                   </h4>
-                  <p className='text-muted small mb-0'>
-                    L'IA inspecte les candidatures, détecte les anomalies d'âge, les résidences hors zone, les CNI erronées, les diplômes et notes.
+                  <p className='text-light mb-0 opacity-75 small' style={{ maxWidth: '650px' }}>
+                    L'IA inspecte automatiquement les candidatures, détecte les anomalies d'âge, de CNI, de résidence et vérifie les diplômes.
                   </p>
                 </div>
-                <div className='d-flex flex-wrap gap-2 mt-2 mt-md-0'>
+                <div className='d-flex flex-wrap gap-2 mt-3 mt-md-0'>
                   <Button
-                    variant='primary'
-                    className='fw-bold shadow-sm'
+                    variant='light'
+                    className='fw-bold px-3 py-2 shadow-sm d-flex align-items-center gap-2'
+                    style={{ borderRadius: '10px', color: '#0052FF' }}
                     disabled={aiAuditLoading}
                     onClick={handleBatchAIAudit}
                   >
@@ -1395,14 +522,15 @@ const ControlleursCandidaturesScreen = () => {
                       </>
                     ) : (
                       <>
-                        <i className='fas fa-microchip me-2'></i>
-                        Lancer l'Audit IA sur Tous les Dossiers
+                        <i className='fas fa-microchip'></i>
+                        Lancer l'Audit IA sur Tous
                       </>
                     )}
                   </Button>
                   <Button
                     variant='success'
-                    className='fw-bold shadow-sm'
+                    className='fw-bold px-3 py-2 text-white shadow-sm d-flex align-items-center gap-2'
+                    style={{ borderRadius: '10px' }}
                     disabled={validatingControl1Loading || countConformes === 0}
                     onClick={handleValidateConformesToControl2}
                   >
@@ -1413,7 +541,7 @@ const ControlleursCandidaturesScreen = () => {
                       </>
                     ) : (
                       <>
-                        <i className='fas fa-check-double me-2'></i>
+                        <i className='fas fa-check-double'></i>
                         Transmettre les {countConformes} Conformes vers Contrôle 2
                       </>
                     )}
@@ -1423,22 +551,30 @@ const ControlleursCandidaturesScreen = () => {
 
               {/* ALERTE DOSSIERS EN ATTENTE D'AUDIT */}
               {countEnAttente > 0 && (
-                <div className='alert alert-info d-flex flex-wrap align-items-center justify-content-between mb-3 shadow-sm rounded-3'>
+                <div
+                  className='p-3 mb-3 d-flex flex-wrap align-items-center justify-content-between rounded-3'
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+                    backdropFilter: 'blur(10px)',
+                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                  }}
+                >
                   <div className='d-flex align-items-center gap-2 mb-2 mb-md-0'>
-                    <i className='fas fa-info-circle fa-2x text-primary'></i>
+                    <i className='fas fa-info-circle fa-2x text-info'></i>
                     <div>
-                      <div className='fw-bold fs-6'>
+                      <div className='fw-bold fs-6 text-white'>
                         {countEnAttente} dossier(s) n'ont pas encore été scannés par l'IA !
                       </div>
-                      <div className='small text-muted'>
-                        Cliquez sur "Lancer l'Audit IA" pour détecter automatiquement les erreurs d'âge, d'adresse/résidence, de CIN et de diplômes.
+                      <div className='small text-light opacity-75'>
+                        Cliquez sur "Lancer l'Audit IA" pour détecter automatiquement les erreurs d'âge, d'adresse, de CIN et de diplômes.
                       </div>
                     </div>
                   </div>
                   <Button
-                    variant='primary'
+                    variant='light'
                     size='sm'
                     className='fw-bold shadow-sm'
+                    style={{ borderRadius: '8px', color: '#0052FF' }}
                     disabled={aiAuditLoading}
                     onClick={handleBatchAIAudit}
                   >
@@ -1451,8 +587,8 @@ const ControlleursCandidaturesScreen = () => {
               <Row className='g-3 text-center'>
                 <Col xs={6} md={countEnAttente > 0 ? true : 3}>
                   <div
-                    className={`p-3 rounded-3 border ${filterTab === 'ALL' ? 'bg-primary text-white shadow' : 'bg-light text-dark'}`}
-                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                    className={`p-3 rounded-3 ${filterTab === 'ALL' ? 'bg-white text-primary shadow' : 'bg-white bg-opacity-10 text-white'}`}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s', borderRadius: '14px' }}
                     onClick={() => setFilterTab('ALL')}
                   >
                     <div className='fs-3 fw-bold'>{totalCount}</div>
@@ -1462,8 +598,8 @@ const ControlleursCandidaturesScreen = () => {
                 {countEnAttente > 0 && (
                   <Col xs={6} md={true}>
                     <div
-                      className={`p-3 rounded-3 border ${filterTab === 'ATTENTE' ? 'bg-secondary text-white shadow' : 'bg-light text-dark'}`}
-                      style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                      className={`p-3 rounded-3 ${filterTab === 'ATTENTE' ? 'bg-white text-dark shadow' : 'bg-white bg-opacity-10 text-white'}`}
+                      style={{ cursor: 'pointer', transition: 'all 0.2s', borderRadius: '14px' }}
                       onClick={() => setFilterTab('ATTENTE')}
                     >
                       <div className='fs-3 fw-bold'>{countEnAttente}</div>
@@ -1473,8 +609,8 @@ const ControlleursCandidaturesScreen = () => {
                 )}
                 <Col xs={6} md={countEnAttente > 0 ? true : 3}>
                   <div
-                    className={`p-3 rounded-3 border ${filterTab === 'CONFORMES' ? 'bg-success text-white shadow' : 'bg-light text-dark'}`}
-                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                    className={`p-3 rounded-3 ${filterTab === 'CONFORMES' ? 'bg-success text-white shadow' : 'bg-white bg-opacity-10 text-white'}`}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s', borderRadius: '14px' }}
                     onClick={() => setFilterTab('CONFORMES')}
                   >
                     <div className='fs-3 fw-bold'>{countConformes}</div>
@@ -1483,8 +619,8 @@ const ControlleursCandidaturesScreen = () => {
                 </Col>
                 <Col xs={6} md={countEnAttente > 0 ? true : 3}>
                   <div
-                    className={`p-3 rounded-3 border ${filterTab === 'ANOMALIES' ? 'bg-warning text-dark shadow' : 'bg-light text-dark'}`}
-                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                    className={`p-3 rounded-3 ${filterTab === 'ANOMALIES' ? 'bg-warning text-dark shadow' : 'bg-white bg-opacity-10 text-white'}`}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s', borderRadius: '14px' }}
                     onClick={() => setFilterTab('ANOMALIES')}
                   >
                     <div className='fs-3 fw-bold text-danger'>{countAnomalies}</div>
@@ -1493,8 +629,8 @@ const ControlleursCandidaturesScreen = () => {
                 </Col>
                 <Col xs={6} md={countEnAttente > 0 ? true : 3}>
                   <div
-                    className={`p-3 rounded-3 border ${filterTab === 'REJETES' ? 'bg-danger text-white shadow' : 'bg-light text-dark'}`}
-                    style={{ cursor: 'pointer', transition: 'all 0.2s' }}
+                    className={`p-3 rounded-3 ${filterTab === 'REJETES' ? 'bg-danger text-white shadow' : 'bg-white bg-opacity-10 text-white'}`}
+                    style={{ cursor: 'pointer', transition: 'all 0.2s', borderRadius: '14px' }}
                     onClick={() => setFilterTab('REJETES')}
                   >
                     <div className='fs-3 fw-bold'>{countRejetes}</div>
@@ -1506,12 +642,12 @@ const ControlleursCandidaturesScreen = () => {
           </Container>
 
           <Container
-            className='mb-4 pt-3 pb-3 font-weight-bold'
+            className='mb-4 mt-4 pt-3 pb-3'
             style={{
               backgroundColor: '#fff',
-              transition: 'box-shadow 0.25s',
-              boxShadow:
-                '0 2px 5px 0 rgb(0 0 0 / 16%), 0 2px 10px 0 rgb(0 0 0 / 12%)',
+              borderRadius: '16px',
+              border: '1px solid #E2E8F0',
+              boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.05)',
             }}
           >
             {loadingCandidatures1 ? (
@@ -1524,48 +660,66 @@ const ControlleursCandidaturesScreen = () => {
                   keyField='id'
                   data={data}
                   columns={columns}
-                  columnToggle
                   search
                 >
                   {(props) => (
                     <>
-                      <Container>
-                        <Row className='mt-2'>
-                          <h5>
-                            <i className='fas fa-search'></i> Rechercher :
+                      <div className='d-flex flex-wrap justify-content-between align-items-center mb-3 px-2 gap-2'>
+                        <div className='d-flex align-items-center gap-2'>
+                          <h5 className='mb-0 fw-bold text-dark'>
+                            <i className='fas fa-list-check me-2 text-primary'></i>
+                            Liste des Candidatures ({data.length})
                           </h5>
-                          <Col md={8} lg={8}>
-                            {' '}
-                            <SearchBar {...props.searchProps} />
-                          </Col>
-                        </Row>
-                      </Container>
-                      <hr />
-                      <CustomToggleList {...props.columnToggleProps} />
-                      <hr />
-                      <BootstrapTable
-                        {...props.baseProps}
-                        keyField='id'
-                        bootstrap4={true}
-                        data={data}
-                        columns={columns}
-                        wrapperClasses='table-responsive text-center'
-                        hover
-                        noDataIndication='Table is Empty'
-                        defaultSorted={defaultSorted}
-                        pagination={paginationFactory(options)}
-                        filter={filterFactory()}
-                        cellEdit={cellEditFactory({
-                          mode: 'click',
-                        })}
-                        rowEvents={rowEvents}
-                      />
+                          <span className='small text-muted'>
+                            (Cliquez sur une ligne pour examiner)
+                          </span>
+                        </div>
+                        <div style={{ width: '300px' }}>
+                          <SearchBar {...props.searchProps} placeholder='Rechercher un candidat, CNI...' />
+                        </div>
+                      </div>
+
+                      <div className='table-responsive'>
+                        <BootstrapTable
+                          {...props.baseProps}
+                          keyField='id'
+                          bootstrap4={true}
+                          data={data}
+                          columns={columns}
+                          hover
+                          rowClasses='cursor-pointer'
+                          noDataIndication={
+                            <div className='text-center py-4 text-muted'>
+                              <i className='fas fa-folder-open fa-2x mb-2 d-block opacity-50'></i>
+                              Aucun dossier trouvé dans cette vue.
+                            </div>
+                          }
+                          defaultSorted={defaultSorted}
+                          pagination={paginationFactory(options)}
+                          rowEvents={rowEvents}
+                        />
+                      </div>
                     </>
                   )}
                 </ToolkitProvider>
               )
             )}
           </Container>
+
+          {/* DRAWER D'EXAMEN LATÉRAL RAPIDE */}
+          <ControleurDrawer
+            show={showDrawer}
+            onClose={() => setShowDrawer(false)}
+            candidature={selectedCandidate}
+            controlLevel={1}
+            userInfo={userInfo}
+            onPrev={handlePrevCandidate}
+            onNext={handleNextCandidate}
+            hasPrev={selectedIndex > 0}
+            hasNext={selectedIndex < data.length - 1}
+            currentIndex={selectedIndex}
+            totalCount={data.length}
+          />
         </main>
       </div>
     </div>

@@ -188,10 +188,61 @@ export const executeAIAudit = async (candidature, user, offre) => {
     return candidates.find((p) => fs.existsSync(p)) || candidates[0];
   };
 
+  // DÉTECTION ANTI-FRAUDE : CLONAGE OU RECYCLAGE DU MÊME FICHIER ENTRE PLUSIEURS PIÈCES
+  const cniBase = path.basename(candUser.copieCNI || '').split('?')[0];
+  const diplomeBase = path.basename(candidature.copieDiplomes || '').split('?')[0];
+  const releveBase = path.basename(candidature.releves || '').split('?')[0];
+
+  if (cniBase && diplomeBase && cniBase.toLowerCase() === diplomeBase.toLowerCase()) {
+    anomalies.push(
+      `🚨 Fraude / Doublon documentaire : Le même fichier ("${cniBase}") a été téléversé à la fois pour la CNI et pour le Diplôme.`
+    );
+    isEliminatoire = true;
+    scoreConfiance -= 45;
+  }
+
+  if (cniBase && releveBase && cniBase.toLowerCase() === releveBase.toLowerCase()) {
+    anomalies.push(
+      `🚨 Fraude / Doublon documentaire : Le même fichier ("${cniBase}") a été téléversé à la fois pour la CNI et pour les Relevés de notes.`
+    );
+    isEliminatoire = true;
+    scoreConfiance -= 40;
+  }
+
+  if (diplomeBase && releveBase && diplomeBase.toLowerCase() === releveBase.toLowerCase()) {
+    anomalies.push(
+      `⚠️ Doublon documentaire : Le même fichier ("${diplomeBase}") a été utilisé pour le Diplôme et les Relevés de notes.`
+    );
+    scoreConfiance -= 20;
+  }
+
+  // Vérification d'empreinte binaire (Même fichier sous des noms renommés)
+  try {
+    const cniPath = resolveDocPath(cniBase);
+    const dipPath = resolveDocPath(diplomeBase);
+    if (fs.existsSync(cniPath) && fs.existsSync(dipPath) && cniBase !== diplomeBase) {
+      const stat1 = fs.statSync(cniPath);
+      const stat2 = fs.statSync(dipPath);
+      if (stat1.size === stat2.size && stat1.size > 2000) {
+        const buf1 = fs.readFileSync(cniPath);
+        const buf2 = fs.readFileSync(dipPath);
+        if (buf1.equals(buf2)) {
+          anomalies.push(
+            `🚨 Fraude avancée / Fichiers identiques : Le document CNI et le Diplôme contiennent exactement les mêmes octets sous deux noms de fichiers différents.`
+          );
+          isEliminatoire = true;
+          scoreConfiance -= 50;
+        }
+      }
+    }
+  } catch (errDuplicate) {
+    // Ignorer
+  }
+
   const pieceChecks = [
     { name: 'CNI', file: candUser.copieCNI, isCNI: true },
     { name: 'Diplôme', file: candidature.copieDiplomes, isDiplome: true },
-    { name: 'Relevés de notes', file: candidature.releves },
+    { name: 'Relevés de notes', file: candidature.releves, isReleves: true },
   ];
 
   for (const piece of pieceChecks) {
@@ -205,130 +256,210 @@ export const executeAIAudit = async (candidature, user, offre) => {
       if (!fs.existsSync(filePath)) {
         anomalies.push(`Fichier numérisé introuvable sur le serveur pour ${piece.name} (${cleanFileName}).`);
         scoreConfiance -= 15;
-      } else if (cleanFileName.toLowerCase().endsWith('.pdf')) {
-        // Extraction textuelle du PDF pour vérification croisée approfondie
-        const pdfText = extractTextFromPDF(filePath).toLowerCase();
-
-        // A. DÉTECTION DE DOCUMENTS SUSPECTS / INAPPROPRIÉS (ex: contrat de location, renta car, facture...)
-        const suspiciousKeywords = [
-          'rental contract',
-          'rent a car',
-          'rentacar',
-          'contrat de location',
-          'loueur',
-          'véhicule de location',
-          'quittance de loyer',
-        ];
-
-        const foundSuspicious = suspiciousKeywords.find((kw) => pdfText.includes(kw));
-        if (foundSuspicious) {
-          anomalies.push(
-            `🚨 Document suspect pour ${piece.name} : Le fichier PDF semble être un document commercial ("${foundSuspicious}") et non une pièce officielle requise.`
-          );
-          isEliminatoire = true;
-          scoreConfiance -= 45;
-        }
-
-        // B. VÉRIFICATION CROISÉE DE LA DATE DE NAISSANCE DANS LA CNI
-        if (piece.isCNI && pdfText.length > 30) {
-          const hasBirthInDoc = birthFormats.some((fmt) => pdfText.includes(fmt.toLowerCase()));
-          const hasBirthKeywords =
-            pdfText.includes('naissance') ||
-            pdfText.includes('né le') ||
-            pdfText.includes('née le') ||
-            pdfText.includes('date');
-
-          if (!hasBirthInDoc && !hasBirthKeywords) {
+      } else {
+        // CONTRÔLE D'INTÉGRITÉ & TAILLE DU FICHIER (TOUS FORMATS: PDF, IMAGES...)
+        try {
+          const stats = fs.statSync(filePath);
+          if (stats.size < 6000) {
+            // Moins de 6 Ko : Fichier corrompu, blanc ou tronqué
             anomalies.push(
-              `⚠️ Date de naissance déclarée introuvable dans la pièce CNI.`
-            );
-            scoreConfiance -= 25;
-            verifications.age = {
-              status: 'WARNING',
-              message: 'Date de naissance non identifiable dans le PDF',
-            };
-          }
-        }
-
-        // C. VÉRIFICATION DU NUMÉRO CNI DANS LA COPIE CNI
-        if (piece.isCNI && pdfText.length > 30 && cniNum) {
-          const cleanCniLower = cniNum.toLowerCase();
-          if (!pdfText.includes(cleanCniLower)) {
-            anomalies.push(
-              `⚠️ Numéro CNI ("${cniNum}") introuvable dans le document.`
-            );
-            scoreConfiance -= 20;
-          }
-        }
-
-        // D. VÉRIFICATION CROISÉE DU NOM ET PRÉNOM DU CANDIDAT DANS LA PIÈCE CNI / DOSSIER
-        if (piece.isCNI && pdfText.length > 30) {
-          const candNom = String(candUser.nom || '').trim().toLowerCase();
-          const candPrenom = String(candUser.prenom || '').trim().toLowerCase();
-          const escapeReg = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-
-          const hasNom = candNom.length >= 2 && new RegExp(`\\b${escapeReg(candNom)}\\b`, 'i').test(pdfText);
-          const hasPrenom = candPrenom.length >= 2 && new RegExp(`\\b${escapeReg(candPrenom)}\\b`, 'i').test(pdfText);
-
-          const fullName = `${candUser.prenom || ''} ${candUser.nom || ''}`.trim();
-          if (!hasNom && !hasPrenom) {
-            anomalies.push(
-              `🚨 Discordance d'identité : Le nom "${fullName}" n'apparaît pas dans la pièce téléversée (document d'un tiers).`
+              `🚨 Pièce suspecte ou anormalement légère pour ${piece.name} (${Math.round(stats.size / 1024)} Ko) : Document potentiellement vide, illisible ou corrompu.`
             );
             isEliminatoire = true;
-            scoreConfiance -= 40;
+            scoreConfiance -= 35;
           }
+        } catch (e) {
+          // Ignorer erreur stat
         }
 
-        // E. VÉRIFICATION CROISÉE DE L'ADRESSE ET DE LA VILLE DE RÉSIDENCE DANS LA CNI
-        if (piece.isCNI && pdfText.length > 30) {
-          const declaredVille = String(candUser.ville || '').trim().toLowerCase();
-          const declaredAdresse = String(candUser.adresse || '').trim().toLowerCase();
+        if (cleanFileName.toLowerCase().endsWith('.pdf')) {
+          // Extraction textuelle du PDF pour vérification croisée approfondie
+          const pdfText = extractTextFromPDF(filePath).toLowerCase();
 
-          // Mots significatifs de l'adresse (ex: "massira", "deroua", "anfa", "maarif")
-          const adresseMots = declaredAdresse
-            .split(/[\s,.'\-\/]+/)
-            .filter(
-              (w) =>
-                w.length >= 4 &&
-                ![
-                  'rue',
-                  'av',
-                  'avenue',
-                  'boulevard',
-                  'bd',
-                  'lot',
-                  'lotissement',
-                  'n°',
-                  'num',
-                  'numero',
-                  'immeuble',
-                  'imm',
-                  'residence',
-                  'res',
-                  'quartier',
-                  'hay',
-                ].includes(w)
-            );
+          // A. DÉTECTION DE DOCUMENTS SUSPECTS / INAPPROPRIÉS (ex: contrat de location, renta car, facture...)
+          const suspiciousKeywords = [
+            'rental contract',
+            'rent a car',
+            'rentacar',
+            'contrat de location',
+            'loueur',
+            'véhicule de location',
+            'quittance de loyer',
+            'facture d\'électricité',
+          ];
 
-          const hasVilleInDoc = declaredVille.length >= 3 && pdfText.includes(declaredVille);
-          const hasAdresseMotInDoc = adresseMots.some((mot) => pdfText.includes(mot));
-          const hasCertifResidence = Boolean(candUser.residence);
-
-          if (hasVilleInDoc || hasAdresseMotInDoc) {
-            verifications.adresseDoc = {
-              status: 'VALID',
-              message: `Adresse / Ville ("${candUser.ville || declaredAdresse}") vérifiée dans la pièce justificative`,
-            };
-          } else if (declaredVille && !hasCertifResidence) {
+          const foundSuspicious = suspiciousKeywords.find((kw) => pdfText.includes(kw));
+          if (foundSuspicious) {
             anomalies.push(
-              `⚠️ Résidence : Ville ("${candUser.ville}") non attestée sur la CNI (aucun certificat de résidence joint).`
+              `🚨 Document hors-sujet / suspect pour ${piece.name} : Le fichier PDF semble être un document commercial ("${foundSuspicious}") et non une pièce officielle requise.`
+            );
+            isEliminatoire = true;
+            scoreConfiance -= 45;
+          }
+
+          // B. DÉTECTION DE DOCUMENT FLOU, MAL NUMÉRISÉ OU SCAN SANS TEXTE (Qualité d'image insuffisante)
+          if (pdfText.length <= 25) {
+            anomalies.push(
+              `⚠️ Qualité de numérisation insuffisante pour ${piece.name} : Document sans texte exploitable (scan flou, photo sombre ou document non ocrisé). Contrôle visuel requis.`
             );
             scoreConfiance -= 15;
-            verifications.adresseDoc = {
+            verifications[`qualite_${piece.name.toLowerCase()}`] = {
               status: 'WARNING',
-              message: 'Adresse / Ville non attestée par la CNI sans certificat de résidence',
+              message: 'Scan image sans texte exploitable / vérification visuelle obligatoire',
             };
+          }
+
+          // C. CONTRÔLE APPROFONDI DU DIPLÔME (Vérification de validité académique)
+          if (piece.isDiplome) {
+            const academicKeywords = [
+              'diplôme', 'diplome', 'attestation', 'réussite', 'reussite',
+              'licence', 'master', 'bachelor', 'ingénieur', 'ingenieur',
+              'baccalauréat', 'baccalaureat', 'technicien', 'brevet',
+              'université', 'universite', 'faculté', 'faculte', 'école', 'ecole',
+              'institut', 'ministère', 'ministere', 'royaume du maroc', 'décerné', 'decerne',
+              'titulaire', 'filière', 'filiere', 'mention', 'session', 'ofppt', 'istafi',
+              'cycle', 'grade', 'commission', 'doyen', 'recteur', 'directeur'
+            ];
+
+            if (pdfText.length > 30) {
+              const hasAcademicTerm = academicKeywords.some((kw) => pdfText.includes(kw));
+              if (!hasAcademicTerm) {
+                anomalies.push(
+                  `🚨 Diplôme non conforme ou illisible : Le document téléversé ne contient aucun terme académique officiel valide (ni mention de diplôme, ni université/école, ni attestation). Pièce floue ou document non académique.`
+                );
+                isEliminatoire = true;
+                scoreConfiance -= 35;
+                verifications.diplomeDoc = {
+                  status: 'REJECT',
+                  message: 'Contenu académique officiel introuvable dans le fichier joint',
+                };
+              } else {
+                verifications.diplomeDoc = {
+                  status: 'VALID',
+                  message: 'Mentions académiques officielles reconnues dans le document',
+                };
+              }
+            }
+          }
+
+          // D. CONTRÔLE APPROFONDI DES RELEVÉS DE NOTES
+          if (piece.isReleves && pdfText.length > 30) {
+            const notesKeywords = [
+              'relevé', 'releve', 'note', 'notes', 'semestre', 'module', 'bulletin',
+              'moyenne', 'session', 'résultat', 'resultat', 'crédits', 'credits',
+              'admis', 'ajourné', 'matière', 'matiere', 'faculté', 'universite', 'école'
+            ];
+
+            const hasNotesTerm = notesKeywords.some((kw) => pdfText.includes(kw));
+            if (!hasNotesTerm) {
+              anomalies.push(
+                `⚠️ Relevés de notes suspects : Le document téléversé ne semble pas correspondre à un relevé de notes ou bulletin académique officiel (mentions de notes/semestres introuvables).`
+              );
+              scoreConfiance -= 20;
+            }
+          }
+
+          // E. VÉRIFICATION CROISÉE DE LA DATE DE NAISSANCE DANS LA CNI
+          if (piece.isCNI && pdfText.length > 30) {
+            const hasBirthInDoc = birthFormats.some((fmt) => pdfText.includes(fmt.toLowerCase()));
+            const hasBirthKeywords =
+              pdfText.includes('naissance') ||
+              pdfText.includes('né le') ||
+              pdfText.includes('née le') ||
+              pdfText.includes('date');
+
+            if (!hasBirthInDoc && !hasBirthKeywords) {
+              anomalies.push(
+                `⚠️ Date de naissance déclarée introuvable dans la pièce CNI (scan mal cadré ou date illisible).`
+              );
+              scoreConfiance -= 20;
+              verifications.age = {
+                status: 'WARNING',
+                message: 'Date de naissance non identifiable dans le PDF',
+              };
+            }
+          }
+
+          // F. VÉRIFICATION DU NUMÉRO CNI DANS LA COPIE CNI
+          if (piece.isCNI && pdfText.length > 30 && cniNum) {
+            const cleanCniLower = cniNum.toLowerCase();
+            if (!pdfText.includes(cleanCniLower)) {
+              anomalies.push(
+                `⚠️ Numéro CNI ("${cniNum}") introuvable ou illisible dans le document CNI (vérifier si la pièce est floue ou rognée).`
+              );
+              scoreConfiance -= 20;
+            }
+          }
+
+          // G. VÉRIFICATION CROISÉE DU NOM ET PRÉNOM DU CANDIDAT DANS LA PIÈCE CNI / DOSSIER
+          if (piece.isCNI && pdfText.length > 30) {
+            const candNom = String(candUser.nom || '').trim().toLowerCase();
+            const candPrenom = String(candUser.prenom || '').trim().toLowerCase();
+            const escapeReg = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+            const hasNom = candNom.length >= 2 && new RegExp(`\\b${escapeReg(candNom)}\\b`, 'i').test(pdfText);
+            const hasPrenom = candPrenom.length >= 2 && new RegExp(`\\b${escapeReg(candPrenom)}\\b`, 'i').test(pdfText);
+
+            const fullName = `${candUser.prenom || ''} ${candUser.nom || ''}`.trim();
+            if (!hasNom && !hasPrenom) {
+              anomalies.push(
+                `🚨 Discordance d'identité : Le nom "${fullName}" n'apparaît pas dans la pièce téléversée (document d'un tiers ou CNI illisible).`
+              );
+              isEliminatoire = true;
+              scoreConfiance -= 40;
+            }
+          }
+
+          // H. VÉRIFICATION CROISÉE DE L'ADRESSE ET DE LA VILLE DE RÉSIDENCE DANS LA CNI
+          if (piece.isCNI && pdfText.length > 30) {
+            const declaredVille = String(candUser.ville || '').trim().toLowerCase();
+            const declaredAdresse = String(candUser.adresse || '').trim().toLowerCase();
+
+            // Mots significatifs de l'adresse (ex: "massira", "deroua", "anfa", "maarif")
+            const adresseMots = declaredAdresse
+              .split(/[\s,.'\-\/]+/)
+              .filter(
+                (w) =>
+                  w.length >= 4 &&
+                  ![
+                    'rue',
+                    'av',
+                    'avenue',
+                    'boulevard',
+                    'bd',
+                    'lot',
+                    'lotissement',
+                    'n°',
+                    'num',
+                    'numero',
+                    'immeuble',
+                    'imm',
+                    'residence',
+                    'res',
+                    'quartier',
+                    'hay',
+                  ].includes(w)
+              );
+
+            const hasVilleInDoc = declaredVille.length >= 3 && pdfText.includes(declaredVille);
+            const hasAdresseMotInDoc = adresseMots.some((mot) => pdfText.includes(mot));
+            const hasCertifResidence = Boolean(candUser.residence);
+
+            if (hasVilleInDoc || hasAdresseMotInDoc) {
+              verifications.adresseDoc = {
+                status: 'VALID',
+                message: `Adresse / Ville ("${candUser.ville || declaredAdresse}") vérifiée dans la pièce justificative`,
+              };
+            } else if (declaredVille && !hasCertifResidence) {
+              anomalies.push(
+                `⚠️ Résidence : Ville ("${candUser.ville}") non attestée sur la CNI (aucun certificat de résidence joint).`
+              );
+              scoreConfiance -= 15;
+              verifications.adresseDoc = {
+                status: 'WARNING',
+                message: 'Adresse / Ville non attestée par la CNI sans certificat de résidence',
+              };
+            }
           }
         }
       }

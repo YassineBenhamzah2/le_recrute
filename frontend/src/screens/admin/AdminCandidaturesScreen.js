@@ -265,7 +265,7 @@ const AdminCandidaturesScreen = () => {
       dossier: postulation.dossier || '-',
     }));
 
-  const columns = [
+  const rawColumns = [
     {
       dataField: 'numeroDossier',
       text: 'N° Dossier',
@@ -1118,6 +1118,27 @@ const AdminCandidaturesScreen = () => {
       },
     },
   ];
+
+  const columns = rawColumns.map((col) => {
+    let minW = '160px';
+    if (col.dataField === 'numeroDossier') minW = '180px';
+    else if (col.dataField === 'organisation') minW = '220px';
+    else if (col.dataField === 'id') minW = '180px';
+    else if (col.dataField === 'dateCandidature' || col.dataField === 'heureCandidature') minW = '200px';
+    else if (col.dataField === 'email' || col.dataField === 'adresse') minW = '220px';
+    else if (col.dataField === 'civilite') minW = '130px';
+    else if (col.dataField === 'scoreTotal') minW = '160px';
+    else if (col.dataField.includes('Experience')) minW = '180px';
+
+    return {
+      ...col,
+      headerStyle: {
+        ...col.headerStyle,
+        minWidth: col.headerStyle?.minWidth || minW,
+        verticalAlign: 'top',
+      },
+    };
+  });
 
   const defaultSorted = [
     {

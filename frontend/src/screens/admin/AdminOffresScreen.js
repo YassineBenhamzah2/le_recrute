@@ -52,14 +52,20 @@ const DEFAULT_SCORING_RULES = {
     actif: true,
     poidsMax: 30,
     nomSpecialite: 'Bancaire',
+    modeCalcul: 'mois',
     pointsParMoisSpecialite: 0.625,
     pointsParMoisAutre: 0.15,
     maxMois: 48,
+    tranches: [
+      { minAns: 0, maxAns: 1, points: 10 },
+      { minAns: 1, maxAns: 2, points: 20 },
+      { minAns: 2, maxAns: 5, points: 30 },
+    ],
   },
   diplome: {
     actif: true,
     poidsMax: 20,
-    pointsParNiveau: { bac2: 10, bac3: 15, bac5: 20 },
+    pointsParNiveau: { bac2: 10, bac3: 15, bac5: 20, doctorat: 20 },
   },
 };
 
@@ -163,13 +169,186 @@ const AdminOffresScreen = () => {
     setProfilRecherche(offre.profilRecherche || '');
 
     if (offre.scoringRules) {
-      setScoring(JSON.parse(JSON.stringify(offre.scoringRules)));
+      const sr = offre.scoringRules;
+      setScoring({
+        maxScore: sr.maxScore || 100,
+        age: {
+          actif: sr.age?.actif !== undefined ? sr.age.actif : true,
+          poidsMax: sr.age?.poidsMax !== undefined ? Number(sr.age.poidsMax) : 10,
+          tranches: Array.isArray(sr.age?.tranches) && sr.age.tranches.length > 0
+            ? sr.age.tranches
+            : DEFAULT_SCORING_RULES.age.tranches,
+        },
+        note: {
+          actif: sr.note?.actif !== undefined ? sr.note.actif : true,
+          poidsMax: sr.note?.poidsMax !== undefined ? Number(sr.note.poidsMax) : 40,
+          modeCalcul: sr.note?.modeCalcul || 'tranches',
+          tranches: Array.isArray(sr.note?.tranches) && sr.note.tranches.length > 0
+            ? sr.note.tranches
+            : DEFAULT_SCORING_RULES.note.tranches,
+        },
+        mention: {
+          actif: sr.mention?.actif !== undefined ? sr.mention.actif : false,
+          poidsMax: sr.mention?.poidsMax !== undefined ? Number(sr.mention.poidsMax) : 20,
+          points: {
+            ...DEFAULT_SCORING_RULES.mention.points,
+            ...(sr.mention?.points || {}),
+          },
+        },
+        experience: {
+          actif: sr.experience?.actif !== undefined ? sr.experience.actif : true,
+          poidsMax: sr.experience?.poidsMax !== undefined ? Number(sr.experience.poidsMax) : 30,
+          nomSpecialite: sr.experience?.nomSpecialite || 'Bancaire',
+          modeCalcul: sr.experience?.modeCalcul || 'mois',
+          pointsParMoisSpecialite: sr.experience?.pointsParMoisSpecialite !== undefined ? Number(sr.experience.pointsParMoisSpecialite) : 0.625,
+          pointsParMoisAutre: sr.experience?.pointsParMoisAutre !== undefined ? Number(sr.experience.pointsParMoisAutre) : 0.15,
+          maxMois: sr.experience?.maxMois !== undefined ? Number(sr.experience.maxMois) : 48,
+          tranches: Array.isArray(sr.experience?.tranches) && sr.experience.tranches.length > 0
+            ? sr.experience.tranches
+            : DEFAULT_SCORING_RULES.experience.tranches,
+        },
+        diplome: {
+          actif: sr.diplome?.actif !== undefined ? sr.diplome.actif : true,
+          poidsMax: sr.diplome?.poidsMax !== undefined ? Number(sr.diplome.poidsMax) : 20,
+          pointsParNiveau: {
+            ...DEFAULT_SCORING_RULES.diplome.pointsParNiveau,
+            ...(sr.diplome?.pointsParNiveau || {}),
+          },
+        },
+      });
     } else {
       setScoring(JSON.parse(JSON.stringify(DEFAULT_SCORING_RULES)));
     }
 
     setModalTab('general');
     setShowModal(true);
+  };
+
+  // Age Tranches Helpers
+  const addAgeTranche = () => {
+    setScoring((prev) => {
+      const current = prev.age?.tranches || [];
+      const last = current[current.length - 1];
+      const nextMin = last ? Number(last.max) + 1 : 18;
+      const nextMax = nextMin + 5;
+      return {
+        ...prev,
+        age: {
+          ...prev.age,
+          tranches: [...current, { min: nextMin, max: nextMax, points: 0 }],
+        },
+      };
+    });
+  };
+
+  const updateAgeTranche = (index, field, value) => {
+    setScoring((prev) => {
+      const tranches = [...(prev.age?.tranches || [])];
+      tranches[index] = { ...tranches[index], [field]: Number(value) };
+      return {
+        ...prev,
+        age: { ...prev.age, tranches },
+      };
+    });
+  };
+
+  const removeAgeTranche = (index) => {
+    setScoring((prev) => {
+      const tranches = (prev.age?.tranches || []).filter((_, i) => i !== index);
+      return {
+        ...prev,
+        age: { ...prev.age, tranches },
+      };
+    });
+  };
+
+  // Note Tranches Helpers
+  const addNoteTranche = () => {
+    setScoring((prev) => {
+      const current = prev.note?.tranches || [];
+      const last = current[current.length - 1];
+      const nextMin = last ? Math.max(0, Number(last.minNote) - 2) : 10;
+      return {
+        ...prev,
+        note: {
+          ...prev.note,
+          tranches: [...current, { minNote: nextMin, points: 5 }],
+        },
+      };
+    });
+  };
+
+  const updateNoteTranche = (index, field, value) => {
+    setScoring((prev) => {
+      const tranches = [...(prev.note?.tranches || [])];
+      tranches[index] = { ...tranches[index], [field]: Number(value) };
+      return {
+        ...prev,
+        note: { ...prev.note, tranches },
+      };
+    });
+  };
+
+  const removeNoteTranche = (index) => {
+    setScoring((prev) => {
+      const tranches = (prev.note?.tranches || []).filter((_, i) => i !== index);
+      return {
+        ...prev,
+        note: { ...prev.note, tranches },
+      };
+    });
+  };
+
+  // Experience Tranches Helpers
+  const addExpTranche = () => {
+    setScoring((prev) => {
+      const current = prev.experience?.tranches || [];
+      const last = current[current.length - 1];
+      const nextMin = last ? Number(last.maxAns) : 0;
+      const nextMax = nextMin + 2;
+      return {
+        ...prev,
+        experience: {
+          ...prev.experience,
+          tranches: [...current, { minAns: nextMin, maxAns: nextMax, points: 10 }],
+        },
+      };
+    });
+  };
+
+  const updateExpTranche = (index, field, value) => {
+    setScoring((prev) => {
+      const tranches = [...(prev.experience?.tranches || [])];
+      tranches[index] = { ...tranches[index], [field]: Number(value) };
+      return {
+        ...prev,
+        experience: { ...prev.experience, tranches },
+      };
+    });
+  };
+
+  const removeExpTranche = (index) => {
+    setScoring((prev) => {
+      const tranches = (prev.experience?.tranches || []).filter((_, i) => i !== index);
+      return {
+        ...prev,
+        experience: { ...prev.experience, tranches },
+      };
+    });
+  };
+
+  // Diplome Points Helper
+  const updateDiplomePoint = (niveauKey, value) => {
+    setScoring((prev) => ({
+      ...prev,
+      diplome: {
+        ...prev.diplome,
+        pointsParNiveau: {
+          ...(prev.diplome?.pointsParNiveau || {}),
+          [niveauKey]: Number(value),
+        },
+      },
+    }));
   };
 
   // Handle Entreprise Change in Form
@@ -673,7 +852,7 @@ const AdminOffresScreen = () => {
                         </div>
 
                         {/* CRITÈRE 1 : ÂGE */}
-                        <Card className='mb-3 border'>
+                        <Card className='mb-3 border shadow-sm'>
                           <Card.Header className='bg-white d-flex justify-content-between align-items-center py-2'>
                             <Form.Check
                               type='switch'
@@ -712,37 +891,104 @@ const AdminOffresScreen = () => {
                                 <Col md={2}>
                                   <span className='fw-bold text-primary fs-5'>{scoring.age.poidsMax} pts</span>
                                 </Col>
+                                <Col md={5} className='text-end'>
+                                  <Button
+                                    variant='outline-primary'
+                                    size='sm'
+                                    className='fw-bold'
+                                    onClick={addAgeTranche}
+                                  >
+                                    <i className='fas fa-plus me-1'></i> Ajouter une tranche d'âge
+                                  </Button>
+                                </Col>
                               </Row>
 
-                              <div className='small text-muted mb-2'>
-                                Barème par tranches (Al Barid Bank & Fonction Publique valorisent les tranches jeunes) :
+                              <div className='small fw-bold text-dark mb-2'>
+                                <i className='fas fa-layer-group text-primary me-1'></i> Configuration des Tranches d'Âge & Points (personnalisable) :
                               </div>
-                              <Row className='g-2'>
-                                <Col md={4}>
-                                  <div className='p-2 bg-white rounded border'>
-                                    <small className='text-muted d-block'>18 à 24 ans :</small>
-                                    <strong className='text-success'>+10 pts</strong>
-                                  </div>
-                                </Col>
-                                <Col md={4}>
-                                  <div className='p-2 bg-white rounded border'>
-                                    <small className='text-muted d-block'>25 à 28 ans :</small>
-                                    <strong className='text-primary'>+7 pts</strong>
-                                  </div>
-                                </Col>
-                                <Col md={4}>
-                                  <div className='p-2 bg-white rounded border'>
-                                    <small className='text-muted d-block'>29 ans et plus :</small>
-                                    <strong className='text-secondary'>0 à 3 pts</strong>
-                                  </div>
-                                </Col>
-                              </Row>
+
+                              {(!scoring.age?.tranches || scoring.age.tranches.length === 0) ? (
+                                <div className='alert alert-warning py-2 small mb-0'>
+                                  Aucune tranche d'âge configurée. Cliquez sur "Ajouter une tranche d'âge" pour définir les règles.
+                                </div>
+                              ) : (
+                                <div className='table-responsive bg-white rounded border p-2'>
+                                  <Table size='sm' className='mb-0 align-middle text-center' style={{ fontSize: '13px' }}>
+                                    <thead className='table-light'>
+                                      <tr>
+                                        <th style={{ width: '80px' }}>Tranche</th>
+                                        <th>Âge Min (ans)</th>
+                                        <th>Âge Max (ans)</th>
+                                        <th>Points Accordés</th>
+                                        <th style={{ width: '60px' }}>Action</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {scoring.age.tranches.map((t, idx) => (
+                                        <tr key={idx}>
+                                          <td className='fw-bold text-muted'>#{idx + 1}</td>
+                                          <td>
+                                            <Form.Control
+                                              type='number'
+                                              size='sm'
+                                              className='text-center mx-auto'
+                                              style={{ maxWidth: '100px' }}
+                                              min='16'
+                                              max='65'
+                                              value={t.min}
+                                              onChange={(e) => updateAgeTranche(idx, 'min', e.target.value)}
+                                            />
+                                          </td>
+                                          <td>
+                                            <Form.Control
+                                              type='number'
+                                              size='sm'
+                                              className='text-center mx-auto'
+                                              style={{ maxWidth: '100px' }}
+                                              min='16'
+                                              max='65'
+                                              value={t.max}
+                                              onChange={(e) => updateAgeTranche(idx, 'max', e.target.value)}
+                                            />
+                                          </td>
+                                          <td>
+                                            <div className='d-flex align-items-center justify-content-center gap-1'>
+                                              <Form.Control
+                                                type='number'
+                                                size='sm'
+                                                className='text-center fw-bold text-primary'
+                                                style={{ maxWidth: '90px' }}
+                                                min='0'
+                                                max={scoring.age.poidsMax || 100}
+                                                value={t.points}
+                                                onChange={(e) => updateAgeTranche(idx, 'points', e.target.value)}
+                                              />
+                                              <span className='small text-muted'>pts</span>
+                                            </div>
+                                          </td>
+                                          <td>
+                                            <Button
+                                              variant='outline-danger'
+                                              size='sm'
+                                              className='p-1'
+                                              onClick={() => removeAgeTranche(idx)}
+                                              title='Supprimer cette tranche'
+                                            >
+                                              <i className='fas fa-trash-alt'></i>
+                                            </Button>
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </Table>
+                                </div>
+                              )}
                             </Card.Body>
                           )}
                         </Card>
 
                         {/* CRITÈRE 2 : NOTE ACADÉMIQUE / MOYENNE */}
-                        <Card className='mb-3 border'>
+                        <Card className='mb-3 border shadow-sm'>
                           <Card.Header className='bg-white d-flex justify-content-between align-items-center py-2'>
                             <Form.Check
                               type='switch'
@@ -783,11 +1029,12 @@ const AdminOffresScreen = () => {
                                 </Col>
                                 <Col md={5}>
                                   <Form.Label className='small fw-bold'>Méthode de Calcul :</Form.Label>
-                                  <div>
+                                  <div className='d-flex gap-3'>
                                     <Form.Check
                                       inline
                                       type='radio'
                                       name='modeCalcul'
+                                      id='mode-tranches'
                                       label='Par Paliers (>=16, >=14...)'
                                       checked={scoring.note.modeCalcul === 'tranches'}
                                       onChange={() =>
@@ -801,6 +1048,7 @@ const AdminOffresScreen = () => {
                                       inline
                                       type='radio'
                                       name='modeCalcul'
+                                      id='mode-prop'
                                       label='Proportionnel (/20)'
                                       checked={scoring.note.modeCalcul === 'proportionnel'}
                                       onChange={() =>
@@ -813,12 +1061,106 @@ const AdminOffresScreen = () => {
                                   </div>
                                 </Col>
                               </Row>
+
+                              {scoring.note.modeCalcul === 'tranches' ? (
+                                <div>
+                                  <div className='d-flex justify-content-between align-items-center mb-2'>
+                                    <span className='small fw-bold text-dark'>
+                                      <i className='fas fa-list-ol text-info me-1'></i> Configuration des Paliers de Notes & Points :
+                                    </span>
+                                    <Button
+                                      variant='outline-info'
+                                      size='sm'
+                                      className='fw-bold text-dark'
+                                      onClick={addNoteTranche}
+                                    >
+                                      <i className='fas fa-plus me-1'></i> Ajouter un palier de note
+                                    </Button>
+                                  </div>
+
+                                  <div className='table-responsive bg-white rounded border p-2'>
+                                    <Table size='sm' className='mb-0 align-middle text-center' style={{ fontSize: '13px' }}>
+                                      <thead className='table-light'>
+                                        <tr>
+                                          <th style={{ width: '80px' }}>Palier</th>
+                                          <th>Note Seuil Minimale (sur 20)</th>
+                                          <th>Points Accordés</th>
+                                          <th style={{ width: '60px' }}>Action</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {(scoring.note.tranches || []).map((t, idx) => (
+                                          <tr key={idx}>
+                                            <td className='fw-bold text-muted'>#{idx + 1}</td>
+                                            <td>
+                                              <div className='d-flex align-items-center justify-content-center gap-1'>
+                                                <span className='small text-muted'>Note &gt;=</span>
+                                                <Form.Control
+                                                  type='number'
+                                                  step='0.5'
+                                                  size='sm'
+                                                  className='text-center mx-1 fw-bold'
+                                                  style={{ maxWidth: '90px' }}
+                                                  min='0'
+                                                  max='20'
+                                                  value={t.minNote}
+                                                  onChange={(e) => updateNoteTranche(idx, 'minNote', e.target.value)}
+                                                />
+                                                <span className='small text-muted'>/ 20</span>
+                                              </div>
+                                            </td>
+                                            <td>
+                                              <div className='d-flex align-items-center justify-content-center gap-1'>
+                                                <Form.Control
+                                                  type='number'
+                                                  size='sm'
+                                                  className='text-center fw-bold text-info'
+                                                  style={{ maxWidth: '90px' }}
+                                                  min='0'
+                                                  max={scoring.note.poidsMax || 100}
+                                                  value={t.points}
+                                                  onChange={(e) => updateNoteTranche(idx, 'points', e.target.value)}
+                                                />
+                                                <span className='small text-muted'>pts</span>
+                                              </div>
+                                            </td>
+                                            <td>
+                                              <Button
+                                                variant='outline-danger'
+                                                size='sm'
+                                                className='p-1'
+                                                onClick={() => removeNoteTranche(idx)}
+                                                title='Supprimer ce palier'
+                                              >
+                                                <i className='fas fa-trash-alt'></i>
+                                              </Button>
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </Table>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className='p-3 bg-white rounded border'>
+                                  <div className='d-flex align-items-center gap-2'>
+                                    <i className='fas fa-calculator text-info fs-4'></i>
+                                    <div>
+                                      <strong className='text-dark d-block'>Mode Proportionnel Linéaire (/20)</strong>
+                                      <small className='text-muted'>
+                                        Chaque candidat reçoit un score exactement proportionnel à sa note académique :{' '}
+                                        <code className='fw-bold text-primary'>Score = (Note / 20) × {scoring.note.poidsMax} pts</code>
+                                      </small>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
                             </Card.Body>
                           )}
                         </Card>
 
                         {/* CRITÈRE 3 : MENTION DU DIPLÔME */}
-                        <Card className='mb-3 border'>
+                        <Card className='mb-3 border shadow-sm'>
                           <Card.Header className='bg-white d-flex justify-content-between align-items-center py-2'>
                             <Form.Check
                               type='switch'
@@ -838,7 +1180,7 @@ const AdminOffresScreen = () => {
                           </Card.Header>
                           {scoring.mention?.actif && (
                             <Card.Body className='bg-light py-3'>
-                              <Row className='align-items-center mb-2'>
+                              <Row className='align-items-center mb-3'>
                                 <Col md={5}>
                                   <Form.Label className='small fw-bold'>Poids Maximum Mention :</Form.Label>
                                   <Form.Range
@@ -858,8 +1200,111 @@ const AdminOffresScreen = () => {
                                   <span className='fw-bold fs-5' style={{ color: '#8B5CF6' }}>{scoring.mention.poidsMax} pts</span>
                                 </Col>
                                 <Col md={5}>
-                                  <div className='small text-muted'>
-                                    Très Bien: <strong>{scoring.mention.points?.tresBien || 20}p</strong> • Bien: <strong>{scoring.mention.points?.bien || 15}p</strong> • Assez Bien: <strong>{scoring.mention.points?.assezBien || 10}p</strong>
+                                  <small className='text-muted'>
+                                    Définissez les points attribués selon la mention d'excellence du diplôme.
+                                  </small>
+                                </Col>
+                              </Row>
+
+                              <Row className='g-2'>
+                                <Col md={3}>
+                                  <div className='p-2 bg-white rounded border'>
+                                    <small className='text-muted d-block fw-bold'>Très Bien :</small>
+                                    <div className='d-flex align-items-center gap-1 mt-1'>
+                                      <Form.Control
+                                        size='sm'
+                                        type='number'
+                                        min='0'
+                                        max={scoring.mention.poidsMax || 100}
+                                        value={scoring.mention.points?.tresBien ?? 20}
+                                        onChange={(e) =>
+                                          setScoring((prev) => ({
+                                            ...prev,
+                                            mention: {
+                                              ...prev.mention,
+                                              points: { ...prev.mention.points, tresBien: Number(e.target.value) },
+                                            },
+                                          }))
+                                        }
+                                        className='text-center fw-bold'
+                                      />
+                                      <span className='small text-muted'>pts</span>
+                                    </div>
+                                  </div>
+                                </Col>
+                                <Col md={3}>
+                                  <div className='p-2 bg-white rounded border'>
+                                    <small className='text-muted d-block fw-bold'>Bien :</small>
+                                    <div className='d-flex align-items-center gap-1 mt-1'>
+                                      <Form.Control
+                                        size='sm'
+                                        type='number'
+                                        min='0'
+                                        max={scoring.mention.poidsMax || 100}
+                                        value={scoring.mention.points?.bien ?? 15}
+                                        onChange={(e) =>
+                                          setScoring((prev) => ({
+                                            ...prev,
+                                            mention: {
+                                              ...prev.mention,
+                                              points: { ...prev.mention.points, bien: Number(e.target.value) },
+                                            },
+                                          }))
+                                        }
+                                        className='text-center fw-bold'
+                                      />
+                                      <span className='small text-muted'>pts</span>
+                                    </div>
+                                  </div>
+                                </Col>
+                                <Col md={3}>
+                                  <div className='p-2 bg-white rounded border'>
+                                    <small className='text-muted d-block fw-bold'>Assez Bien :</small>
+                                    <div className='d-flex align-items-center gap-1 mt-1'>
+                                      <Form.Control
+                                        size='sm'
+                                        type='number'
+                                        min='0'
+                                        max={scoring.mention.poidsMax || 100}
+                                        value={scoring.mention.points?.assezBien ?? 10}
+                                        onChange={(e) =>
+                                          setScoring((prev) => ({
+                                            ...prev,
+                                            mention: {
+                                              ...prev.mention,
+                                              points: { ...prev.mention.points, assezBien: Number(e.target.value) },
+                                            },
+                                          }))
+                                        }
+                                        className='text-center fw-bold'
+                                      />
+                                      <span className='small text-muted'>pts</span>
+                                    </div>
+                                  </div>
+                                </Col>
+                                <Col md={3}>
+                                  <div className='p-2 bg-white rounded border'>
+                                    <small className='text-muted d-block fw-bold'>Passable :</small>
+                                    <div className='d-flex align-items-center gap-1 mt-1'>
+                                      <Form.Control
+                                        size='sm'
+                                        type='number'
+                                        min='0'
+                                        max={scoring.mention.poidsMax || 100}
+                                        value={scoring.mention.points?.passable ?? 5}
+                                        onChange={(e) =>
+                                          setScoring((prev) => ({
+                                            ...prev,
+                                            mention: {
+                                              ...prev.mention,
+                                              points: { ...prev.mention.points, passable: Number(e.target.value) },
+                                            },
+                                          }))
+                                        }
+                                        className='text-center fw-bold'
+                                      />
+                                      <span className='small text-muted'>pts</span>
+                                    </div>
                                   </div>
                                 </Col>
                               </Row>
@@ -868,7 +1313,7 @@ const AdminOffresScreen = () => {
                         </Card>
 
                         {/* CRITÈRE 4 : EXPÉRIENCE PROFESSIONNELLE */}
-                        <Card className='mb-3 border'>
+                        <Card className='mb-3 border shadow-sm'>
                           <Card.Header className='bg-white d-flex justify-content-between align-items-center py-2'>
                             <Form.Check
                               type='switch'
@@ -889,11 +1334,11 @@ const AdminOffresScreen = () => {
                           {scoring.experience?.actif && (
                             <Card.Body className='bg-light py-3'>
                               <Row className='align-items-center mb-3'>
-                                <Col md={4}>
+                                <Col md={5}>
                                   <Form.Label className='small fw-bold'>Poids Max Expérience :</Form.Label>
                                   <Form.Range
                                     min='0'
-                                    max='40'
+                                    max='50'
                                     step='1'
                                     value={scoring.experience.poidsMax}
                                     onChange={(e) =>
@@ -907,43 +1352,207 @@ const AdminOffresScreen = () => {
                                 <Col md={2}>
                                   <span className='fw-bold text-success fs-5'>{scoring.experience.poidsMax} pts</span>
                                 </Col>
-                                <Col md={3}>
-                                  <Form.Label className='small fw-bold'>Domaine Cible :</Form.Label>
-                                  <Form.Control
-                                    type='text'
-                                    value={scoring.experience.nomSpecialite || 'Bancaire'}
-                                    onChange={(e) =>
-                                      setScoring((prev) => ({
-                                        ...prev,
-                                        experience: { ...prev.experience, nomSpecialite: e.target.value },
-                                      }))
-                                    }
-                                  />
-                                </Col>
-                                <Col md={3}>
-                                  <Form.Label className='small fw-bold'>Points / Mois :</Form.Label>
-                                  <Form.Control
-                                    type='number'
-                                    step='0.1'
-                                    value={scoring.experience.pointsParMoisSpecialite || 0.6}
-                                    onChange={(e) =>
-                                      setScoring((prev) => ({
-                                        ...prev,
-                                        experience: {
-                                          ...prev.experience,
-                                          pointsParMoisSpecialite: Number(e.target.value),
-                                        },
-                                      }))
-                                    }
-                                  />
+                                <Col md={5}>
+                                  <Form.Label className='small fw-bold'>Mode d'Évaluation :</Form.Label>
+                                  <div className='d-flex gap-3'>
+                                    <Form.Check
+                                      inline
+                                      type='radio'
+                                      name='modeCalculExp'
+                                      id='mode-exp-mois'
+                                      label='Prorata Mensuel (Spécialité)'
+                                      checked={(scoring.experience?.modeCalcul || 'mois') === 'mois'}
+                                      onChange={() =>
+                                        setScoring((prev) => ({
+                                          ...prev,
+                                          experience: { ...prev.experience, modeCalcul: 'mois' },
+                                        }))
+                                      }
+                                    />
+                                    <Form.Check
+                                      inline
+                                      type='radio'
+                                      name='modeCalculExp'
+                                      id='mode-exp-tranches'
+                                      label="Paliers d'Années"
+                                      checked={scoring.experience?.modeCalcul === 'tranches'}
+                                      onChange={() =>
+                                        setScoring((prev) => ({
+                                          ...prev,
+                                          experience: { ...prev.experience, modeCalcul: 'tranches' },
+                                        }))
+                                      }
+                                    />
+                                  </div>
                                 </Col>
                               </Row>
+
+                              {(scoring.experience?.modeCalcul || 'mois') === 'mois' ? (
+                                <Row className='g-2 p-2 bg-white rounded border'>
+                                  <Col md={3}>
+                                    <Form.Label className='small fw-bold'>Domaine Cible / Spécialité :</Form.Label>
+                                    <Form.Control
+                                      size='sm'
+                                      type='text'
+                                      value={scoring.experience.nomSpecialite || 'Bancaire'}
+                                      onChange={(e) =>
+                                        setScoring((prev) => ({
+                                          ...prev,
+                                          experience: { ...prev.experience, nomSpecialite: e.target.value },
+                                        }))
+                                      }
+                                    />
+                                  </Col>
+                                  <Col md={3}>
+                                    <Form.Label className='small fw-bold'>Points / Mois Spécialité :</Form.Label>
+                                    <Form.Control
+                                      size='sm'
+                                      type='number'
+                                      step='0.05'
+                                      value={scoring.experience.pointsParMoisSpecialite || 0.625}
+                                      onChange={(e) =>
+                                        setScoring((prev) => ({
+                                          ...prev,
+                                          experience: {
+                                            ...prev.experience,
+                                            pointsParMoisSpecialite: Number(e.target.value),
+                                          },
+                                        }))
+                                      }
+                                    />
+                                  </Col>
+                                  <Col md={3}>
+                                    <Form.Label className='small fw-bold'>Points / Mois Autres :</Form.Label>
+                                    <Form.Control
+                                      size='sm'
+                                      type='number'
+                                      step='0.05'
+                                      value={scoring.experience.pointsParMoisAutre || 0.15}
+                                      onChange={(e) =>
+                                        setScoring((prev) => ({
+                                          ...prev,
+                                          experience: {
+                                            ...prev.experience,
+                                            pointsParMoisAutre: Number(e.target.value),
+                                          },
+                                        }))
+                                      }
+                                    />
+                                  </Col>
+                                  <Col md={3}>
+                                    <Form.Label className='small fw-bold'>Plafond Total (Mois) :</Form.Label>
+                                    <Form.Control
+                                      size='sm'
+                                      type='number'
+                                      value={scoring.experience.maxMois || 48}
+                                      onChange={(e) =>
+                                        setScoring((prev) => ({
+                                          ...prev,
+                                          experience: {
+                                            ...prev.experience,
+                                            maxMois: Number(e.target.value),
+                                          },
+                                        }))
+                                      }
+                                    />
+                                  </Col>
+                                </Row>
+                              ) : (
+                                <div>
+                                  <div className='d-flex justify-content-between align-items-center mb-2'>
+                                    <span className='small fw-bold text-dark'>
+                                      <i className='fas fa-calendar-alt text-success me-1'></i> Configuration des Paliers d'Années & Points :
+                                    </span>
+                                    <Button
+                                      variant='outline-success'
+                                      size='sm'
+                                      className='fw-bold'
+                                      onClick={addExpTranche}
+                                    >
+                                      <i className='fas fa-plus me-1'></i> Ajouter un palier d'expérience
+                                    </Button>
+                                  </div>
+
+                                  <div className='table-responsive bg-white rounded border p-2'>
+                                    <Table size='sm' className='mb-0 align-middle text-center' style={{ fontSize: '13px' }}>
+                                      <thead className='table-light'>
+                                        <tr>
+                                          <th style={{ width: '80px' }}>Palier</th>
+                                          <th>Années Min</th>
+                                          <th>Années Max</th>
+                                          <th>Points Accordés</th>
+                                          <th style={{ width: '60px' }}>Action</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody>
+                                        {(scoring.experience.tranches || []).map((t, idx) => (
+                                          <tr key={idx}>
+                                            <td className='fw-bold text-muted'>#{idx + 1}</td>
+                                            <td>
+                                              <Form.Control
+                                                type='number'
+                                                step='0.5'
+                                                size='sm'
+                                                className='text-center mx-auto'
+                                                style={{ maxWidth: '90px' }}
+                                                min='0'
+                                                max='40'
+                                                value={t.minAns}
+                                                onChange={(e) => updateExpTranche(idx, 'minAns', e.target.value)}
+                                              />
+                                            </td>
+                                            <td>
+                                              <Form.Control
+                                                type='number'
+                                                step='0.5'
+                                                size='sm'
+                                                className='text-center mx-auto'
+                                                style={{ maxWidth: '90px' }}
+                                                min='0'
+                                                max='40'
+                                                value={t.maxAns}
+                                                onChange={(e) => updateExpTranche(idx, 'maxAns', e.target.value)}
+                                              />
+                                            </td>
+                                            <td>
+                                              <div className='d-flex align-items-center justify-content-center gap-1'>
+                                                <Form.Control
+                                                  type='number'
+                                                  size='sm'
+                                                  className='text-center fw-bold text-success'
+                                                  style={{ maxWidth: '90px' }}
+                                                  min='0'
+                                                  max={scoring.experience.poidsMax || 100}
+                                                  value={t.points}
+                                                  onChange={(e) => updateExpTranche(idx, 'points', e.target.value)}
+                                                />
+                                                <span className='small text-muted'>pts</span>
+                                              </div>
+                                            </td>
+                                            <td>
+                                              <Button
+                                                variant='outline-danger'
+                                                size='sm'
+                                                className='p-1'
+                                                onClick={() => removeExpTranche(idx)}
+                                                title='Supprimer ce palier'
+                                              >
+                                                <i className='fas fa-trash-alt'></i>
+                                              </Button>
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </Table>
+                                  </div>
+                                </div>
+                              )}
                             </Card.Body>
                           )}
                         </Card>
 
                         {/* CRITÈRE 5 : NIVEAU DE DIPLÔME */}
-                        <Card className='mb-3 border'>
+                        <Card className='mb-3 border shadow-sm'>
                           <Card.Header className='bg-white d-flex justify-content-between align-items-center py-2'>
                             <Form.Check
                               type='switch'
@@ -963,12 +1572,12 @@ const AdminOffresScreen = () => {
                           </Card.Header>
                           {scoring.diplome?.actif && (
                             <Card.Body className='bg-light py-3'>
-                              <Row className='align-items-center'>
+                              <Row className='align-items-center mb-3'>
                                 <Col md={5}>
                                   <Form.Label className='small fw-bold'>Poids Maximum Diplôme :</Form.Label>
                                   <Form.Range
                                     min='0'
-                                    max='30'
+                                    max='40'
                                     step='1'
                                     value={scoring.diplome.poidsMax}
                                     onChange={(e) =>
@@ -983,8 +1592,93 @@ const AdminOffresScreen = () => {
                                   <span className='fw-bold text-dark fs-5'>{scoring.diplome.poidsMax} pts</span>
                                 </Col>
                                 <Col md={5}>
-                                  <div className='small text-muted'>
-                                    Bac+2: <strong>{scoring.diplome.pointsParNiveau?.bac2 || 10}p</strong> • Bac+3: <strong>{scoring.diplome.pointsParNiveau?.bac3 || 15}p</strong> • Bac+5: <strong>{scoring.diplome.pointsParNiveau?.bac5 || 20}p</strong>
+                                  <small className='text-muted'>
+                                    Ajustez les points correspondant à chaque niveau de diplôme requis pour ce concours.
+                                  </small>
+                                </Col>
+                              </Row>
+
+                              <div className='small fw-bold text-dark mb-2'>
+                                <i className='fas fa-sliders-h text-warning me-1'></i> Barème par Niveau Académique (personnalisable) :
+                              </div>
+                              <Row className='g-2'>
+                                <Col md={3}>
+                                  <div className='p-2 bg-white rounded border'>
+                                    <Form.Label className='small fw-bold text-muted mb-1 d-block'>
+                                      Bac +2 (DUT, BTS, EST, OFPPT) :
+                                    </Form.Label>
+                                    <div className='d-flex align-items-center gap-1'>
+                                      <Form.Control
+                                        size='sm'
+                                        type='number'
+                                        min='0'
+                                        max={scoring.diplome.poidsMax || 100}
+                                        value={scoring.diplome.pointsParNiveau?.bac2 ?? 10}
+                                        onChange={(e) => updateDiplomePoint('bac2', e.target.value)}
+                                        className='text-center fw-bold'
+                                      />
+                                      <span className='small text-muted'>pts</span>
+                                    </div>
+                                  </div>
+                                </Col>
+
+                                <Col md={3}>
+                                  <div className='p-2 bg-white rounded border'>
+                                    <Form.Label className='small fw-bold text-muted mb-1 d-block'>
+                                      Bac +3 (Licence, Bachelor) :
+                                    </Form.Label>
+                                    <div className='d-flex align-items-center gap-1'>
+                                      <Form.Control
+                                        size='sm'
+                                        type='number'
+                                        min='0'
+                                        max={scoring.diplome.poidsMax || 100}
+                                        value={scoring.diplome.pointsParNiveau?.bac3 ?? 15}
+                                        onChange={(e) => updateDiplomePoint('bac3', e.target.value)}
+                                        className='text-center fw-bold'
+                                      />
+                                      <span className='small text-muted'>pts</span>
+                                    </div>
+                                  </div>
+                                </Col>
+
+                                <Col md={3}>
+                                  <div className='p-2 bg-white rounded border'>
+                                    <Form.Label className='small fw-bold text-muted mb-1 d-block'>
+                                      Bac +5 (Master, Ingénieur) :
+                                    </Form.Label>
+                                    <div className='d-flex align-items-center gap-1'>
+                                      <Form.Control
+                                        size='sm'
+                                        type='number'
+                                        min='0'
+                                        max={scoring.diplome.poidsMax || 100}
+                                        value={scoring.diplome.pointsParNiveau?.bac5 ?? 20}
+                                        onChange={(e) => updateDiplomePoint('bac5', e.target.value)}
+                                        className='text-center fw-bold'
+                                      />
+                                      <span className='small text-muted'>pts</span>
+                                    </div>
+                                  </div>
+                                </Col>
+
+                                <Col md={3}>
+                                  <div className='p-2 bg-white rounded border'>
+                                    <Form.Label className='small fw-bold text-muted mb-1 d-block'>
+                                      Doctorat / PhD :
+                                    </Form.Label>
+                                    <div className='d-flex align-items-center gap-1'>
+                                      <Form.Control
+                                        size='sm'
+                                        type='number'
+                                        min='0'
+                                        max={scoring.diplome.poidsMax || 100}
+                                        value={scoring.diplome.pointsParNiveau?.doctorat ?? 20}
+                                        onChange={(e) => updateDiplomePoint('doctorat', e.target.value)}
+                                        className='text-center fw-bold'
+                                      />
+                                      <span className='small text-muted'>pts</span>
+                                    </div>
                                   </div>
                                 </Col>
                               </Row>

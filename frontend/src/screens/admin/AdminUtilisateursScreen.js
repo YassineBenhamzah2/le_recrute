@@ -81,9 +81,11 @@ const AdminUtilisateursScreen = () => {
       dataField: 'id',
       text: 'ID',
       sort: true,
-      filter: textFilter(),
+      filter: textFilter({ placeholder: 'ID...' }),
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        minWidth: '180px',
+        verticalAlign: 'top',
       },
       editorStyle: {
         backgroundColor: '#e9ecef',
@@ -93,9 +95,11 @@ const AdminUtilisateursScreen = () => {
       dataField: 'poste',
       text: 'Poste',
       sort: true,
-      filter: textFilter(),
+      filter: textFilter({ placeholder: 'Poste...' }),
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        minWidth: '160px',
+        verticalAlign: 'top',
       },
       editorStyle: {
         backgroundColor: '#e9ecef',
@@ -105,9 +109,11 @@ const AdminUtilisateursScreen = () => {
       dataField: 'civilite',
       text: 'Civilite',
       sort: true,
-      filter: textFilter(),
+      filter: textFilter({ placeholder: 'Civilité...' }),
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        minWidth: '130px',
+        verticalAlign: 'top',
       },
       editorStyle: {
         backgroundColor: '#e9ecef',
@@ -117,9 +123,11 @@ const AdminUtilisateursScreen = () => {
       dataField: 'prenom',
       text: 'Prenom',
       sort: true,
-      filter: textFilter(),
+      filter: textFilter({ placeholder: 'Prénom...' }),
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        minWidth: '150px',
+        verticalAlign: 'top',
       },
       editorStyle: {
         backgroundColor: '#e9ecef',
@@ -129,9 +137,11 @@ const AdminUtilisateursScreen = () => {
       dataField: 'nom',
       text: 'Nom',
       sort: true,
-      filter: textFilter(),
+      filter: textFilter({ placeholder: 'Nom...' }),
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        minWidth: '150px',
+        verticalAlign: 'top',
       },
       editorStyle: {
         backgroundColor: '#e9ecef',
@@ -141,9 +151,11 @@ const AdminUtilisateursScreen = () => {
       dataField: 'cni',
       text: 'CNI',
       sort: true,
-      filter: textFilter(),
+      filter: textFilter({ placeholder: 'CNI...' }),
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        minWidth: '140px',
+        verticalAlign: 'top',
       },
       editorStyle: {
         backgroundColor: '#e9ecef',
@@ -153,9 +165,11 @@ const AdminUtilisateursScreen = () => {
       dataField: 'dateNaissance',
       text: 'Date de Naissance',
       sort: true,
-      filter: textFilter(),
+      filter: textFilter({ placeholder: 'Date naiss...' }),
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        minWidth: '180px',
+        verticalAlign: 'top',
       },
       editorStyle: {
         backgroundColor: '#e9ecef',
@@ -165,9 +179,11 @@ const AdminUtilisateursScreen = () => {
       dataField: 'email',
       text: 'Email',
       sort: true,
-      filter: textFilter(),
+      filter: textFilter({ placeholder: 'Email...' }),
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        minWidth: '220px',
+        verticalAlign: 'top',
       },
       editorStyle: {
         backgroundColor: '#e9ecef',
@@ -178,10 +194,12 @@ const AdminUtilisateursScreen = () => {
       dataField: 'phone',
       text: 'Numero de telephone',
       sort: true,
-      filter: textFilter(),
+      filter: textFilter({ placeholder: 'Téléphone...' }),
       align: 'left',
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        minWidth: '180px',
+        verticalAlign: 'top',
       },
       editorStyle: {
         backgroundColor: '#e9ecef',
@@ -191,9 +209,11 @@ const AdminUtilisateursScreen = () => {
     {
       dataField: 'isController',
       text: 'Profile controlleur',
-      filter: textFilter(),
+      filter: textFilter({ placeholder: 'true / false' }),
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        minWidth: '170px',
+        verticalAlign: 'top',
       },
       editorStyle: {
         backgroundColor: '#e9ecef',
@@ -203,9 +223,11 @@ const AdminUtilisateursScreen = () => {
       dataField: 'isAdmin',
       text: 'Profile administrateur',
 
-      filter: textFilter(),
+      filter: textFilter({ placeholder: 'true / false' }),
       headerStyle: {
         backgroundColor: '#d1ecf1',
+        minWidth: '180px',
+        verticalAlign: 'top',
       },
       editorStyle: {
         backgroundColor: '#e9ecef',

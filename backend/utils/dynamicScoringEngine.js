@@ -115,18 +115,36 @@ export const calculateDynamicScore = (candidature, user, scoringRules) => {
 
   if (rules.age && rules.age.actif !== false) {
     const poidsMaxAge = Number(rules.age.poidsMax) || 10;
-    if (age >= 18 && age <= 24) {
-      scoreAge = poidsMaxAge; // 100%
-      details.push(`Âge (${age} ans - Jeune Diplômé) : +${scoreAge} pts`);
-    } else if (age >= 25 && age <= 28) {
-      scoreAge = Number((poidsMaxAge * 0.7).toFixed(2)); // 70%
-      details.push(`Âge (${age} ans - Tranche 25-28 ans) : +${scoreAge} pts`);
-    } else if (age >= 29 && age <= 35) {
-      scoreAge = Number((poidsMaxAge * 0.3).toFixed(2)); // 30%
-      details.push(`Âge (${age} ans - Tranche 29-35 ans) : +${scoreAge} pts`);
-    } else {
-      scoreAge = 0;
-      details.push(`Âge (${age} ans - Supérieur à 35 ans) : 0 pt`);
+    let matchFound = false;
+
+    if (Array.isArray(rules.age.tranches) && rules.age.tranches.length > 0) {
+      for (const t of rules.age.tranches) {
+        const tMin = Number(t.min);
+        const tMax = Number(t.max);
+        const tPts = Number(t.points) || 0;
+        if (age >= tMin && age <= tMax) {
+          scoreAge = Math.min(tPts, poidsMaxAge);
+          details.push(`Âge (${age} ans - Tranche [${tMin}-${tMax} ans]) : +${scoreAge} pts`);
+          matchFound = true;
+          break;
+        }
+      }
+    }
+
+    if (!matchFound) {
+      if (age >= 18 && age <= 24) {
+        scoreAge = poidsMaxAge; // 100%
+        details.push(`Âge (${age} ans - Jeune Diplômé) : +${scoreAge} pts`);
+      } else if (age >= 25 && age <= 28) {
+        scoreAge = Number((poidsMaxAge * 0.7).toFixed(2)); // 70%
+        details.push(`Âge (${age} ans - Tranche 25-28 ans) : +${scoreAge} pts`);
+      } else if (age >= 29 && age <= 35) {
+        scoreAge = Number((poidsMaxAge * 0.3).toFixed(2)); // 30%
+        details.push(`Âge (${age} ans - Tranche 29-35 ans) : +${scoreAge} pts`);
+      } else {
+        scoreAge = 0;
+        details.push(`Âge (${age} ans - Hors tranches barème) : 0 pt`);
+      }
     }
   } else {
     details.push('Critère Âge désactivé pour cette institution');
@@ -141,21 +159,47 @@ export const calculateDynamicScore = (candidature, user, scoringRules) => {
   if (rules.note && rules.note.actif !== false) {
     const poidsMaxNote = Number(rules.note.poidsMax) || 40;
 
-    if (rawNote >= 16) {
-      scoreNote = poidsMaxNote; // 100%
-      details.push(`Moyenne académique (${rawNote}/20 - Mention Très Bien) : +${scoreNote} pts`);
-    } else if (rawNote >= 14) {
-      scoreNote = Number((poidsMaxNote * 0.75).toFixed(2)); // 75%
-      details.push(`Moyenne académique (${rawNote}/20 - Mention Bien) : +${scoreNote} pts`);
-    } else if (rawNote >= 12) {
-      scoreNote = Number((poidsMaxNote * 0.5).toFixed(2)); // 50%
-      details.push(`Moyenne académique (${rawNote}/20 - Mention Assez Bien) : +${scoreNote} pts`);
-    } else if (rawNote >= 10) {
-      scoreNote = Number((poidsMaxNote * 0.25).toFixed(2)); // 25%
-      details.push(`Moyenne académique (${rawNote}/20 - Mention Passable) : +${scoreNote} pts`);
+    if (rules.note.modeCalcul === 'proportionnel') {
+      scoreNote = Number(((rawNote / 20) * poidsMaxNote).toFixed(2));
+      details.push(
+        `Moyenne académique (${rawNote}/20 - Proportionnel) : +${scoreNote} pts / ${poidsMaxNote} pts`
+      );
+    } else if (Array.isArray(rules.note.tranches) && rules.note.tranches.length > 0) {
+      const sortedTranches = [...rules.note.tranches].sort(
+        (a, b) => Number(b.minNote) - Number(a.minNote)
+      );
+      let noteMatched = false;
+      for (const t of sortedTranches) {
+        const minN = Number(t.minNote);
+        const pts = Number(t.points) || 0;
+        if (rawNote >= minN) {
+          scoreNote = Math.min(pts, poidsMaxNote);
+          details.push(`Moyenne académique (${rawNote}/20 - Palier >= ${minN}/20) : +${scoreNote} pts`);
+          noteMatched = true;
+          break;
+        }
+      }
+      if (!noteMatched) {
+        scoreNote = 0;
+        details.push(`Moyenne académique (${rawNote}/20 - En dessous du palier minimum) : 0 pt`);
+      }
     } else {
-      scoreNote = 0;
-      details.push(`Moyenne académique (${rawNote}/20 - Inférieur à 10/20) : 0 pt`);
+      if (rawNote >= 16) {
+        scoreNote = poidsMaxNote; // 100%
+        details.push(`Moyenne académique (${rawNote}/20 - Mention Très Bien) : +${scoreNote} pts`);
+      } else if (rawNote >= 14) {
+        scoreNote = Number((poidsMaxNote * 0.75).toFixed(2)); // 75%
+        details.push(`Moyenne académique (${rawNote}/20 - Mention Bien) : +${scoreNote} pts`);
+      } else if (rawNote >= 12) {
+        scoreNote = Number((poidsMaxNote * 0.5).toFixed(2)); // 50%
+        details.push(`Moyenne académique (${rawNote}/20 - Mention Assez Bien) : +${scoreNote} pts`);
+      } else if (rawNote >= 10) {
+        scoreNote = Number((poidsMaxNote * 0.25).toFixed(2)); // 25%
+        details.push(`Moyenne académique (${rawNote}/20 - Mention Passable) : +${scoreNote} pts`);
+      } else {
+        scoreNote = 0;
+        details.push(`Moyenne académique (${rawNote}/20 - Inférieur à 10/20) : 0 pt`);
+      }
     }
   } else {
     details.push('Critère Note désactivé pour cette institution');
@@ -168,30 +212,30 @@ export const calculateDynamicScore = (candidature, user, scoringRules) => {
   if (rules.mention && rules.mention.actif) {
     const mention = (candidature.mention || '').toLowerCase().trim();
     const poidsMaxMention = Number(rules.mention.poidsMax) || 20;
+    const ptsConfig = rules.mention.points || {};
 
     if (mention.includes('très bien') || mention.includes('tres bien')) {
-      scoreMention = poidsMaxMention;
+      scoreMention = ptsConfig.tresBien !== undefined ? Number(ptsConfig.tresBien) : poidsMaxMention;
     } else if (mention.includes('bien')) {
-      scoreMention = Number((poidsMaxMention * 0.75).toFixed(2));
+      scoreMention = ptsConfig.bien !== undefined ? Number(ptsConfig.bien) : Number((poidsMaxMention * 0.75).toFixed(2));
     } else if (mention.includes('assez bien')) {
-      scoreMention = Number((poidsMaxMention * 0.5).toFixed(2));
+      scoreMention = ptsConfig.assezBien !== undefined ? Number(ptsConfig.assezBien) : Number((poidsMaxMention * 0.5).toFixed(2));
     } else if (mention.includes('passable')) {
-      scoreMention = Number((poidsMaxMention * 0.25).toFixed(2));
+      scoreMention = ptsConfig.passable !== undefined ? Number(ptsConfig.passable) : Number((poidsMaxMention * 0.25).toFixed(2));
     }
 
+    scoreMention = Math.min(scoreMention, poidsMaxMention);
     details.push(`Mention (${candidature.mention || 'Non spécifiée'}) : +${scoreMention} pts`);
   }
 
   // =========================================================================
-  // 4. CRITÈRE EXPÉRIENCE PROFESSIONNELLE (Prorata mensuel, max 48 mois = 4 ans)
+  // 4. CRITÈRE EXPÉRIENCE PROFESSIONNELLE
   // =========================================================================
   let scoreExperience = 0;
   if (rules.experience && rules.experience.actif !== false) {
     const nomSpec = (rules.experience.nomSpecialite || 'bancaire').toLowerCase();
     const maxMois = Number(rules.experience.maxMois) || 48;
     const poidsMaxExp = Number(rules.experience.poidsMax) || 30;
-    const ptsMoisSpec = poidsMaxExp / maxMois; // 48 mois = exactement poidsMaxExp
-    const ptsMoisAutre = ptsMoisSpec * 0.3; // 30% des points pour exp hors spécialité
 
     let moisSpec = 0;
     let moisAutre = 0;
@@ -225,15 +269,44 @@ export const calculateDynamicScore = (candidature, user, scoringRules) => {
       });
     }
 
-    // Plafonner les mois totaux pris en compte
-    const totalMois = Math.min(moisSpec + moisAutre, maxMois);
-    const scoreSpec = moisSpec * ptsMoisSpec;
-    const scoreAutre = Math.max(0, totalMois - moisSpec) * ptsMoisAutre;
+    const totalAnnees = (moisSpec + moisAutre) / 12;
 
-    scoreExperience = Number(Math.min(scoreSpec + scoreAutre, poidsMaxExp).toFixed(2));
-    details.push(
-      `Expérience pro (${moisSpec.toFixed(0)}m ${rules.experience.nomSpecialite || 'Spécialité'}, ${moisAutre.toFixed(0)}m Autres) : +${scoreExperience} pts / ${poidsMaxExp} pts`
-    );
+    if (
+      rules.experience.modeCalcul === 'tranches' &&
+      Array.isArray(rules.experience.tranches) &&
+      rules.experience.tranches.length > 0
+    ) {
+      let expMatched = false;
+      for (const t of rules.experience.tranches) {
+        const minAns = Number(t.minAns) || 0;
+        const maxAns = t.maxAns !== undefined && !isNaN(Number(t.maxAns)) ? Number(t.maxAns) : 99;
+        const pts = Number(t.points) || 0;
+        if (totalAnnees >= minAns && totalAnnees <= maxAns) {
+          scoreExperience = Math.min(pts, poidsMaxExp);
+          details.push(
+            `Expérience pro (${totalAnnees.toFixed(1)} ans - Tranche [${minAns}-${maxAns === 99 ? '+' : maxAns} ans]) : +${scoreExperience} pts`
+          );
+          expMatched = true;
+          break;
+        }
+      }
+      if (!expMatched) {
+        scoreExperience = 0;
+        details.push(`Expérience pro (${totalAnnees.toFixed(1)} ans - Hors tranche) : 0 pt`);
+      }
+    } else {
+      const ptsMoisSpec = Number(rules.experience.pointsParMoisSpecialite) || (poidsMaxExp / maxMois);
+      const ptsMoisAutre = Number(rules.experience.pointsParMoisAutre) || (ptsMoisSpec * 0.3);
+
+      const totalMois = Math.min(moisSpec + moisAutre, maxMois);
+      const scoreSpec = moisSpec * ptsMoisSpec;
+      const scoreAutre = Math.max(0, totalMois - moisSpec) * ptsMoisAutre;
+
+      scoreExperience = Number(Math.min(scoreSpec + scoreAutre, poidsMaxExp).toFixed(2));
+      details.push(
+        `Expérience pro (${moisSpec.toFixed(0)}m ${rules.experience.nomSpecialite || 'Spécialité'}, ${moisAutre.toFixed(0)}m Autres) : +${scoreExperience} pts / ${poidsMaxExp} pts`
+      );
+    }
   }
 
   // =========================================================================
@@ -243,13 +316,23 @@ export const calculateDynamicScore = (candidature, user, scoringRules) => {
   if (rules.diplome && rules.diplome.actif !== false) {
     const niveau = (candidature.niveauEtude || '').toLowerCase();
     const poidsMaxDiplome = Number(rules.diplome.poidsMax) || 20;
+    const ppn = rules.diplome.pointsParNiveau || {};
 
-    if (niveau.includes('bac+5') || niveau.includes('master') || niveau.includes('ingénieur')) {
-      scoreDiplome = poidsMaxDiplome; // 100%
-    } else if (niveau.includes('bac+3') || niveau.includes('licence')) {
-      scoreDiplome = Number((poidsMaxDiplome * 0.75).toFixed(2)); // 75%
-    } else if (niveau.includes('bac+2') || niveau.includes('dut') || niveau.includes('bts') || niveau.includes('ofppt')) {
-      scoreDiplome = Number((poidsMaxDiplome * 0.5).toFixed(2)); // 50%
+    const bac2Pts = ppn.bac2 !== undefined ? Number(ppn.bac2) : Number((poidsMaxDiplome * 0.5).toFixed(2));
+    const bac3Pts = ppn.bac3 !== undefined ? Number(ppn.bac3) : Number((poidsMaxDiplome * 0.75).toFixed(2));
+    const bac5Pts = ppn.bac5 !== undefined ? Number(ppn.bac5) : poidsMaxDiplome;
+    const docPts = ppn.doctorat !== undefined ? Number(ppn.doctorat) : poidsMaxDiplome;
+
+    if (niveau.includes('doctorat') || niveau.includes('phd')) {
+      scoreDiplome = Math.min(docPts, poidsMaxDiplome);
+    } else if (niveau.includes('bac+5') || niveau.includes('master') || niveau.includes('ingénieur') || niveau.includes('ingenieur')) {
+      scoreDiplome = Math.min(bac5Pts, poidsMaxDiplome);
+    } else if (niveau.includes('bac+3') || niveau.includes('licence') || niveau.includes('bachelor')) {
+      scoreDiplome = Math.min(bac3Pts, poidsMaxDiplome);
+    } else if (niveau.includes('bac+2') || niveau.includes('dut') || niveau.includes('bts') || niveau.includes('ofppt') || niveau.includes('est')) {
+      scoreDiplome = Math.min(bac2Pts, poidsMaxDiplome);
+    } else if (ppn.autre !== undefined) {
+      scoreDiplome = Math.min(Number(ppn.autre), poidsMaxDiplome);
     }
 
     details.push(`Diplôme (${candidature.niveauEtude}) : +${scoreDiplome} pts / ${poidsMaxDiplome} pts`);
