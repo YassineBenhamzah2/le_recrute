@@ -36,6 +36,8 @@ const CandidaturesInformationsScreen = () => {
   const [ville, setVille] = useState('');
   const [cni, setCni] = useState('');
   const [copieCNI, setCopieCNI] = useState('');
+  const [copieCNIVerso, setCopieCNIVerso] = useState('');
+  const [activeCniFace, setActiveCniFace] = useState('recto');
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [rerunLoading, setRerunLoading] = useState(false);
@@ -86,7 +88,8 @@ const CandidaturesInformationsScreen = () => {
         setVille(candidature.user.ville || '');
         setEmail(candidature.user.email || '');
         setCni(candidature.user.cni || '');
-        setCopieCNI(candidature.user.copieCNI || '');
+        setCopieCNI(candidature.user.copieCNI || candidature.copieCNI || '');
+        setCopieCNIVerso(candidature.user.copieCNIVerso || candidature.copieCNIVerso || '');
         setNationalite(candidature.user.nationalite || '');
         setPhone(candidature.user.phone || '');
         setAdresse(candidature.user.adresse || '');
@@ -471,9 +474,27 @@ const CandidaturesInformationsScreen = () => {
                   </Col>
                   <Col md={6}>
                     <div className='my-3'>
+                      <div className='d-flex align-items-center gap-2 mb-2'>
+                        <Button
+                          variant={activeCniFace === 'recto' ? 'primary' : 'outline-primary'}
+                          size='sm'
+                          className='fw-bold'
+                          onClick={() => setActiveCniFace('recto')}
+                        >
+                          <i className='fas fa-id-card me-1'></i> CNI Recto (Face avant)
+                        </Button>
+                        <Button
+                          variant={activeCniFace === 'verso' ? 'primary' : 'outline-primary'}
+                          size='sm'
+                          className='fw-bold'
+                          onClick={() => setActiveCniFace('verso')}
+                        >
+                          <i className='fas fa-id-card me-1'></i> CNI Verso (Adresse)
+                        </Button>
+                      </div>
                       <DocumentViewer
-                        url={copieCNI}
-                        title="Carte Nationale d'Identité (CNIE)"
+                        url={activeCniFace === 'recto' ? copieCNI : (copieCNIVerso || copieCNI)}
+                        title={activeCniFace === 'recto' ? "Carte Nationale d'Identité (Recto)" : "Carte Nationale d'Identité (Verso - Adresse)"}
                         height='650px'
                       />
                     </div>

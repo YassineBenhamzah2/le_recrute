@@ -131,6 +131,9 @@ const addCandidature = asyncHandler(async (req, res) => {
     eligibilite,
     motif,
     dossier,
+    copieCNI: req.body.copieCNI || (req.user && req.user.copieCNI) || null,
+    copieCNIVerso: req.body.copieCNIVerso || (req.user && req.user.copieCNIVerso) || null,
+    anneeObtention: dateObtention ? String(new Date(dateObtention).getFullYear()) : (req.body.anneeObtention || ''),
     releves,
     copieDiplomes,
     attestationsTravail,
@@ -138,6 +141,8 @@ const addCandidature = asyncHandler(async (req, res) => {
   });
 
   const user = await User.findById(req.user._id);
+  if (!candidature.copieCNI && user?.copieCNI) candidature.copieCNI = user.copieCNI;
+  if (!candidature.copieCNIVerso && user?.copieCNIVerso) candidature.copieCNIVerso = user.copieCNIVerso;
 
   // Moteur de Scoring Dynamique (Multi-Entreprises & Multi-Barèmes)
   if (offreDoc && offreDoc.scoringRules) {

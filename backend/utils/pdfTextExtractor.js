@@ -72,9 +72,49 @@ function extractStringsFromPdfContent(content) {
     if (innerMatches) {
       texts.push(...innerMatches.map((s) => unescapePdfText(s.slice(1, -1))));
     }
+    // Hex strings inside TJ array: [<0048> -10 <0069>] TJ
+    const hexInner = m[1].match(/<([0-9a-fA-F]+)>/g);
+    if (hexInner) {
+      texts.push(
+        ...hexInner.map((h) => {
+          const raw = h.slice(1, -1);
+          let str = '';
+          for (let k = 0; k < raw.length; k += 2) {
+            str += String.fromCharCode(parseInt(raw.substr(k, 2), 16));
+          }
+          return str;
+        })
+      );
+    }
   }
+
+  // 3. Commandes Tj avec chaîne hexadécimale : <48656C6C6F> Tj
+  const hexTjRegex = /<([0-9a-fA-F]+)>\s*Tj/g;
+  let hm;
+  while ((hm = hexTjRegex.exec(content)) !== null) {
+    const hex = hm[1];
+    let str = '';
+    for (let k = 0; k < hex.length; k += 2) {
+      str += String.fromCharCode(parseInt(hex.substr(k, 2), 16));
+    }
+    texts.push(str);
+  }
+
   return texts.join(' ');
 }
+
+/**
+ * Normalise le texte (suppression des accents, minuscules, espaces superflus)
+ */
+export const normalizePdfText = (str) => {
+  if (!str) return '';
+  return str
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+};
 
 /**
  * Extracteur natif de texte depuis un fichier PDF (sans dépendances externes)

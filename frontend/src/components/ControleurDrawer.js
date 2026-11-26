@@ -201,7 +201,8 @@ const ControleurDrawer = ({
   };
 
   const docsList = [
-    { key: 'copieCNI', label: 'Carte CNI', url: candidature.copieCNI || candidature.user?.copieCNI, icon: 'fa-id-card' },
+    { key: 'copieCNI', label: 'CNI Recto', url: candidature.copieCNI || candidature.user?.copieCNI, icon: 'fa-id-card' },
+    { key: 'copieCNIVerso', label: 'CNI Verso', url: candidature.copieCNIVerso || candidature.user?.copieCNIVerso, icon: 'fa-id-card' },
     { key: 'copieDiplomes', label: 'Diplômes', url: candidature.copieDiplomes, icon: 'fa-graduation-cap' },
     { key: 'releves', label: 'Relevés de Notes', url: candidature.releves, icon: 'fa-file-invoice' },
     { key: 'residence', label: 'Certificat Résidence', url: candidature.residence || candidature.user?.residence, icon: 'fa-map-marker-alt' },

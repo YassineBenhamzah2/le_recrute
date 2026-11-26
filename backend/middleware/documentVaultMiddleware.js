@@ -136,6 +136,7 @@ export const documentVault = async (req, res, next) => {
       const matchingCands = await Candidature.find({
         $or: [
           { copieCNI: { $regex: cleanFilename, $options: 'i' } },
+          { copieCNIVerso: { $regex: cleanFilename, $options: 'i' } },
           { residence: { $regex: cleanFilename, $options: 'i' } },
           { copieDiplomes: { $regex: cleanFilename, $options: 'i' } },
           { releves: { $regex: cleanFilename, $options: 'i' } },
@@ -169,6 +170,7 @@ export const documentVault = async (req, res, next) => {
     // 2. Pièces enregistrées dans le profil utilisateur (CNI, Résidence)
     if (
       (user.copieCNI && user.copieCNI.includes(cleanFilename)) ||
+      (user.copieCNIVerso && user.copieCNIVerso.includes(cleanFilename)) ||
       (user.residence && user.residence.includes(cleanFilename))
     ) {
       return serveFileInline(res, foundPath);
@@ -179,6 +181,7 @@ export const documentVault = async (req, res, next) => {
       user: user._id,
       $or: [
         { copieCNI: { $regex: cleanFilename, $options: 'i' } },
+        { copieCNIVerso: { $regex: cleanFilename, $options: 'i' } },
         { residence: { $regex: cleanFilename, $options: 'i' } },
         { copieDiplomes: { $regex: cleanFilename, $options: 'i' } },
         { releves: { $regex: cleanFilename, $options: 'i' } },

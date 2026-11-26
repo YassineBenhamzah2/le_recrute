@@ -845,18 +845,27 @@ const ProfileScreen = () => {
           {activeTab === 'documents' && (() => {
             const latestCandidature =
               candidatures && candidatures.length > 0 ? candidatures[0] : null;
-            const cniPath = user?.copieCNI || latestCandidature?.user?.copieCNI;
+            const cniPath = user?.copieCNI || latestCandidature?.user?.copieCNI || latestCandidature?.copieCNI;
+            const cniVersoPath = user?.copieCNIVerso || latestCandidature?.user?.copieCNIVerso || latestCandidature?.copieCNIVerso;
             const diplomePath = latestCandidature?.copieDiplomes;
             const relevesPath = latestCandidature?.releves;
             const attestationsPath = latestCandidature?.attestationsTravail;
+            const residencePath = user?.residence || latestCandidature?.user?.residence || latestCandidature?.residence;
 
             const docsInventory = [
               {
-                title: 'Carte Nationale d’Identité (CNI)',
+                title: 'Carte Nationale d’Identité (CNI Recto)',
                 icon: 'fa-id-card',
                 path: cniPath,
                 required: true,
-                description: 'Justificatif d’identité officiel',
+                description: 'Justificatif d’identité officiel (Face avant)',
+              },
+              {
+                title: 'Carte Nationale d’Identité (CNI Verso)',
+                icon: 'fa-id-card',
+                path: cniVersoPath,
+                required: true,
+                description: 'Face arrière de la CNI avec adresse officielle',
               },
               {
                 title: 'Diplôme / Attestation Bac+2/3',
@@ -871,6 +880,13 @@ const ProfileScreen = () => {
                 path: relevesPath,
                 required: true,
                 description: 'Relevés de notes officiels (S1 à S6)',
+              },
+              {
+                title: 'Certificat de Résidence',
+                icon: 'fa-map-marker-alt',
+                path: residencePath,
+                required: false,
+                description: 'Attestation de résidence si adresse différente',
               },
               {
                 title: 'Attestations d’Expérience',

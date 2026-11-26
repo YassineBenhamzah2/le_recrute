@@ -57,6 +57,7 @@ const userSchema = mongoose.Schema(
       type: Number,
     },
     copieCNI: { type: String },
+    copieCNIVerso: { type: String },
     residence: {
       type: String,
     },

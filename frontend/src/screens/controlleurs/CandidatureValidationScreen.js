@@ -360,7 +360,7 @@ const CandidatureVlidationScreen = () => {
                           <div className='list-group-item d-flex justify-content-between align-items-center px-0'>
                             <div>
                               <i className='fas fa-id-card text-primary me-2'></i>
-                              <strong>Carte Nationale d'Identité (CNI) :</strong>
+                              <strong>CNI (Face Avant / Recto) :</strong>
                             </div>
                             {postulationTarget.copieCNI || postulationTarget.user?.copieCNI ? (
                               <a
@@ -369,7 +369,26 @@ const CandidatureVlidationScreen = () => {
                                 rel='noopener noreferrer'
                                 className='btn btn-outline-primary btn-sm fw-bold'
                               >
-                                <i className='fas fa-external-link-alt me-1'></i> Voir CNI
+                                <i className='fas fa-external-link-alt me-1'></i> Voir CNI Recto
+                              </a>
+                            ) : (
+                              <Badge bg='danger'>Non Fournie</Badge>
+                            )}
+                          </div>
+
+                          <div className='list-group-item d-flex justify-content-between align-items-center px-0'>
+                            <div>
+                              <i className='fas fa-id-card text-primary me-2'></i>
+                              <strong>CNI (Face Arrière / Verso) :</strong>
+                            </div>
+                            {postulationTarget.copieCNIVerso || postulationTarget.user?.copieCNIVerso ? (
+                              <a
+                                href={getFileUrl(postulationTarget.copieCNIVerso || postulationTarget.user?.copieCNIVerso)}
+                                target='_blank'
+                                rel='noopener noreferrer'
+                                className='btn btn-outline-primary btn-sm fw-bold'
+                              >
+                                <i className='fas fa-external-link-alt me-1'></i> Voir CNI Verso
                               </a>
                             ) : (
                               <Badge bg='danger'>Non Fournie</Badge>

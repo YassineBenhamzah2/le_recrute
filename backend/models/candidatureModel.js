@@ -231,6 +231,15 @@ const candidatureSchema = mongoose.Schema(
       type: String,
       enum: ['NEP-CIN', 'NEP-AR', 'NEP-DIP', 'NEP-AE', 'NEP-RN', 'NEP-AT'],
     },
+    copieCNI: {
+      type: String,
+    },
+    copieCNIVerso: {
+      type: String,
+    },
+    anneeObtention: {
+      type: String,
+    },
     releves: {
       type: String,
     },

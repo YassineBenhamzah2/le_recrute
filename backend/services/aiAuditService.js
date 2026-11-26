@@ -1,12 +1,15 @@
 import moment from 'moment';
 import path from 'path';
 import fs from 'fs';
-import { extractTextFromPDF } from '../utils/pdfTextExtractor.js';
+import { extractTextFromPDF, normalizePdfText } from '../utils/pdfTextExtractor.js';
 
 /**
- * Service d'Audit Intelligent (IA Contrôle Niveau 1)
- * Analyse automatique des pièces, détection des incohérences (âge, adresse, CNI, diplôme, notes).
- * Analyse approfondie du contenu textuel des fichiers PDF téléversés.
+ * Service d'Audit Intelligent Avancé (IA Contrôle Niveau 1)
+ * Vérification croisée exhaustive et anti-fraude entre les déclarations du candidat et les pièces justificatives :
+ * - CNI Recto & CNI Verso (Numéro, Nom/Prénom, Date et Lieu de naissance, Adresse au Verso)
+ * - Diplôme / Attestation (Titulaire, Année d'obtention vs Année déclarée, Intitulé/Filière, Établissement/Université)
+ * - Relevés de notes et mentions
+ * - Détection du recyclage / doublon documentaire (fichiers identiques)
  */
 export const executeAIAudit = async (candidature, user, offre) => {
   const anomalies = [];
@@ -17,8 +20,16 @@ export const executeAIAudit = async (candidature, user, offre) => {
   const candUser = user || candidature.user || {};
   const candOffre = offre || candidature.offre || {};
 
-  // 1. CONTRÔLE INTELLIGENT DE L'ÂGE & DATE DE NAISSANCE
-  const rawBirth = candUser.dateNaissance;
+  // Helpers de nettoyage et normalisation
+  const cleanStr = (s) => (s ? normalizePdfText(String(s)) : '');
+  const escapeReg = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
+
+  const candNom = cleanStr(candUser.nom || candidature.nom);
+  const candPrenom = cleanStr(candUser.prenom || candidature.prenom);
+  const fullName = `${candUser.prenom || candidature.prenom || ''} ${candUser.nom || candidature.nom || ''}`.trim();
+
+  // 1. CONTRÔLE DE L'ÂGE & DATE DE NAISSANCE
+  const rawBirth = candUser.dateNaissance || candidature.dateNaissance;
   let birthYear = '';
   let birthFormats = [];
 
@@ -27,7 +38,10 @@ export const executeAIAudit = async (candidature, user, offre) => {
     scoreConfiance -= 25;
     verifications.age = { status: 'ERROR', message: 'Date de naissance non renseignée' };
   } else {
-    const birthMoment = moment(rawBirth, ['YYYY-MM-DD', 'DD.MM.YYYY', 'DD/MM/YYYY'], true);
+    const cleanBirthStr = typeof rawBirth === 'string'
+      ? rawBirth.replace(/\./g, '/').replace(/-/g, '/')
+      : rawBirth;
+    const birthMoment = moment(cleanBirthStr, ['DD/MM/YYYY', 'YYYY/MM/DD', 'DD-MM-YYYY', 'YYYY-MM-DD'], true);
     const validBirth = birthMoment.isValid() ? birthMoment : moment(rawBirth);
 
     if (!validBirth.isValid()) {
@@ -37,8 +51,8 @@ export const executeAIAudit = async (candidature, user, offre) => {
     } else {
       birthYear = validBirth.format('YYYY');
       const moisFrancais = [
-        'janvier', 'février', 'fevrier', 'mars', 'avril', 'mai', 'juin',
-        'juillet', 'août', 'aout', 'septembre', 'octobre', 'novembre', 'décembre', 'decembre'
+        'janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin',
+        'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre'
       ];
       const jour = validBirth.format('D');
       const jourPadded = validBirth.format('DD');
@@ -77,8 +91,8 @@ export const executeAIAudit = async (candidature, user, offre) => {
     }
   }
 
-  // 2. CONTRÔLE DE LA CNI & IDENTITÉ NUMÉRIQUE
-  const cniNum = String(candUser.cni || '').trim().toUpperCase();
+  // 2. CONTRÔLE DE LA CNI (FORMAT & PRÉSENCE DU NUMÉRO)
+  const cniNum = String(candUser.cni || candidature.cni || '').trim().toUpperCase();
   const cniRegex = /^[A-Z]{1,3}[0-9]{4,8}$/;
   if (!cniNum) {
     anomalies.push("Numéro de Carte Nationale d'Identité (CNI) non renseigné.");
@@ -93,36 +107,35 @@ export const executeAIAudit = async (candidature, user, offre) => {
     verifications.cni = { status: 'VALID', cni: cniNum, message: 'Format CNI standard conforme' };
   }
 
-  // 3. CONTRÔLE DE L'ADRESSE & DE LA VILLE DE RÉSIDENCE
-  const ville = String(candUser.ville || '').trim().toLowerCase();
-  const adresse = String(candUser.adresse || '').trim().toLowerCase();
-  const hasCertifResidence = Boolean(candUser.residence);
+  // 3. CONTRÔLE DE L'ADRESSE DÉCLARÉE & VILLE
+  const declaredVille = cleanStr(candUser.ville || candidature.ville);
+  const declaredAdresse = cleanStr(candUser.adresse || candidature.adresse);
+  const hasCertifResidence = Boolean(candUser.residence || candidature.residence);
 
-  if (!ville || !adresse) {
+  if (!declaredVille || !declaredAdresse) {
     anomalies.push("Coordonnées de résidence incomplètes (Ville ou Adresse manquante).");
     scoreConfiance -= 15;
-    verifications.adresse = { status: 'WARNING', message: 'Adresse incomplète' };
+    verifications.adresse = { status: 'WARNING', message: 'Adresse déclarée incomplète' };
   } else {
-    // Si l'offre cible une ville précise et que le candidat est d'une autre ville sans certificat
-    const offreVille = String(candOffre.ville || '').toLowerCase();
+    const offreVille = cleanStr(candOffre.ville);
     const isRegionalTarget = offreVille && !offreVille.includes('national') && !offreVille.includes('tout');
 
-    if (isRegionalTarget && !offreVille.includes(ville) && !hasCertifResidence) {
+    if (isRegionalTarget && !offreVille.includes(declaredVille) && !hasCertifResidence) {
       anomalies.push(
-        `Résidence déclarée (${candUser.ville}) différente de la zone du concours (${candOffre.ville}) sans certificat de résidence joint.`
+        `Résidence déclarée (${candUser.ville || candidature.ville}) différente de la zone du concours (${candOffre.ville}) sans certificat de résidence joint.`
       );
       scoreConfiance -= 20;
       verifications.adresse = { status: 'WARNING', message: 'Certificat de résidence requis' };
     } else {
-      verifications.adresse = { status: 'VALID', ville: candUser.ville, message: 'Résidence conforme' };
+      verifications.adresse = { status: 'VALID', ville: candUser.ville || candidature.ville, message: 'Résidence déclarée conforme' };
     }
   }
 
-  // 4. CONTRÔLE DU DIPLÔME & SPÉCIALITÉ RECHERCHÉE
+  // 4. CONTRÔLE DU NIVEAU D'ÉTUDES VS PRÉREQUIS OFFRE
   const getLevelWeight = (str) => {
     if (!str) return 0;
-    const s = String(str).toLowerCase();
-    if (s.includes('bac+5') || s.includes('master') || s.includes('ingenieur') || s.includes('ingénieur')) return 5;
+    const s = cleanStr(str);
+    if (s.includes('bac+5') || s.includes('master') || s.includes('ingenieur')) return 5;
     if (s.includes('bac+3') || s.includes('licence') || s.includes('bachelor')) return 3;
     if (s.includes('bac+2') || s.includes('ts') || s.includes('bts') || s.includes('dut') || s.includes('dts') || s.includes('deug')) return 2;
     if (s.includes('bac')) return 1;
@@ -132,7 +145,6 @@ export const executeAIAudit = async (candidature, user, offre) => {
   const candLvl = getLevelWeight(candidature.niveauEtude);
   const reqLvl = getLevelWeight(candOffre.niveau || candOffre.profil);
 
-  // On ne vérifie le niveau que si l'offre a expressément défini un niveau requis non vide
   if (reqLvl > 0 && candLvl < reqLvl) {
     anomalies.push(
       `Niveau académique insuffisant : Candidat déclare ${candidature.niveauEtude || 'non renseigné'} alors que l'offre exige ${candOffre.niveau}.`
@@ -148,7 +160,7 @@ export const executeAIAudit = async (candidature, user, offre) => {
     };
   }
 
-  // 5. CONTRÔLE DES NOTES & DE LA MOYENNE
+  // 5. CONTRÔLE DES NOTES DÉCLARÉES
   const notes = [
     candidature.semestre1,
     candidature.semestre2,
@@ -171,8 +183,9 @@ export const executeAIAudit = async (candidature, user, offre) => {
     verifications.notes = { status: 'VALID', message: 'Notes et moyennes cohérentes' };
   }
 
-  // 6. CONTRÔLE APPROFONDI DU CONTENU DES PIÈCES NUMÉRISÉES (ANTI-FRAUDE & VÉRIFICATION CROISÉE)
+  // 6. GESTION DES CHEMINS DES PIÈCES TÉLÉVERSÉES
   const resolveDocPath = (cleanFileName) => {
+    if (!cleanFileName) return '';
     const candidates = [
       path.join(process.cwd(), 'uploads', cleanFileName),
       path.join(process.cwd(), 'backend', 'uploads', cleanFileName),
@@ -188,285 +201,458 @@ export const executeAIAudit = async (candidature, user, offre) => {
     return candidates.find((p) => fs.existsSync(p)) || candidates[0];
   };
 
-  // DÉTECTION ANTI-FRAUDE : CLONAGE OU RECYCLAGE DU MÊME FICHIER ENTRE PLUSIEURS PIÈCES
-  const cniBase = path.basename(candUser.copieCNI || '').split('?')[0];
-  const diplomeBase = path.basename(candidature.copieDiplomes || '').split('?')[0];
-  const releveBase = path.basename(candidature.releves || '').split('?')[0];
+  const getCleanBase = (f) => (f ? path.basename(f).split('?')[0] : '');
 
-  if (cniBase && diplomeBase && cniBase.toLowerCase() === diplomeBase.toLowerCase()) {
-    anomalies.push(
-      `🚨 Fraude / Doublon documentaire : Le même fichier ("${cniBase}") a été téléversé à la fois pour la CNI et pour le Diplôme.`
-    );
+  const cniRectoFile = candidature.copieCNI || candUser.copieCNI || null;
+  const cniVersoFile = candidature.copieCNIVerso || candUser.copieCNIVerso || null;
+  const diplomeFile = candidature.copieDiplomes || null;
+  const relevesFile = candidature.releves || null;
+  const residenceFile = candidature.residence || candUser.residence || null;
+  const attestationsFile = candidature.attestationsTravail || null;
+
+  const cniRectoBase = getCleanBase(cniRectoFile);
+  const cniVersoBase = getCleanBase(cniVersoFile);
+  const diplomeBase = getCleanBase(diplomeFile);
+  const relevesBase = getCleanBase(relevesFile);
+  const residenceBase = getCleanBase(residenceFile);
+
+  // 7. CONTRÔLE DE PRÉSENCE STRICTE CNI RECTO & VERSO
+  if (!cniRectoFile) {
+    anomalies.push("Pièce justificative obligatoire manquante : Carte Nationale d'Identité (Recto).");
     isEliminatoire = true;
-    scoreConfiance -= 45;
+    scoreConfiance -= 30;
+    verifications.cniRecto = { status: 'REJECT', message: 'CNI Recto manquante' };
   }
 
-  if (cniBase && releveBase && cniBase.toLowerCase() === releveBase.toLowerCase()) {
-    anomalies.push(
-      `🚨 Fraude / Doublon documentaire : Le même fichier ("${cniBase}") a été téléversé à la fois pour la CNI et pour les Relevés de notes.`
-    );
+  if (!cniVersoFile) {
+    // Si cniRecto est présent mais pas le verso : exigence légale
+    anomalies.push("Pièce justificative obligatoire manquante : Carte Nationale d'Identité (Verso avec adresse).");
     isEliminatoire = true;
-    scoreConfiance -= 40;
+    scoreConfiance -= 25;
+    verifications.cniVerso = { status: 'REJECT', message: 'CNI Verso manquante' };
   }
 
-  if (diplomeBase && releveBase && diplomeBase.toLowerCase() === releveBase.toLowerCase()) {
-    anomalies.push(
-      `⚠️ Doublon documentaire : Le même fichier ("${diplomeBase}") a été utilisé pour le Diplôme et les Relevés de notes.`
-    );
-    scoreConfiance -= 20;
+  if (!diplomeFile) {
+    anomalies.push("Pièce justificative obligatoire manquante : Diplôme / Attestation.");
+    isEliminatoire = true;
+    scoreConfiance -= 30;
+    verifications.diplomeDoc = { status: 'REJECT', message: 'Copie du Diplôme manquante' };
   }
 
-  // Vérification d'empreinte binaire (Même fichier sous des noms renommés)
-  try {
-    const cniPath = resolveDocPath(cniBase);
-    const dipPath = resolveDocPath(diplomeBase);
-    if (fs.existsSync(cniPath) && fs.existsSync(dipPath) && cniBase !== diplomeBase) {
-      const stat1 = fs.statSync(cniPath);
-      const stat2 = fs.statSync(dipPath);
-      if (stat1.size === stat2.size && stat1.size > 2000) {
-        const buf1 = fs.readFileSync(cniPath);
-        const buf2 = fs.readFileSync(dipPath);
-        if (buf1.equals(buf2)) {
-          anomalies.push(
-            `🚨 Fraude avancée / Fichiers identiques : Le document CNI et le Diplôme contiennent exactement les mêmes octets sous deux noms de fichiers différents.`
-          );
-          isEliminatoire = true;
-          scoreConfiance -= 50;
-        }
-      }
-    }
-  } catch (errDuplicate) {
-    // Ignorer
+  if (!relevesFile) {
+    anomalies.push("Pièce justificative obligatoire manquante : Relevés de notes globaux.");
+    isEliminatoire = true;
+    scoreConfiance -= 25;
+    verifications.relevesDoc = { status: 'REJECT', message: 'Relevés de notes manquants' };
   }
 
-  const pieceChecks = [
-    { name: 'CNI', file: candUser.copieCNI, isCNI: true },
-    { name: 'Diplôme', file: candidature.copieDiplomes, isDiplome: true },
-    { name: 'Relevés de notes', file: candidature.releves, isReleves: true },
-  ];
+  // 8. DÉTECTION ANTI-FRAUDE : CLONAGE / DOUBLONS DE FICHIERS (MÊME NOM OU MÊME CONTENU BINAIRE)
+  const uploadedFilesList = [
+    { label: 'CNI Recto', base: cniRectoBase },
+    { label: 'CNI Verso', base: cniVersoBase },
+    { label: 'Diplôme', base: diplomeBase },
+    { label: 'Relevés de notes', base: relevesBase },
+  ].filter((item) => Boolean(item.base));
 
-  for (const piece of pieceChecks) {
-    if (!piece.file) {
-      anomalies.push(`Pièce justificative obligatoire manquante : ${piece.name}.`);
-      isEliminatoire = true;
-      scoreConfiance -= 25;
-    } else {
-      const cleanFileName = path.basename(piece.file).split('?')[0];
-      const filePath = resolveDocPath(cleanFileName);
-      if (!fs.existsSync(filePath)) {
-        anomalies.push(`Fichier numérisé introuvable sur le serveur pour ${piece.name} (${cleanFileName}).`);
-        scoreConfiance -= 15;
+  for (let i = 0; i < uploadedFilesList.length; i++) {
+    for (let j = i + 1; j < uploadedFilesList.length; j++) {
+      const docA = uploadedFilesList[i];
+      const docB = uploadedFilesList[j];
+
+      // Même nom de fichier
+      if (docA.base.toLowerCase() === docB.base.toLowerCase()) {
+        const isCriticalPair =
+          (docA.label.includes('CNI') && docB.label.includes('Diplôme')) ||
+          (docA.label.includes('CNI') && docB.label.includes('Relevés')) ||
+          (docA.label.includes('Recto') && docB.label.includes('Verso'));
+
+        anomalies.push(
+          `🚨 Fraude / Doublon documentaire : Le même fichier ("${docA.base}") a été téléversé à la fois pour ${docA.label} et pour ${docB.label}.`
+        );
+        isEliminatoire = true;
+        scoreConfiance -= isCriticalPair ? 50 : 25;
       } else {
-        // CONTRÔLE D'INTÉGRITÉ & TAILLE DU FICHIER (TOUS FORMATS: PDF, IMAGES...)
+        // Noms différents mais même contenu binaire (renommage frauduleux)
         try {
-          const stats = fs.statSync(filePath);
-          if (stats.size < 6000) {
-            // Moins de 6 Ko : Fichier corrompu, blanc ou tronqué
-            anomalies.push(
-              `🚨 Pièce suspecte ou anormalement légère pour ${piece.name} (${Math.round(stats.size / 1024)} Ko) : Document potentiellement vide, illisible ou corrompu.`
-            );
-            isEliminatoire = true;
-            scoreConfiance -= 35;
-          }
-        } catch (e) {
-          // Ignorer erreur stat
-        }
-
-        if (cleanFileName.toLowerCase().endsWith('.pdf')) {
-          // Extraction textuelle du PDF pour vérification croisée approfondie
-          const pdfText = extractTextFromPDF(filePath).toLowerCase();
-
-          // A. DÉTECTION DE DOCUMENTS SUSPECTS / INAPPROPRIÉS (ex: contrat de location, renta car, facture...)
-          const suspiciousKeywords = [
-            'rental contract',
-            'rent a car',
-            'rentacar',
-            'contrat de location',
-            'loueur',
-            'véhicule de location',
-            'quittance de loyer',
-            'facture d\'électricité',
-          ];
-
-          const foundSuspicious = suspiciousKeywords.find((kw) => pdfText.includes(kw));
-          if (foundSuspicious) {
-            anomalies.push(
-              `🚨 Document hors-sujet / suspect pour ${piece.name} : Le fichier PDF semble être un document commercial ("${foundSuspicious}") et non une pièce officielle requise.`
-            );
-            isEliminatoire = true;
-            scoreConfiance -= 45;
-          }
-
-          // B. DÉTECTION DE DOCUMENT FLOU, MAL NUMÉRISÉ OU SCAN SANS TEXTE (Qualité d'image insuffisante)
-          if (pdfText.length <= 25) {
-            anomalies.push(
-              `⚠️ Qualité de numérisation insuffisante pour ${piece.name} : Document sans texte exploitable (scan flou, photo sombre ou document non ocrisé). Contrôle visuel requis.`
-            );
-            scoreConfiance -= 15;
-            verifications[`qualite_${piece.name.toLowerCase()}`] = {
-              status: 'WARNING',
-              message: 'Scan image sans texte exploitable / vérification visuelle obligatoire',
-            };
-          }
-
-          // C. CONTRÔLE APPROFONDI DU DIPLÔME (Vérification de validité académique)
-          if (piece.isDiplome) {
-            const academicKeywords = [
-              'diplôme', 'diplome', 'attestation', 'réussite', 'reussite',
-              'licence', 'master', 'bachelor', 'ingénieur', 'ingenieur',
-              'baccalauréat', 'baccalaureat', 'technicien', 'brevet',
-              'université', 'universite', 'faculté', 'faculte', 'école', 'ecole',
-              'institut', 'ministère', 'ministere', 'royaume du maroc', 'décerné', 'decerne',
-              'titulaire', 'filière', 'filiere', 'mention', 'session', 'ofppt', 'istafi',
-              'cycle', 'grade', 'commission', 'doyen', 'recteur', 'directeur'
-            ];
-
-            if (pdfText.length > 30) {
-              const hasAcademicTerm = academicKeywords.some((kw) => pdfText.includes(kw));
-              if (!hasAcademicTerm) {
+          const pathA = resolveDocPath(docA.base);
+          const pathB = resolveDocPath(docB.base);
+          if (fs.existsSync(pathA) && fs.existsSync(pathB)) {
+            const statA = fs.statSync(pathA);
+            const statB = fs.statSync(pathB);
+            if (statA.size === statB.size && statA.size > 2000) {
+              const bufA = fs.readFileSync(pathA);
+              const bufB = fs.readFileSync(pathB);
+              if (bufA.equals(bufB)) {
                 anomalies.push(
-                  `🚨 Diplôme non conforme ou illisible : Le document téléversé ne contient aucun terme académique officiel valide (ni mention de diplôme, ni université/école, ni attestation). Pièce floue ou document non académique.`
+                  `🚨 Fraude / Fichiers identiques : Le document ${docA.label} et ${docB.label} contiennent exactement le même contenu binaire sous des noms différents.`
                 );
                 isEliminatoire = true;
-                scoreConfiance -= 35;
-                verifications.diplomeDoc = {
-                  status: 'REJECT',
-                  message: 'Contenu académique officiel introuvable dans le fichier joint',
-                };
-              } else {
-                verifications.diplomeDoc = {
-                  status: 'VALID',
-                  message: 'Mentions académiques officielles reconnues dans le document',
-                };
+                scoreConfiance -= 50;
               }
             }
           }
-
-          // D. CONTRÔLE APPROFONDI DES RELEVÉS DE NOTES
-          if (piece.isReleves && pdfText.length > 30) {
-            const notesKeywords = [
-              'relevé', 'releve', 'note', 'notes', 'semestre', 'module', 'bulletin',
-              'moyenne', 'session', 'résultat', 'resultat', 'crédits', 'credits',
-              'admis', 'ajourné', 'matière', 'matiere', 'faculté', 'universite', 'école'
-            ];
-
-            const hasNotesTerm = notesKeywords.some((kw) => pdfText.includes(kw));
-            if (!hasNotesTerm) {
-              anomalies.push(
-                `⚠️ Relevés de notes suspects : Le document téléversé ne semble pas correspondre à un relevé de notes ou bulletin académique officiel (mentions de notes/semestres introuvables).`
-              );
-              scoreConfiance -= 20;
-            }
-          }
-
-          // E. VÉRIFICATION CROISÉE DE LA DATE DE NAISSANCE DANS LA CNI
-          if (piece.isCNI && pdfText.length > 30) {
-            const hasBirthInDoc = birthFormats.some((fmt) => pdfText.includes(fmt.toLowerCase()));
-            const hasBirthKeywords =
-              pdfText.includes('naissance') ||
-              pdfText.includes('né le') ||
-              pdfText.includes('née le') ||
-              pdfText.includes('date');
-
-            if (!hasBirthInDoc && !hasBirthKeywords) {
-              anomalies.push(
-                `⚠️ Date de naissance déclarée introuvable dans la pièce CNI (scan mal cadré ou date illisible).`
-              );
-              scoreConfiance -= 20;
-              verifications.age = {
-                status: 'WARNING',
-                message: 'Date de naissance non identifiable dans le PDF',
-              };
-            }
-          }
-
-          // F. VÉRIFICATION DU NUMÉRO CNI DANS LA COPIE CNI
-          if (piece.isCNI && pdfText.length > 30 && cniNum) {
-            const cleanCniLower = cniNum.toLowerCase();
-            if (!pdfText.includes(cleanCniLower)) {
-              anomalies.push(
-                `⚠️ Numéro CNI ("${cniNum}") introuvable ou illisible dans le document CNI (vérifier si la pièce est floue ou rognée).`
-              );
-              scoreConfiance -= 20;
-            }
-          }
-
-          // G. VÉRIFICATION CROISÉE DU NOM ET PRÉNOM DU CANDIDAT DANS LA PIÈCE CNI / DOSSIER
-          if (piece.isCNI && pdfText.length > 30) {
-            const candNom = String(candUser.nom || '').trim().toLowerCase();
-            const candPrenom = String(candUser.prenom || '').trim().toLowerCase();
-            const escapeReg = (s) => s.replace(/[-/\\^$*+?.()|[\]{}]/g, '\\$&');
-
-            const hasNom = candNom.length >= 2 && new RegExp(`\\b${escapeReg(candNom)}\\b`, 'i').test(pdfText);
-            const hasPrenom = candPrenom.length >= 2 && new RegExp(`\\b${escapeReg(candPrenom)}\\b`, 'i').test(pdfText);
-
-            const fullName = `${candUser.prenom || ''} ${candUser.nom || ''}`.trim();
-            if (!hasNom && !hasPrenom) {
-              anomalies.push(
-                `🚨 Discordance d'identité : Le nom "${fullName}" n'apparaît pas dans la pièce téléversée (document d'un tiers ou CNI illisible).`
-              );
-              isEliminatoire = true;
-              scoreConfiance -= 40;
-            }
-          }
-
-          // H. VÉRIFICATION CROISÉE DE L'ADRESSE ET DE LA VILLE DE RÉSIDENCE DANS LA CNI
-          if (piece.isCNI && pdfText.length > 30) {
-            const declaredVille = String(candUser.ville || '').trim().toLowerCase();
-            const declaredAdresse = String(candUser.adresse || '').trim().toLowerCase();
-
-            // Mots significatifs de l'adresse (ex: "massira", "deroua", "anfa", "maarif")
-            const adresseMots = declaredAdresse
-              .split(/[\s,.'\-\/]+/)
-              .filter(
-                (w) =>
-                  w.length >= 4 &&
-                  ![
-                    'rue',
-                    'av',
-                    'avenue',
-                    'boulevard',
-                    'bd',
-                    'lot',
-                    'lotissement',
-                    'n°',
-                    'num',
-                    'numero',
-                    'immeuble',
-                    'imm',
-                    'residence',
-                    'res',
-                    'quartier',
-                    'hay',
-                  ].includes(w)
-              );
-
-            const hasVilleInDoc = declaredVille.length >= 3 && pdfText.includes(declaredVille);
-            const hasAdresseMotInDoc = adresseMots.some((mot) => pdfText.includes(mot));
-            const hasCertifResidence = Boolean(candUser.residence);
-
-            if (hasVilleInDoc || hasAdresseMotInDoc) {
-              verifications.adresseDoc = {
-                status: 'VALID',
-                message: `Adresse / Ville ("${candUser.ville || declaredAdresse}") vérifiée dans la pièce justificative`,
-              };
-            } else if (declaredVille && !hasCertifResidence) {
-              anomalies.push(
-                `⚠️ Résidence : Ville ("${candUser.ville}") non attestée sur la CNI (aucun certificat de résidence joint).`
-              );
-              scoreConfiance -= 15;
-              verifications.adresseDoc = {
-                status: 'WARNING',
-                message: 'Adresse / Ville non attestée par la CNI sans certificat de résidence',
-              };
-            }
-          }
+        } catch (eBinary) {
+          // Ignorer
         }
       }
     }
   }
 
-  // 7. VERDICT GLOBAL DE L'AUDIT IA (SCORE CLAMPÉ ENTRE 0 ET 100)
+  // 9. EXTRACTION DE TEXTE DES DOCUMENTS PDF
+  const readDocText = (baseName) => {
+    if (!baseName) return '';
+    try {
+      const p = resolveDocPath(baseName);
+      if (!fs.existsSync(p)) return '';
+      if (!baseName.toLowerCase().endsWith('.pdf')) return '';
+      const rawText = extractTextFromPDF(p);
+      return normalizePdfText(rawText);
+    } catch (e) {
+      return '';
+    }
+  };
+
+  const textCNIRecto = readDocText(cniRectoBase);
+  const textCNIVerso = readDocText(cniVersoBase);
+  const textDiplome = readDocText(diplomeBase);
+  const textReleves = readDocText(relevesBase);
+  const textResidence = readDocText(residenceBase);
+
+  // Mots-clés de documents frauduleux ou hors-sujet
+  const suspiciousKeywords = [
+    'rental contract', 'rent a car', 'rentacar', 'contrat de location',
+    'loueur', 'vehicule de location', 'quittance de loyer', 'facture d electricite',
+  ];
+
+  const checkSuspiciousDoc = (text, docLabel) => {
+    if (!text || text.length < 20) return;
+    const found = suspiciousKeywords.find((kw) => text.includes(kw));
+    if (found) {
+      anomalies.push(
+        `🚨 Document hors-sujet / suspect pour ${docLabel} : Le document PDF semble être une pièce commerciale ("${found}") et non une pièce officielle requise.`
+      );
+      isEliminatoire = true;
+      scoreConfiance -= 45;
+    }
+  };
+
+  checkSuspiciousDoc(textCNIRecto, 'CNI Recto');
+  checkSuspiciousDoc(textCNIVerso, 'CNI Verso');
+  checkSuspiciousDoc(textDiplome, 'Diplôme');
+  checkSuspiciousDoc(textReleves, 'Relevés de notes');
+
+  // 10. VÉRIFICATION CROISÉE CNI RECTO & VERSO VS DÉCLARATION DU CANDIDAT
+  const combinedCNIText = `${textCNIRecto} ${textCNIVerso}`.trim();
+
+  if (combinedCNIText.length > 25) {
+    // A. Vérification du numéro de CNI
+    if (cniNum) {
+      const cniClean = cleanStr(cniNum);
+      const hasCniInDoc = combinedCNIText.includes(cniClean);
+      if (!hasCniInDoc) {
+        anomalies.push(
+          `⚠️ Numéro CNI ("${cniNum}") introuvable ou illisible dans les documents CNI (vérifier si la pièce est floue ou rognée).`
+        );
+        scoreConfiance -= 20;
+      }
+    }
+
+    // B. Vérification du Nom et Prénom du titulaire
+    if (candNom && candPrenom) {
+      const hasNom = candNom.length >= 2 && new RegExp(`\\b${escapeReg(candNom)}\\b`, 'i').test(combinedCNIText);
+      const hasPrenom = candPrenom.length >= 2 && new RegExp(`\\b${escapeReg(candPrenom)}\\b`, 'i').test(combinedCNIText);
+
+      if (!hasNom && !hasPrenom) {
+        anomalies.push(
+          `🚨 Discordance d'identité CNI : Le nom "${fullName}" n'apparaît pas dans la pièce CNI téléversée (document d'un tiers ou illisible).`
+        );
+        isEliminatoire = true;
+        scoreConfiance -= 45;
+        verifications.cniIdentite = { status: 'REJECT', message: 'Nom et prénom introuvables sur la CNI' };
+      } else {
+        verifications.cniIdentite = { status: 'VALID', message: 'Identité vérifiée conforme sur la CNI' };
+      }
+    }
+
+    // C. Vérification de la date de naissance dans la CNI
+    if (birthFormats.length > 0) {
+      const hasBirthInDoc = birthFormats.some((fmt) => combinedCNIText.includes(cleanStr(fmt)));
+      const hasBirthKeywords =
+        combinedCNIText.includes('naissance') ||
+        combinedCNIText.includes('ne le') ||
+        combinedCNIText.includes('nee le') ||
+        combinedCNIText.includes('date');
+
+      if (!hasBirthInDoc && !hasBirthKeywords) {
+        anomalies.push(
+          `⚠️ Date de naissance déclarée introuvable dans la CNI (pièce mal cadrée ou date masquée).`
+        );
+        scoreConfiance -= 15;
+      }
+    }
+
+    // D. Vérification du lieu de naissance
+    const lieuNaissance = cleanStr(candUser.lieuNaissance || candidature.lieuNaissance);
+    if (lieuNaissance && lieuNaissance.length >= 3) {
+      const hasLieu = combinedCNIText.includes(lieuNaissance);
+      verifications.lieuNaissanceDoc = {
+        status: hasLieu ? 'VALID' : 'INFO',
+        message: hasLieu ? 'Lieu de naissance attesté sur la CNI' : 'Lieu de naissance non détecté sur la CNI',
+      };
+    }
+
+    // E. VÉRIFICATION CROISÉE DE L'ADRESSE ET VILLE SUR LE VERSO DE LA CNI
+    const versoAndResText = `${textCNIVerso} ${textResidence}`.trim();
+
+    if (textCNIVerso.length > 20 || textResidence.length > 20) {
+      // Mots significatifs de l'adresse déclarée
+      const stopwords = [
+        'rue', 'av', 'avenue', 'boulevard', 'bd', 'lot', 'lotissement', 'n°', 'num',
+        'numero', 'immeuble', 'imm', 'residence', 'res', 'quartier', 'hay', 'maroc', 'et', 'de', 'du'
+      ];
+      const adresseMots = declaredAdresse
+        .split(/[\s,.'\-\/]+/)
+        .filter((w) => w.length >= 4 && !stopwords.includes(w));
+
+      const hasVilleInVerso = declaredVille.length >= 3 && versoAndResText.includes(declaredVille);
+      const hasAdresseMotInVerso = adresseMots.some((mot) => versoAndResText.includes(mot));
+
+      if (hasVilleInVerso || hasAdresseMotInVerso) {
+        verifications.adresseDoc = {
+          status: 'VALID',
+          message: `Adresse / Ville ("${candUser.ville || candUser.adresse}") confirmée sur le verso de la CNI ou justificatif`,
+        };
+      } else if (declaredVille && !hasCertifResidence) {
+        anomalies.push(
+          `🚨 Incohérence d'adresse : L'adresse déclarée ("${candUser.adresse || ''}, ${candUser.ville || ''}") ne correspond pas aux mentions trouvées sur le verso de la CNI (aucun certificat de résidence joint pour attester d'un changement).`
+        );
+        scoreConfiance -= 25;
+        verifications.adresseDoc = {
+          status: 'WARNING',
+          message: 'Adresse / Ville déclarée non attestée sur le verso de la CNI sans certificat de résidence',
+        };
+      }
+    }
+  }
+
+  // 11. VÉRIFICATION CROISÉE APPROFONDIE DU DIPLÔME VS DÉCLARATION DU CANDIDAT
+  if (diplomeBase) {
+    if (textDiplome.length > 30) {
+      // A. Termes académiques officiels
+      const academicKeywords = [
+        'diplome', 'attestation', 'reussite', 'licence', 'master', 'bachelor',
+        'ingenieur', 'baccalaureat', 'technicien', 'brevet', 'universite', 'faculte',
+        'ecole', 'institut', 'ministere', 'royaume du maroc', 'decerne', 'titulaire',
+        'filiere', 'mention', 'session', 'ofppt', 'istafi', 'cycle', 'grade', 'directeur'
+      ];
+      const hasAcademicTerm = academicKeywords.some((kw) => textDiplome.includes(kw));
+      if (!hasAcademicTerm) {
+        anomalies.push(
+          `🚨 Diplôme non conforme ou illisible : Le document téléversé ne contient aucun terme académique officiel valide (ni mention de diplôme, ni université/école). Pièce floue ou document non académique.`
+        );
+        isEliminatoire = true;
+        scoreConfiance -= 40;
+        verifications.diplomeDoc = {
+          status: 'REJECT',
+          message: 'Contenu académique officiel introuvable dans le fichier joint',
+        };
+      } else {
+        verifications.diplomeDoc = {
+          status: 'VALID',
+          message: 'Mentions académiques officielles reconnues dans le diplôme',
+        };
+      }
+
+      // B. Vérification du titulaire du diplôme (Nom et Prénom du candidat)
+      if (candNom && candPrenom) {
+        const hasNomInDip = candNom.length >= 2 && new RegExp(`\\b${escapeReg(candNom)}\\b`, 'i').test(textDiplome);
+        const hasPrenomInDip = candPrenom.length >= 2 && new RegExp(`\\b${escapeReg(candPrenom)}\\b`, 'i').test(textDiplome);
+
+        if (!hasNomInDip && !hasPrenomInDip) {
+          anomalies.push(
+            `🚨 Discordance Titulaire Diplôme : Le nom du candidat ("${fullName}") n'apparaît nulle part sur le diplôme téléversé (document d'un tiers ou nom illisible).`
+          );
+          isEliminatoire = true;
+          scoreConfiance -= 50;
+          verifications.diplomeTitulaire = {
+            status: 'REJECT',
+            message: 'Titulaire du diplôme différent du candidat',
+          };
+        } else {
+          verifications.diplomeTitulaire = {
+            status: 'VALID',
+            message: 'Titulaire du diplôme certifié conforme au candidat',
+          };
+        }
+      }
+
+      // C. VÉRIFICATION STRICTE DE L'ANNÉE D'OBTENTION DU DIPLÔME
+      // Ex: candidat déclare 2024, mais sur le diplôme il y a écrit 2020 ou une autre année
+      let declaredGradYear = '';
+      if (candidature.dateObtention) {
+        const parsedYear = moment(candidature.dateObtention).year();
+        if (parsedYear && !isNaN(parsedYear) && parsedYear > 1980 && parsedYear <= 2030) {
+          declaredGradYear = String(parsedYear);
+        }
+      }
+      if (!declaredGradYear && candidature.anneeObtention) {
+        const matchYear = String(candidature.anneeObtention).match(/\b(19\d{2}|20\d{2})\b/);
+        if (matchYear) declaredGradYear = matchYear[1];
+      }
+
+      if (declaredGradYear) {
+        // Extraction de toutes les années à 4 chiffres présentes dans le document
+        const allYearsInDoc = (textDiplome.match(/\b(19[8-9]\d|20[0-3]\d)\b/g) || []);
+        const uniqueYears = [...new Set(allYearsInDoc)];
+
+        // Recherche spécifique des motifs de session / promotion
+        const sessionMatches = [
+          ...textDiplome.matchAll(/session\s*[:\s]\s*(\d{4})/g),
+          ...textDiplome.matchAll(/promotion\s*[:\s]\s*(\d{4})/g),
+          ...textDiplome.matchAll(/annee\s+universitaire\s*[:\s]\s*(\d{4})/g),
+          ...textDiplome.matchAll(/delivre\s+le\s+.*?(\d{4})/g),
+          ...textDiplome.matchAll(/decerne\s+le\s+.*?(\d{4})/g),
+          ...textDiplome.matchAll(/fait\s+le\s+.*?(\d{4})/g),
+          ...textDiplome.matchAll(/l an\s+(\d{4})/g),
+        ].map((m) => m[1]);
+
+        const keyDocYears = [...new Set(sessionMatches.length > 0 ? sessionMatches : uniqueYears)];
+
+        if (keyDocYears.length > 0) {
+          const yearMatches = keyDocYears.includes(declaredGradYear) || uniqueYears.includes(declaredGradYear);
+          if (!yearMatches) {
+            anomalies.push(
+              `🚨 Incohérence Année d'obtention du Diplôme : Le candidat déclare l'année ${declaredGradYear}, alors que le diplôme téléversé indique l'année ${keyDocYears.join(', ')}.`
+            );
+            isEliminatoire = true;
+            scoreConfiance -= 45;
+            verifications.diplomeAnnee = {
+              status: 'REJECT',
+              declared: declaredGradYear,
+              found: keyDocYears,
+              message: `Année déclarée (${declaredGradYear}) non conforme au diplôme (${keyDocYears.join(', ')})`,
+            };
+          } else {
+            verifications.diplomeAnnee = {
+              status: 'VALID',
+              declared: declaredGradYear,
+              message: `Année d'obtention (${declaredGradYear}) certifiée conforme au diplôme`,
+            };
+          }
+        }
+      }
+
+      // D. VÉRIFICATION CROISÉE DE L'INTITULÉ DU DIPLÔME ET DE LA FILIÈRE
+      const declaredDiplome = cleanStr(candidature.diplome || candidature.specialite);
+      if (declaredDiplome && declaredDiplome.length >= 3) {
+        const dipStopwords = [
+          'diplome', 'licence', 'master', 'technicien', 'specialise', 'specialite',
+          'filiere', 'option', 'etudes', 'superieures', 'professionnelle', 'fondamentale',
+          'cycle', 'de', 'en', 'la', 'le', 'du', 'des', 'et'
+        ];
+        const dipKeywords = declaredDiplome
+          .split(/[\s,.'\-\/]+/)
+          .filter((w) => w.length >= 4 && !dipStopwords.includes(w));
+
+        if (dipKeywords.length > 0) {
+          const matchCount = dipKeywords.filter((kw) => textDiplome.includes(kw)).length;
+          const matchRatio = matchCount / dipKeywords.length;
+
+          if (matchCount === 0) {
+            anomalies.push(
+              `⚠️ Incohérence Spécialité / Diplôme : L'intitulé déclaré ("${candidature.diplome || candidature.specialite}") ne correspond pas aux filières mentionnées sur le diplôme joint.`
+            );
+            scoreConfiance -= 25;
+            verifications.diplomeTitre = {
+              status: 'WARNING',
+              declared: candidature.diplome || candidature.specialite,
+              message: 'Intitulé ou filière déclarée introuvable sur le diplôme',
+            };
+          } else {
+            verifications.diplomeTitre = {
+              status: 'VALID',
+              declared: candidature.diplome || candidature.specialite,
+              message: 'Intitulé et spécialité confirmés dans le document',
+            };
+          }
+        }
+      }
+
+      // E. VÉRIFICATION CROISÉE DE L'ÉTABLISSEMENT / UNIVERSITÉ
+      const declaredEtab = cleanStr(candidature.etablissement);
+      if (declaredEtab && declaredEtab.length >= 3) {
+        const etabStopwords = [
+          'ecole', 'universite', 'faculte', 'institut', 'centre', 'maroc', 'de', 'du', 'des'
+        ];
+        const etabKeywords = declaredEtab
+          .split(/[\s,.'\-\/]+/)
+          .filter((w) => w.length >= 3 && !etabStopwords.includes(w));
+
+        if (etabKeywords.length > 0) {
+          const hasEtab = etabKeywords.some((kw) => textDiplome.includes(kw));
+          if (!hasEtab) {
+            anomalies.push(
+              `⚠️ Incohérence Établissement : L'établissement déclaré ("${candidature.etablissement}") ne figure pas sur le diplôme téléversé.`
+            );
+            scoreConfiance -= 20;
+            verifications.diplomeEtablissement = {
+              status: 'WARNING',
+              declared: candidature.etablissement,
+              message: 'Établissement déclaré non mentionné sur le diplôme',
+            };
+          } else {
+            verifications.diplomeEtablissement = {
+              status: 'VALID',
+              declared: candidature.etablissement,
+              message: 'Établissement certifié conforme au document',
+            };
+          }
+        }
+      }
+    } else {
+      // Document sans texte exploitable (image non ocrisée ou scan sombre)
+      anomalies.push(
+        `⚠️ Qualité Diplôme : Scan sans texte exploitable ou document non ocrisé. Contrôle visuel par l'arbitre humain obligatoire.`
+      );
+      scoreConfiance -= 15;
+      verifications.diplomeDoc = {
+        status: 'WARNING',
+        message: 'Scan image sans texte exploitable / vérification visuelle obligatoire',
+      };
+    }
+  }
+
+  // 12. VÉRIFICATION CROISÉE DES RELEVÉS DE NOTES
+  if (relevesBase) {
+    if (textReleves.length > 30) {
+      const notesKeywords = [
+        'releve', 'note', 'notes', 'semestre', 'module', 'bulletin',
+        'moyenne', 'session', 'resultat', 'credits', 'admis', 'ajourne', 'matiere'
+      ];
+      const hasNotesTerm = notesKeywords.some((kw) => textReleves.includes(kw));
+      if (!hasNotesTerm) {
+        anomalies.push(
+          `⚠️ Relevés de notes suspects : Le document téléversé ne semble pas correspondre à un relevé de notes ou bulletin académique officiel (mentions de notes ou semestres introuvables).`
+        );
+        scoreConfiance -= 20;
+      }
+
+      // Vérification du nom du candidat sur les relevés
+      if (candNom && candPrenom) {
+        const hasNomInReleves = candNom.length >= 2 && new RegExp(`\\b${escapeReg(candNom)}\\b`, 'i').test(textReleves);
+        const hasPrenomInReleves = candPrenom.length >= 2 && new RegExp(`\\b${escapeReg(candPrenom)}\\b`, 'i').test(textReleves);
+        if (!hasNomInReleves && !hasPrenomInReleves) {
+          anomalies.push(
+            `🚨 Relevés de notes d'un tiers : Le nom de l'étudiant sur les relevés de notes ne correspond pas à l'identité du candidat (${fullName}).`
+          );
+          isEliminatoire = true;
+          scoreConfiance -= 45;
+        }
+      }
+    }
+  }
+
+  // 13. VERDICT GLOBAL DE L'AUDIT IA (SCORE CLAMPÉ ENTRE 0 ET 100)
   scoreConfiance = Math.max(0, Math.min(100, Math.round(scoreConfiance)));
 
   let statutAI = 'VALIDE_IA';
@@ -493,4 +679,3 @@ export const executeAIAudit = async (candidature, user, offre) => {
 };
 
 export default executeAIAudit;
-

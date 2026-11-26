@@ -211,6 +211,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
     user.email = req.body.email || user.email;
     user.cni = req.body.cni || user.cni;
     user.copieCNI = req.body.copieCNI || user.copieCNI;
+    user.copieCNIVerso = req.body.copieCNIVerso || user.copieCNIVerso;
     user.residence = req.body.residence || user.residence;
     user.nationalite = req.body.nationalite || user.nationalite;
     user.phone = req.body.phone || user.phone;
@@ -239,6 +240,7 @@ const updateUserProfile = asyncHandler(async (req, res) => {
       email: updatedUser.email,
       cni: updatedUser.cni,
       copieCNI: updatedUser.copieCNI,
+      copieCNIVerso: updatedUser.copieCNIVerso,
       residence: updatedUser.residence,
       nationalite: updatedUser.nationalite,
       phone: updatedUser.phone,
@@ -294,6 +296,7 @@ const updateUser = asyncHandler(async (req, res) => {
     user.email = req.body.email || user.email;
     user.cni = req.body.cni || user.cni;
     user.copieCNI = req.body.copieCNI || user.copieCNI;
+    user.copieCNIVerso = req.body.copieCNIVerso || user.copieCNIVerso;
     user.residence = req.body.residence || user.residence;
     user.nationalite = req.body.nationalite || user.nationalite;
     user.phone = req.body.phone || user.phone;
@@ -317,6 +320,7 @@ const updateUser = asyncHandler(async (req, res) => {
       email: updatedUser.email,
       cni: updatedUser.cni,
       copieCNI: updatedUser.copieCNI,
+      copieCNIVerso: updatedUser.copieCNIVerso,
       residence: updatedUser.residence,
       nationalite: updatedUser.nationalite,
       phone: updatedUser.phone,

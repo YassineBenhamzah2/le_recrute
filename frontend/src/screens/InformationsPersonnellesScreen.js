@@ -34,8 +34,10 @@ const InformationsPersonnellesScreen = () => {
   const [cni, setCni] = useState('');
   const [email, setEmail] = useState('');
   const [copieCNI, setCopieCNI] = useState('');
+  const [copieCNIVerso, setCopieCNIVerso] = useState('');
   const [residence, setResidence] = useState('');
   const [uploadingCNI, setUploadingCNI] = useState(false);
+  const [uploadingCNIVerso, setUploadingCNIVerso] = useState(false);
   const [uploadingResidence, setUploadingResidence] = useState(false);
   const [message, setMessage] = useState('');
   const [fieldErrors, setFieldErrors] = useState({});
@@ -98,6 +100,7 @@ const InformationsPersonnellesScreen = () => {
         setPhone(user.phone || '');
         setAdresse(user.adresse || '');
         setCopieCNI(user.copieCNI || '');
+        setCopieCNIVerso(user.copieCNIVerso || '');
         setResidence(user.residence || '');
       }
     }
@@ -155,6 +158,35 @@ const InformationsPersonnellesScreen = () => {
           : 'Erreur lors du téléversement de la CNI';
       setFieldErrors((prev) => ({ ...prev, copieCNI: errMsg }));
       setUploadingCNI(false);
+    }
+  };
+
+  const uploadCNIVerso = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    const formData = new FormData();
+    formData.append('file', file);
+    setUploadingCNIVerso(true);
+    try {
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          ...(userInfo?.token ? { Authorization: `Bearer ${userInfo.token}` } : {}),
+        },
+      };
+      const { data } = await axios.post('/api/upload', formData, config);
+      const fileName = data.fileName || data;
+      setCopieCNIVerso(fileName);
+      setUploadingCNIVerso(false);
+      handleFieldChange('copieCNIVerso', fileName, setCopieCNIVerso);
+    } catch (error) {
+      console.error(error);
+      const errMsg =
+        error.response && error.response.data.message
+          ? error.response.data.message
+          : 'Erreur lors du téléversement de la CNI (Verso)';
+      setFieldErrors((prev) => ({ ...prev, copieCNIVerso: errMsg }));
+      setUploadingCNIVerso(false);
     }
   };
 
@@ -248,7 +280,10 @@ const InformationsPersonnellesScreen = () => {
       }
     }
     if (!copieCNI) {
-      errors.copieCNI = 'Veuillez téléverser la copie scannée de votre CIN (recto/verso)';
+      errors.copieCNI = 'Veuillez téléverser la copie de votre CNI (Recto)';
+    }
+    if (!copieCNIVerso) {
+      errors.copieCNIVerso = 'Veuillez téléverser la copie de votre CNI (Verso avec adresse)';
     }
 
     if (Object.keys(errors).length > 0) {
@@ -275,6 +310,7 @@ const InformationsPersonnellesScreen = () => {
         ville: ville.trim(),
         codePostale: codePostale.toString().trim(),
         copieCNI,
+        copieCNIVerso,
         residence,
       })
     );
@@ -713,7 +749,7 @@ const InformationsPersonnellesScreen = () => {
                 <Col md={6} className='mb-3'>
                   <Form.Label className='fw-bold small text-muted d-flex align-items-center justify-content-between'>
                     <span>
-                      <i className='fas fa-id-card text-primary me-2'></i> Copie de la CNI :
+                      <i className='fas fa-id-card text-primary me-2'></i> Copie CNI (Recto) :
                       <span className='text-danger ms-1'>*</span>
                     </span>
                     {uploadingCNI && (
@@ -752,9 +788,50 @@ const InformationsPersonnellesScreen = () => {
                 </Col>
               </Row>
 
-              {/* LIGNE 6 : Certificat de résidence (Optionnel) */}
+              {/* LIGNE 6 : Copie CNI (Verso) et Certificat de résidence */}
               <Row>
-                <Col md={12} className='mb-4'>
+                <Col md={6} className='mb-3'>
+                  <Form.Label className='fw-bold small text-muted d-flex align-items-center justify-content-between'>
+                    <span>
+                      <i className='fas fa-id-card text-primary me-2'></i> Copie CNI (Verso - Adresse) :
+                      <span className='text-danger ms-1'>*</span>
+                    </span>
+                    {uploadingCNIVerso && (
+                      <span className='badge bg-info text-dark'>
+                        <i className='fas fa-spinner fa-spin me-1'></i> Envoi...
+                      </span>
+                    )}
+                    {!uploadingCNIVerso && copieCNIVerso && (
+                      <span className='badge bg-success-subtle text-success small' title={copieCNIVerso}>
+                        <i className='fas fa-check-circle me-1'></i> Fichier attaché
+                      </span>
+                    )}
+                  </Form.Label>
+                  <Form.Control
+                    accept='.pdf,.png,.jpg,.jpeg'
+                    type='file'
+                    id='copieCNIVerso-file'
+                    style={{
+                      borderRadius: '8px',
+                      border: fieldErrors.copieCNIVerso ? '1.5px solid #EF4444' : '1px solid #ced4da',
+                      background: fieldErrors.copieCNIVerso ? '#FEF2F2' : '#FFFFFF',
+                    }}
+                    onChange={uploadCNIVerso}
+                  />
+                  {copieCNIVerso && (
+                    <div className='small text-muted mt-1 text-truncate' style={{ maxWidth: '320px', fontSize: '11.5px' }}>
+                      <i className='fas fa-file-alt text-success me-1'></i> {copieCNIVerso}
+                    </div>
+                  )}
+                  {fieldErrors.copieCNIVerso && (
+                    <div className='text-danger small mt-1 d-flex align-items-center gap-1' style={{ fontSize: '11.5px', fontWeight: '500' }}>
+                      <i className='fas fa-exclamation-circle'></i>
+                      <span>{fieldErrors.copieCNIVerso}</span>
+                    </div>
+                  )}
+                </Col>
+
+                <Col md={6} className='mb-4'>
                   <Form.Label className='fw-bold small text-muted d-flex align-items-center justify-content-between'>
                     <span><i className='fas fa-home text-secondary me-2'></i> Certificat de résidence (Optionnel) :</span>
                     {uploadingResidence && (
@@ -776,7 +853,7 @@ const InformationsPersonnellesScreen = () => {
                     onChange={uploadResidence}
                   />
                   <div style={{ fontSize: '11.5px' }} className='text-muted mt-1'>
-                    À insérer uniquement si votre adresse de résidence actuelle diffère de celle mentionnée sur votre CIN.
+                    À insérer uniquement si votre adresse de résidence actuelle diffère de celle mentionnée sur votre CIN (Verso).
                   </div>
                   {residence && (
                     <div className='small text-muted mt-1 text-truncate' style={{ maxWidth: '320px', fontSize: '11.5px' }}>
